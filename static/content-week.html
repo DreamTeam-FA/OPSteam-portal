@@ -8,9 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" />
 <style>
-
-/* ── Design Tokens ─────────────────────────────────────────────────────────── */
-/* Light-first: default tokens = light palette */
+/* ── Design Tokens (light-first) ─────────────────────────────────────────── */
 :root {
   --bg:          #EDEEFF;
   --bg2:         #FFFFFF;
@@ -29,858 +27,1068 @@
   --lift-shadow: 0 8px 28px rgba(13,148,136,0.3);
   --card-shadow: 0 4px 20px rgba(61,43,142,0.09), inset 0 1px 0 rgba(255,255,255,0.9);
 }
-
-/* ── Dark mode overrides ── */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg:          #0D1235;
-    --bg2:         #141945;
-    --glass:       rgba(18,24,68,0.65);
-    --glass-hi:    rgba(14,19,55,0.92);
-    --border:      rgba(255,255,255,0.08);
-    --border-hi:   rgba(255,255,255,0.14);
-    --teal:        #2DD4C8;
-    --teal-dim:    rgba(45,212,200,0.13);
-    --teal-glow:   rgba(45,212,200,0.28);
-    --purple:      #7C6AD4;
-    --ink:         #FFFFFF;
-    --ink2:        rgba(255,255,255,0.65);
-    --ink3:        rgba(255,255,255,0.32);
-    --card-shadow: 0 4px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
-    --lift-shadow: 0 8px 32px rgba(45,212,200,0.35);
+    --bg:#0D1235; --bg2:#141945; --glass:rgba(18,24,68,0.65); --glass-hi:rgba(14,19,55,0.92);
+    --border:rgba(255,255,255,0.08); --border-hi:rgba(255,255,255,0.14);
+    --teal:#2DD4C8; --teal-dim:rgba(45,212,200,0.13); --teal-glow:rgba(45,212,200,0.28);
+    --purple:#7C6AD4; --ink:#FFFFFF; --ink2:rgba(255,255,255,0.65); --ink3:rgba(255,255,255,0.32);
+    --card-shadow:0 4px 28px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05);
+    --lift-shadow:0 8px 32px rgba(45,212,200,0.35);
   }
 }
 :root[data-theme="dark"] {
-  --bg:          #0D1235;
-  --bg2:         #141945;
-  --glass:       rgba(18,24,68,0.65);
-  --glass-hi:    rgba(14,19,55,0.92);
-  --border:      rgba(255,255,255,0.08);
-  --border-hi:   rgba(255,255,255,0.14);
-  --teal:        #2DD4C8;
-  --teal-dim:    rgba(45,212,200,0.13);
-  --teal-glow:   rgba(45,212,200,0.28);
-  --purple:      #7C6AD4;
-  --ink:         #FFFFFF;
-  --ink2:        rgba(255,255,255,0.65);
-  --ink3:        rgba(255,255,255,0.32);
-  --card-shadow: 0 4px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
-  --lift-shadow: 0 8px 32px rgba(45,212,200,0.35);
+  --bg:#0D1235; --bg2:#141945; --glass:rgba(18,24,68,0.65); --glass-hi:rgba(14,19,55,0.92);
+  --border:rgba(255,255,255,0.08); --border-hi:rgba(255,255,255,0.14);
+  --teal:#2DD4C8; --teal-dim:rgba(45,212,200,0.13); --teal-glow:rgba(45,212,200,0.28);
+  --purple:#7C6AD4; --ink:#FFFFFF; --ink2:rgba(255,255,255,0.65); --ink3:rgba(255,255,255,0.32);
+  --card-shadow:0 4px 28px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05);
+  --lift-shadow:0 8px 32px rgba(45,212,200,0.35);
 }
 
-/* ── Reset ─────────────────────────────────────────────────────────────────── */
+/* ── Reset & Base ───────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { height: 100%; }
-
+html { font-size: 16px; }
 body {
   font-family: 'Inter', system-ui, sans-serif;
   background: var(--bg);
   color: var(--ink);
-  min-height: 100dvh;
-  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  transition: background .25s, color .25s;
 }
 
-/* Subtle background glow — fixed */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background: radial-gradient(ellipse 65% 42% at 50% -4%, rgba(76,53,168,0.07) 0%, transparent 55%);
+/* ── Nav ────────────────────────────────────────────────────────────────── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  backdrop-filter: blur(18px) saturate(1.6);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  background: var(--glass);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  display: flex; align-items: center; gap: 0; height: 56px;
 }
-:root[data-theme="dark"] body::before {
-  background:
-    radial-gradient(ellipse 70% 50% at 50% -6%, rgba(61,43,142,0.55) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 30% at 90% 110%, rgba(15,80,160,0.2) 0%, transparent 55%);
+.nav-logo {
+  display: flex; align-items: center; gap: 8px;
+  text-decoration: none; margin-right: 18px;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) body::before {
-    background:
-      radial-gradient(ellipse 70% 50% at 50% -6%, rgba(61,43,142,0.55) 0%, transparent 60%),
-      radial-gradient(ellipse 40% 30% at 90% 110%, rgba(15,80,160,0.2) 0%, transparent 55%);
-  }
+.nav-logo svg { width: 26px; height: 26px; flex-shrink: 0; }
+.nav-logo-text {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+  font-size: 1.15rem; letter-spacing: .03em; color: var(--ink); white-space: nowrap;
 }
-
-.ops-nav, main, footer { position: relative; z-index: 1; }
-
-/* ── Navigation ─────────────────────────────────────────────────────────────── */
-.ops-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 18px;
-  height: 52px;
-  background: var(--glass-hi);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-bottom: 1.5px solid var(--border-hi);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  gap: 12px;
+.nav-tabs { display: flex; gap: 2px; }
+.nav-tab {
+  padding: 6px 14px; border-radius: 8px; text-decoration: none;
+  font-size: .85rem; font-weight: 500; color: var(--ink3);
+  transition: background .18s, color .18s;
 }
-.ops-logo { display: flex; align-items: center; gap: 9px; text-decoration: none; flex-shrink: 0; }
-.ops-wordmark { display: flex; flex-direction: column; line-height: 1; }
-.ops-name {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 800; font-size: 17px;
-  letter-spacing: 0.04em; color: var(--ink);
-  text-transform: uppercase;
-}
-.ops-tag {
-  font-size: 8.5px; font-weight: 600;
-  letter-spacing: 0.2em; text-transform: uppercase;
-  color: var(--teal); margin-top: 2px;
-}
-.ops-tabs { display: flex; align-items: center; gap: 2px; flex: 1; justify-content: center; }
-.ops-tab {
-  padding: 6px 14px; border-radius: 8px;
-  font-size: 13px; font-weight: 500;
-  color: var(--ink2); text-decoration: none;
-  white-space: nowrap;
-  transition: color 0.15s, background 0.15s;
-}
-.ops-tab:hover { color: var(--ink); background: rgba(61,43,142,0.07); }
-:root[data-theme="dark"] .ops-tab:hover { background: rgba(255,255,255,0.06); }
-.ops-tab.active { color: var(--teal); background: var(--teal-dim); font-weight: 600; }
-.ops-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.nav-tab:hover { background: var(--teal-dim); color: var(--teal); }
+.nav-tab.active { background: var(--teal-dim); color: var(--teal); font-weight: 600; }
+.nav-spacer { flex: 1; }
 .theme-btn {
-  background: none; border: 1.5px solid var(--border-hi);
-  border-radius: 8px; padding: 5px 8px;
-  cursor: pointer; color: var(--ink2);
-  font-size: 14px; line-height: 1;
-  transition: border-color 0.15s, color 0.15s;
+  width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border);
+  background: var(--glass); cursor: pointer; display: flex; align-items: center;
+  justify-content: center; font-size: 1rem; transition: background .2s, border-color .2s;
 }
-.theme-btn:hover { border-color: var(--teal); color: var(--teal); }
+.theme-btn:hover { background: var(--teal-dim); border-color: var(--teal); }
 
-/* ── Main Layout ─────────────────────────────────────────────────────────────── */
-main { max-width: 760px; margin: 0 auto; padding: 44px 16px 80px; }
+/* ── Page Layout ────────────────────────────────────────────────────────── */
+.page { max-width: 680px; margin: 0 auto; padding: 40px 20px 80px; }
 
-/* ── Page Hero ──────────────────────────────────────────────────────────────── */
-.hero { text-align: center; margin-bottom: 40px; }
-.hero-eyebrow {
-  display: inline-flex; align-items: center; gap: 7px;
-  background: var(--teal-dim);
-  border: 1.5px solid rgba(13,148,136,0.22);
-  border-radius: 100px; padding: 5px 14px;
-  font-size: 11.5px; font-weight: 600;
-  letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--teal); margin-bottom: 18px;
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.page-header { text-align: center; margin-bottom: 32px; }
+.page-header h1 {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+  font-size: 2.6rem; letter-spacing: -.01em; line-height: 1;
+  margin-bottom: 10px;
 }
-:root[data-theme="dark"] .hero-eyebrow { border-color: rgba(45,212,200,0.25); }
-.hero-title {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: clamp(40px, 8vw, 64px);
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  line-height: 1;
-  color: var(--ink);
-  text-wrap: balance;
-  margin-bottom: 14px;
-}
-.hero-sub { font-size: 15px; color: var(--ink2); max-width: 440px; margin: 0 auto; line-height: 1.65; }
+.page-header h1 span { color: var(--teal); }
+.page-header p { color: var(--ink2); font-size: .97rem; line-height: 1.55; }
 
-/* ── Progress Bar ─────────────────────────────────────────────────────────── */
-.steps-bar { display: flex; align-items: center; justify-content: center; margin-bottom: 36px; }
-.step-item { display: flex; align-items: center; }
-.step-dot {
-  width: 30px; height: 30px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 700;
-  background: var(--glass);
-  border: 1.5px solid var(--border-hi);
-  color: var(--ink3);
-  transition: all 0.3s ease;
-  flex-shrink: 0;
-  box-shadow: 0 1px 4px rgba(61,43,142,0.08);
-}
-.step-dot.active {
-  background: var(--teal-dim);
-  border-color: var(--teal);
-  color: var(--teal);
-  box-shadow: 0 0 14px rgba(13,148,136,0.18);
-}
-.step-dot.done {
-  background: linear-gradient(135deg, #0D9488, #2DD4C8);
-  border-color: var(--teal);
-  color: #FFF;
-  font-size: 14px;
-}
-:root[data-theme="dark"] .step-dot.done { color: #080B1F; }
-.step-label { font-size: 11px; font-weight: 500; color: var(--ink3); letter-spacing: 0.04em; margin-left: 7px; white-space: nowrap; }
-.step-label.active { color: var(--teal); }
-.step-connector { width: 48px; height: 1.5px; background: var(--border-hi); margin: 0 10px; flex-shrink: 0; }
-.step-connector.done { background: var(--teal); opacity: 0.4; }
-@media (max-width: 500px) { .step-label { display: none; } .step-connector { width: 28px; margin: 0 5px; } }
-
-/* ── Cards ──────────────────────────────────────────────────────────────────── */
+/* ── Card ────────────────────────────────────────────────────────────────── */
 .card {
-  background: var(--glass);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border: 1.5px solid var(--border);
-  border-radius: 18px;
-  padding: 28px;
-  box-shadow: var(--card-shadow);
-  margin-bottom: 20px;
-  animation: fadeUp 0.25s ease;
-}
-.card-title {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 22px; font-weight: 800;
-  letter-spacing: 0.04em; text-transform: uppercase;
-  color: var(--ink); margin-bottom: 6px;
-}
-.card-sub { font-size: 13.5px; color: var(--ink2); margin-bottom: 20px; line-height: 1.55; }
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ── Form Elements ──────────────────────────────────────────────────────────── */
-.field { margin-bottom: 16px; }
-.field label {
-  display: block; font-size: 11.5px; font-weight: 700;
-  letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--purple); margin-bottom: 7px;
-}
-:root[data-theme="dark"] .field label { color: var(--teal); }
-.field input, .field textarea, .field select {
-  width: 100%;
-  background: rgba(255,255,255,0.85);
-  border: 1.5px solid var(--border-hi);
-  border-radius: 10px;
-  padding: 11px 14px;
-  font-family: 'Inter', sans-serif;
-  font-size: 14.5px;
-  color: var(--ink);
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  -webkit-appearance: none;
-}
-:root[data-theme="dark"] .field input,
-:root[data-theme="dark"] .field textarea,
-:root[data-theme="dark"] .field select {
-  background: rgba(13,18,68,0.55);
-  color: #fff;
-}
-.field input::placeholder, .field textarea::placeholder { color: var(--ink3); }
-.field input:focus, .field textarea:focus, .field select:focus {
-  border-color: var(--teal);
-  box-shadow: 0 0 0 3px var(--teal-dim);
-}
-.field textarea { min-height: 90px; resize: vertical; line-height: 1.55; }
-.field select option { background: #fff; color: #0A0E27; }
-:root[data-theme="dark"] .field select option { background: #141945; color: #fff; }
-
-/* ── Buttons ────────────────────────────────────────────────────────────────── */
-.btn {
-  display: inline-flex; align-items: center; justify-content: center;
-  gap: 7px; padding: 12px 24px; border-radius: 10px;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 17px; font-weight: 700;
-  letter-spacing: 0.07em; text-transform: uppercase;
-  cursor: pointer; border: none;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s;
-  white-space: nowrap; text-decoration: none; line-height: 1;
-}
-.btn-primary {
-  background: linear-gradient(135deg, #0D9488, #2DD4C8);
-  color: #FFF;
-  box-shadow: 0 3px 18px rgba(13,148,136,0.28);
-}
-:root[data-theme="dark"] .btn-primary { color: #080B1F; }
-.btn-primary:hover:not(:disabled) { transform: translateY(-2px) scale(1.02); box-shadow: var(--lift-shadow); }
-.btn-primary:active { transform: scale(0.97); box-shadow: none; }
-.btn-primary:disabled { opacity: 0.35; cursor: default; transform: none; box-shadow: none; }
-.btn-outline {
-  background: transparent; color: var(--ink2);
-  border: 1.5px solid var(--border-hi);
-}
-.btn-outline:hover:not(:disabled) {
-  transform: translateY(-2px) scale(1.02);
-  border-color: var(--teal); color: var(--teal);
-  box-shadow: 0 4px 16px var(--teal-dim);
-}
-.btn-outline:active { transform: scale(0.97); }
-.btn-outline:disabled { opacity: 0.35; cursor: default; transform: none; }
-.btn-ghost {
-  background: transparent; color: var(--teal);
-  border: 1.5px solid rgba(13,148,136,0.28);
-  padding: 8px 14px; font-size: 13px;
-  font-family: 'Inter', sans-serif; font-weight: 600;
-  text-transform: none; letter-spacing: 0;
-}
-:root[data-theme="dark"] .btn-ghost { border-color: rgba(45,212,200,0.3); }
-.btn-ghost:hover:not(:disabled) {
-  transform: translateY(-1px) scale(1.02);
-  background: var(--teal-dim);
-  box-shadow: 0 3px 12px var(--teal-dim);
-}
-.btn-ghost:active { transform: scale(0.97); }
-.btn-ghost:disabled { opacity: 0.35; cursor: default; }
-.btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
-
-/* ── Format Chips ───────────────────────────────────────────────────────────── */
-.format-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-.format-chip {
-  padding: 6px 14px; border-radius: 100px;
-  font-size: 12.5px; font-weight: 500;
-  border: 1.5px solid var(--border-hi);
-  background: var(--glass); color: var(--ink2);
-  cursor: pointer; transition: all 0.15s;
-}
-.format-chip:hover { border-color: var(--teal); color: var(--ink); }
-.format-chip.selected {
-  background: var(--teal-dim);
-  border-color: var(--teal);
-  color: var(--teal);
-}
-
-/* ── Loader ─────────────────────────────────────────────────────────────────── */
-.spinner-wrap { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 60px 24px; }
-.spinner {
-  width: 44px; height: 44px;
-  border: 3px solid var(--border-hi);
-  border-top-color: var(--teal);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.spinner-label { font-size: 14px; color: var(--ink2); text-align: center; line-height: 1.65; }
-.spinner-dot-row { display: flex; gap: 6px; margin-top: 4px; }
-.sdot {
-  width: 5px; height: 5px; border-radius: 50%;
-  background: var(--teal); opacity: 0.3;
-  animation: sdotBounce 1.4s ease-in-out infinite;
-}
-.sdot:nth-child(2) { animation-delay: 0.25s; }
-.sdot:nth-child(3) { animation-delay: 0.5s; }
-@keyframes sdotBounce {
-  0%,80%,100% { opacity: 0.3; transform: translateY(0); }
-  40% { opacity: 1; transform: translateY(-5px); }
-}
-
-/* ── Results ────────────────────────────────────────────────────────────────── */
-#results-section { display: none; }
-.week-grid { display: flex; flex-direction: column; gap: 16px; }
-.day-card {
-  background: var(--glass);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1.5px solid var(--border);
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: var(--card-shadow);
-  animation: fadeUp 0.3s ease both;
-}
-.day-card:nth-child(2) { animation-delay: 0.05s; }
-.day-card:nth-child(3) { animation-delay: 0.10s; }
-.day-card:nth-child(4) { animation-delay: 0.15s; }
-.day-card:nth-child(5) { animation-delay: 0.20s; }
-.day-card:nth-child(6) { animation-delay: 0.25s; }
-.day-card:nth-child(7) { animation-delay: 0.30s; }
-.day-header {
-  display: flex; align-items: center; gap: 12px;
-  padding: 14px 18px;
-  border-bottom: 1.5px solid var(--border);
-  background: rgba(255,255,255,0.35);
-}
-:root[data-theme="dark"] .day-header { background: rgba(13,18,53,0.3); }
-.day-label {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 16px; font-weight: 800;
-  letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--ink); flex: 1;
-}
-.day-badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 3px 10px; border-radius: 100px;
-  font-size: 10.5px; font-weight: 600;
-  letter-spacing: 0.08em; text-transform: uppercase;
-  border: 1.5px solid rgba(13,148,136,0.28);
-  color: var(--teal); background: var(--teal-dim);
-}
-:root[data-theme="dark"] .day-badge { border-color: rgba(45,212,200,0.3); }
-.day-body { padding: 16px 18px; }
-.day-caption { font-size: 14.5px; line-height: 1.68; color: var(--ink); white-space: pre-wrap; word-wrap: break-word; }
-.day-actions { padding: 10px 18px 14px; display: flex; gap: 8px; flex-wrap: wrap; }
-
-.results-toolbar {
-  display: flex; gap: 10px; flex-wrap: wrap;
-  align-items: center; justify-content: space-between;
-  margin-bottom: 22px; padding: 14px 18px;
-  background: var(--glass);
-  backdrop-filter: blur(12px);
-  border: 1.5px solid var(--border);
-  border-radius: 14px;
-}
-.results-meta {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 18px; font-weight: 700;
-  letter-spacing: 0.04em; text-transform: uppercase;
-  color: var(--ink);
-}
-.results-meta span { color: var(--teal); }
-.toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
-/* ── Toast ──────────────────────────────────────────────────────────────────── */
-#toast {
-  position: fixed; bottom: 28px; left: 50%;
-  transform: translateX(-50%) translateY(12px);
   background: var(--glass-hi);
-  backdrop-filter: blur(18px);
-  border: 1.5px solid rgba(13,148,136,0.3);
-  border-radius: 10px; padding: 10px 20px;
-  font-size: 13.5px; font-weight: 500;
-  color: var(--teal); white-space: nowrap;
-  z-index: 999; opacity: 0;
-  transition: opacity 0.2s, transform 0.2s;
-  pointer-events: none;
-  box-shadow: 0 4px 20px rgba(13,148,136,0.12);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  padding: 28px 28px 24px;
+  margin-bottom: 20px;
 }
-#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* ── Misc ───────────────────────────────────────────────────────────────────── */
-.hidden-keybar { display: none; }
-.divider { height: 1px; background: var(--border-hi); margin: 32px 0; }
-.tip { font-size: 12px; color: var(--ink3); margin-top: 6px; line-height: 1.5; }
-@media (prefers-reduced-motion: reduce) {
-  .day-card, .card, .btn { animation: none; transition: none; }
-  .spinner { animation: spin 2s linear infinite; }
+/* ── Step label ──────────────────────────────────────────────────────────── */
+.step-label {
+  font-size: .7rem; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--teal); margin-bottom: 10px;
+}
+.step-question {
+  font-size: 1.15rem; font-weight: 600; color: var(--ink); margin-bottom: 16px;
+}
+
+/* ── Toggle Buttons ─────────────────────────────────────────────────────── */
+.toggle-group { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.toggle-btn {
+  padding: 8px 18px; border-radius: 50px; border: 1.5px solid var(--border-hi);
+  background: var(--glass); color: var(--ink2); font-size: .88rem; font-weight: 500;
+  cursor: pointer; transition: all .18s; font-family: 'Inter', sans-serif;
+}
+.toggle-btn.active {
+  background: var(--teal); border-color: var(--teal); color: #fff; font-weight: 600;
+}
+.toggle-btn:hover:not(.active) { border-color: var(--teal); color: var(--teal); }
+
+/* ── Inputs ──────────────────────────────────────────────────────────────── */
+.field-hint {
+  font-size: .83rem; color: var(--ink3); font-style: italic; margin-bottom: 10px; line-height: 1.45;
+}
+input[type="url"], input[type="text"], textarea {
+  width: 100%; border: 1.5px solid var(--border-hi); border-radius: 10px;
+  background: var(--bg); color: var(--ink);
+  padding: 12px 14px; font-family: 'Inter', sans-serif; font-size: .92rem;
+  outline: none; transition: border-color .18s, box-shadow .18s;
+  resize: vertical;
+}
+input[type="url"]:focus, input[type="text"]:focus, textarea:focus {
+  border-color: var(--teal); box-shadow: 0 0 0 3px var(--teal-dim);
+}
+textarea { min-height: 120px; }
+.optional-label {
+  font-size: 1rem; font-weight: 600; color: var(--ink); margin-bottom: 4px;
+}
+.optional-tag { font-size: .8rem; font-weight: 400; color: var(--ink3); margin-left: 6px; }
+
+/* ── CTA Button ──────────────────────────────────────────────────────────── */
+.cta-btn {
+  width: 100%; padding: 15px; border-radius: 10px; border: none;
+  background: linear-gradient(135deg, #0D9488, #2DD4C8);
+  color: #060E1A; font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 700;
+  cursor: pointer; margin-top: 18px; transition: opacity .2s, box-shadow .2s;
+  box-shadow: var(--lift-shadow);
+}
+.cta-btn:hover:not(:disabled) { opacity: .92; box-shadow: 0 10px 32px rgba(13,148,136,0.45); }
+.cta-btn:disabled { opacity: .55; cursor: not-allowed; }
+.cta-btn.secondary {
+  background: var(--glass); border: 1.5px solid var(--border-hi);
+  color: var(--ink2); box-shadow: none; font-weight: 500;
+}
+.cta-btn.secondary:hover:not(:disabled) { border-color: var(--teal); color: var(--teal); box-shadow: none; }
+
+/* ── Progress List ───────────────────────────────────────────────────────── */
+.progress-section { margin-top: 20px; }
+.progress-label {
+  font-size: .65rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ink3); text-align: center; margin-bottom: 12px;
+}
+.progress-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.progress-item {
+  display: flex; align-items: center; gap: 10px;
+  font-size: .88rem; color: var(--ink3); transition: color .3s;
+}
+.progress-item.done { color: var(--teal); }
+.progress-item.active { color: var(--ink2); }
+.progress-dot {
+  width: 18px; height: 18px; border-radius: 50%; border: 2px solid currentColor;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: .7rem;
+}
+.progress-item.done .progress-dot::before { content: '✓'; }
+.progress-item.active .progress-dot {
+  border-color: var(--teal);
+  animation: spin 1s linear infinite;
+}
+.progress-item.active .progress-dot::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--teal); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Business Summary ────────────────────────────────────────────────────── */
+.summary-box {
+  background: var(--teal-dim); border: 1px solid var(--teal-glow);
+  border-radius: 10px; padding: 14px 16px; font-size: .95rem; font-weight: 500;
+  color: var(--ink); line-height: 1.5; margin-bottom: 20px; text-align: center;
+  font-style: italic;
+}
+
+/* ── Style Chips ─────────────────────────────────────────────────────────── */
+.chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+.chip {
+  padding: 8px 16px; border-radius: 50px; border: 1.5px solid var(--border-hi);
+  background: var(--glass); color: var(--ink2); font-size: .88rem; font-weight: 500;
+  cursor: pointer; transition: all .18s; font-family: 'Inter', sans-serif;
+}
+.chip.active { background: var(--teal); border-color: var(--teal); color: #fff; font-weight: 600; }
+.chip:hover:not(.active) { border-color: var(--teal); color: var(--teal); }
+
+/* ── Day Tabs ────────────────────────────────────────────────────────────── */
+.day-tabs {
+  display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 20px;
+  background: var(--teal-dim); border-radius: 10px; padding: 4px;
+}
+.day-tab {
+  flex: 1; min-width: 60px; padding: 8px 4px; border: none; border-radius: 7px;
+  background: transparent; color: var(--ink3); font-size: .75rem; font-weight: 600;
+  cursor: pointer; text-align: center; transition: all .18s;
+  font-family: 'Inter', sans-serif; text-transform: uppercase; letter-spacing: .04em;
+}
+.day-tab .day-name { display: block; }
+.day-tab .day-format { display: block; font-size: .6rem; font-weight: 400; margin-top: 1px; opacity: .7; }
+.day-tab.active { background: var(--glass-hi); color: var(--teal); box-shadow: 0 1px 6px rgba(0,0,0,.08); }
+.day-tab:hover:not(.active) { color: var(--ink2); }
+
+/* ── Day Card ────────────────────────────────────────────────────────────── */
+.day-panel { display: none; }
+.day-panel.active { display: block; }
+.day-header {
+  display: flex; align-items: baseline; gap: 10px; margin-bottom: 16px;
+}
+.day-name-big {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+  font-size: 1.4rem; color: var(--ink);
+}
+.day-format-badge {
+  background: var(--teal-dim); color: var(--teal); border-radius: 6px;
+  padding: 3px 8px; font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
+}
+
+/* ── Instagram Mock ──────────────────────────────────────────────────────── */
+.ig-mock {
+  border: 1px solid var(--border-hi); border-radius: 10px;
+  background: var(--bg2); margin-bottom: 16px; overflow: hidden;
+}
+.ig-mock-header {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.ig-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--teal), var(--purple));
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: .8rem; font-weight: 700; flex-shrink: 0;
+}
+.ig-handle { font-size: .83rem; font-weight: 600; color: var(--ink); }
+.ig-caption {
+  padding: 14px 14px 10px; font-size: .88rem; color: var(--ink2);
+  line-height: 1.6; white-space: pre-wrap; max-height: 260px; overflow-y: auto;
+}
+.ig-actions {
+  display: flex; gap: 14px; padding: 8px 14px; border-top: 1px solid var(--border);
+  color: var(--ink3); font-size: .85rem;
+}
+
+/* ── Bring it to life ────────────────────────────────────────────────────── */
+.bitl {
+  border: 1px solid var(--border-hi); border-radius: 10px; overflow: hidden; margin-bottom: 14px;
+}
+.bitl-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: var(--teal-dim); cursor: pointer;
+  user-select: none;
+}
+.bitl-title {
+  font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--teal);
+}
+.bitl-tool { font-size: .8rem; color: var(--ink2); font-weight: 600; }
+.bitl-chevron { color: var(--teal); font-size: .8rem; transition: transform .2s; }
+.bitl-header.open .bitl-chevron { transform: rotate(180deg); }
+.bitl-body { padding: 14px 16px; font-size: .85rem; color: var(--ink2); line-height: 1.6; display: none; }
+.bitl-body.open { display: block; }
+.bitl-instructions { margin-bottom: 12px; }
+.bitl-instructions ol { padding-left: 18px; }
+.bitl-instructions li { margin-bottom: 4px; }
+.bitl-prompt-box {
+  background: var(--bg); border: 1px solid var(--border-hi); border-radius: 8px;
+  padding: 12px 14px; font-size: .82rem; color: var(--ink2); white-space: pre-wrap;
+  max-height: 200px; overflow-y: auto; margin-bottom: 10px; font-family: monospace;
+}
+.copy-prompt-btn {
+  padding: 7px 14px; border-radius: 7px; border: 1.5px solid var(--teal);
+  background: transparent; color: var(--teal); font-size: .82rem; font-weight: 600;
+  cursor: pointer; transition: background .18s; font-family: 'Inter', sans-serif;
+}
+.copy-prompt-btn:hover { background: var(--teal-dim); }
+.copy-post-btn {
+  width: 100%; padding: 11px; border-radius: 9px; border: 1.5px solid var(--border-hi);
+  background: var(--glass); color: var(--ink2); font-size: .88rem; font-weight: 600;
+  cursor: pointer; margin-bottom: 8px; transition: all .18s; font-family: 'Inter', sans-serif;
+}
+.copy-post-btn:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-dim); }
+
+/* ── Save Banner ─────────────────────────────────────────────────────────── */
+.save-banner {
+  background: linear-gradient(135deg, rgba(13,148,136,.12), rgba(76,53,168,.08));
+  border: 1.5px solid var(--teal-glow); border-radius: 12px;
+  padding: 16px 20px; margin-bottom: 20px;
+  display: flex; align-items: flex-start; gap: 14px;
+}
+.save-banner-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 2px; }
+.save-banner-text { flex: 1; }
+.save-banner-text strong { display: block; font-size: .95rem; margin-bottom: 4px; color: var(--ink); }
+.save-banner-text p { font-size: .83rem; color: var(--ink2); line-height: 1.45; }
+
+/* ── What happened ───────────────────────────────────────────────────────── */
+.what-happened {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 16px; margin-bottom: 20px;
+}
+.what-happened-label {
+  font-size: .65rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ink3); margin-bottom: 10px;
+}
+.what-happened ul { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+.what-happened li {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: .85rem; color: var(--ink2); line-height: 1.45;
+}
+.what-happened li::before {
+  content: '✓'; color: var(--teal); font-weight: 700; flex-shrink: 0; margin-top: 1px;
+}
+.week-theme {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+  font-size: 1.1rem; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--ink); text-align: center; margin-bottom: 20px;
+  padding: 10px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+}
+
+/* ── Step 4 ──────────────────────────────────────────────────────────────── */
+.step4-actions { display: flex; flex-direction: column; gap: 10px; }
+.feedback-row { display: flex; gap: 10px; justify-content: center; margin-top: 8px; }
+.feedback-btn {
+  padding: 8px 20px; border-radius: 8px; border: 1.5px solid var(--border-hi);
+  background: var(--glass); color: var(--ink2); font-size: .85rem; font-weight: 500;
+  cursor: pointer; transition: all .18s; font-family: 'Inter', sans-serif;
+}
+.feedback-btn:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-dim); }
+.feedback-btn.selected { background: var(--teal); border-color: var(--teal); color: #fff; }
+.footer-note { text-align: center; font-size: .8rem; color: var(--ink3); margin-top: 16px; font-style: italic; }
+
+/* ── Error ───────────────────────────────────────────────────────────────── */
+.error-box {
+  background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.25);
+  border-radius: 10px; padding: 14px 16px; color: #ef4444;
+  font-size: .88rem; margin-top: 14px; display: none;
 }
 </style>
 </head>
 <body>
 
-<!-- ── Navigation ── -->
-<nav class="ops-nav">
-  <a href="/" class="ops-logo">
-    <svg width="11" height="15" viewBox="0 0 11 15" fill="none" aria-hidden="true">
-      <path d="M5.5 0L11 6.5H7.5V15H3.5V6.5H0L5.5 0Z" fill="#2DD4C8"/>
+<!-- ── Nav ──────────────────────────────────────────────────────────────── -->
+<nav>
+  <a href="/" class="nav-logo">
+    <svg viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="13" cy="13" r="12" fill="url(#ng)" opacity=".18"/>
+      <path d="M13 20V10M9 14l4-4 4 4" stroke="#0D9488" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+      <defs><linearGradient id="ng" x1="0" y1="0" x2="26" y2="26" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#0D9488"/><stop offset="1" stop-color="#4C35A8"/>
+      </linearGradient></defs>
     </svg>
-    <div class="ops-wordmark">
-      <span class="ops-name">OPSteam</span>
-      <span class="ops-tag">Portal</span>
-    </div>
+    <span class="nav-logo-text">OPSteam</span>
   </a>
-  <div class="ops-tabs">
-    <a href="/" class="ops-tab">Hi, Amy!</a>
-    <a href="/content-week.html" class="ops-tab active">Content Week</a>
+  <div class="nav-tabs">
+    <a href="/" class="nav-tab">Hi, Amy!</a>
+    <a href="/content-week.html" class="nav-tab active">Content Week</a>
   </div>
-  <div class="ops-right">
-    <button class="theme-btn" id="theme-btn" aria-label="Toggle theme">🌙</button>
-  </div>
+  <div class="nav-spacer"></div>
+  <button class="theme-btn" id="themeBtn" aria-label="Toggle theme">🌙</button>
 </nav>
 
-<!-- Security: Gemini key stays server-side -->
-<div class="hidden-keybar"><input type="password" id="apikey" autocomplete="off" /></div>
+<!-- ── Page ─────────────────────────────────────────────────────────────── -->
+<div class="page">
 
-<main>
-  <!-- Hero -->
-  <div class="hero">
-    <div class="hero-eyebrow">
-      <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3" fill="currentColor" opacity="0.7"/><circle cx="4" cy="4" r="1.5" fill="currentColor"/></svg>
-      Instagram Content Planner
-    </div>
-    <div class="hero-title">Your Content Week</div>
-    <div class="hero-sub">Generate a full 7-day Instagram content calendar with AI-crafted captions in seconds.</div>
+  <!-- Header -->
+  <div class="page-header">
+    <h1>Content <span>Week</span></h1>
+    <p>Paste your website. Two steps. A full week of Instagram content,<br>written for your business, ready to publish.</p>
   </div>
 
-  <!-- Progress -->
-  <div class="steps-bar" id="steps-bar">
-    <div class="step-item">
-      <div class="step-dot active" id="dot-1">1</div>
-      <span class="step-label active" id="lbl-1">About You</span>
-    </div>
-    <div class="step-connector" id="conn-1"></div>
-    <div class="step-item">
-      <div class="step-dot" id="dot-2">2</div>
-      <span class="step-label" id="lbl-2">Your Content</span>
-    </div>
-    <div class="step-connector" id="conn-2"></div>
-    <div class="step-item">
-      <div class="step-dot" id="dot-3">3</div>
-      <span class="step-label" id="lbl-3">Generate</span>
-    </div>
-  </div>
+  <!-- ── STEP 1 ── YOUR BUSINESS ─────────────────────────────────────────── -->
+  <div id="step1" class="step1">
 
-  <!-- ══ STEP 1 ══ -->
-  <div id="step1" class="card">
-    <div class="card-title">About Your Brand</div>
-    <div class="card-sub">Tell us who you are. This shapes the voice and content direction of every post.</div>
-    <div class="field">
-      <label>Your Name / Brand Name</label>
-      <input type="text" id="brandName" placeholder="e.g. Sarah Reyes · The Finance Coach" />
-    </div>
-    <div class="field">
-      <label>What You Do + Who You Serve</label>
-      <textarea id="niche" placeholder="e.g. I help Filipino millennials manage their money and build their first investment portfolio through practical, shame-free coaching."></textarea>
-    </div>
-    <div class="field">
-      <label>Your Brand Voice</label>
-      <select id="tone">
-        <option value="warm and conversational, like talking to a knowledgeable friend">Warm & Friendly</option>
-        <option value="bold, direct and motivating — no fluff, just results">Bold & Direct</option>
-        <option value="educational and thorough, with clear explanations and data">Educational & Informative</option>
-        <option value="playful and witty, with humor that still delivers value">Playful & Witty</option>
-        <option value="premium and aspirational, polished and confident">Premium & Aspirational</option>
-        <option value="empathetic and deeply personal, sharing real stories">Empathetic & Personal</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Current Focus / Campaign Theme <span style="opacity:.5;font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
-      <input type="text" id="focus" placeholder="e.g. Launching my Group Coaching Bootcamp in October" />
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="goStep2()">Continue →</button>
-    </div>
-  </div>
+    <div class="card" id="step1Card">
+      <div class="step-label">Step 1 · Your Business</div>
+      <div class="step-question">Where can we see your business?</div>
 
-  <!-- ══ STEP 2 ══ -->
-  <div id="step2" class="card" style="display:none">
-    <div class="card-title">Your Content Sources</div>
-    <div class="card-sub">Give the AI some material to work with — your website, a recent post, or key talking points.</div>
-    <div class="field">
-      <label>Website URL <span style="opacity:.5;font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
-      <input type="url" id="websiteUrl" placeholder="https://yourwebsite.com" />
-      <div class="tip">⚡ Paste your homepage or a key landing page for richer, on-brand content</div>
-    </div>
-    <div class="field" style="margin-top:18px">
-      <label>Paste Your Content / Talking Points</label>
-      <textarea id="rawContent" style="min-height:120px" placeholder="Paste a blog post, bio, program details, testimonials, past captions, or any content that captures your brand. The more you give, the better the results."></textarea>
-    </div>
-    <div class="field" style="margin-top:18px">
-      <label>Post Formats to Include</label>
-      <div class="format-chips" id="formatChips">
-        <span class="format-chip selected" data-val="Carousel (educational slides)">🎠 Carousel</span>
-        <span class="format-chip selected" data-val="Static Infographic (tips/list)">📊 Infographic</span>
-        <span class="format-chip selected" data-val="Podcast/Audio clip share">🎙️ Audio Clip</span>
-        <span class="format-chip selected" data-val="Video talking head (talking to camera)">🎥 Video</span>
-        <span class="format-chip selected" data-val="Instagram Reel (short-form video)">🎬 Reel</span>
-        <span class="format-chip selected" data-val="Single photo with caption">📸 Photo</span>
-        <span class="format-chip selected" data-val="Instagram Story series">✨ Story</span>
+      <div class="toggle-group">
+        <button class="toggle-btn active" id="btnWebsite" onclick="setMode('website')">I have a website or page</button>
+        <button class="toggle-btn" id="btnNoSite" onclick="setMode('nosite')">No website yet</button>
       </div>
-      <div class="tip">Tap to toggle formats. Select at least 1.</div>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-outline" onclick="goStep(1)">← Back</button>
-      <button class="btn btn-primary" onclick="handleStep2()">Build My Week →</button>
-    </div>
-  </div>
 
-  <!-- ══ STEP 3: Loading ══ -->
-  <div id="step3" class="card" style="display:none">
-    <div class="spinner-wrap">
-      <div class="spinner"></div>
-      <div class="spinner-label" id="loadingMsg">Gathering your brand content…</div>
-      <div class="spinner-dot-row">
-        <div class="sdot"></div><div class="sdot"></div><div class="sdot"></div>
+      <!-- Website URL input -->
+      <div id="urlSection">
+        <input type="url" id="urlInput" placeholder="https://yourbusiness.com" />
+        <p class="field-hint" style="margin-top:8px">No website? Pick "No website yet" above.</p>
+      </div>
+
+      <!-- Free text input (hidden by default) -->
+      <div id="textSection" style="display:none">
+        <p class="field-hint">Tell us about your business in your own words, or paste anything that describes it: a bio, a document, even rough bullet points.</p>
+        <textarea id="bizText" placeholder="I run a... I help... What makes us different is..."></textarea>
+      </div>
+
+      <div class="error-box" id="step1Error"></div>
+
+      <button class="cta-btn" id="readBtn" onclick="readBusiness()">Read my business</button>
+
+      <!-- Progress -->
+      <div class="progress-section" id="step1Progress" style="display:none">
+        <div class="progress-label">What's happening behind the click</div>
+        <ul class="progress-list" id="step1ProgressList"></ul>
       </div>
     </div>
+
   </div>
 
-  <!-- ══ RESULTS ══ -->
-  <div id="results-section">
-    <div class="results-toolbar">
-      <div class="results-meta">Your 7-Day Plan — <span id="resultBrand">OPSteam</span></div>
-      <div class="toolbar-actions">
-        <button class="btn btn-ghost" onclick="downloadZip()">⬇ Download</button>
-        <button class="btn btn-ghost" onclick="buildAgain()">↺ Build Again</button>
+  <!-- ── STEP 2 ── YOUR WEEK, YOUR WAY ──────────────────────────────────── -->
+  <div id="step2" style="display:none">
+
+    <!-- Business summary (populated after step 1) -->
+    <div class="summary-box" id="summaryBox"></div>
+
+    <div class="card">
+      <div class="step-label">Step 2 · Your Week, Your Way</div>
+      <div class="step-question">What's your style?</div>
+
+      <div class="chips">
+        <button class="chip" data-style="Helpful expert" onclick="setStyle(this)">Helpful expert</button>
+        <button class="chip" data-style="Behind the scenes" onclick="setStyle(this)">Behind the scenes</button>
+        <button class="chip" data-style="Bold takes" onclick="setStyle(this)">Bold takes</button>
+        <button class="chip active" data-style="Mix it up" onclick="setStyle(this)">Mix it up</button>
+      </div>
+
+      <div style="margin-bottom:18px">
+        <div class="optional-label">Point this week somewhere <span class="optional-tag">(optional)</span></div>
+        <p class="field-hint">A launch, an event, a topic, or a whole article you want the week built around. Mention what you've covered before and we'll go somewhere new.</p>
+        <textarea id="weekFocus" placeholder="This week is all about... / Here's the article I want the week built around..." style="min-height:90px"></textarea>
+      </div>
+
+      <div style="margin-bottom:4px">
+        <div class="optional-label">Add your brand voice <span class="optional-tag">(optional)</span></div>
+        <p class="field-hint">Paste your brand guidelines, tone-of-voice doc, or any description of how your business sounds. Shapes the whole week. Used for this run only.</p>
+        <textarea id="brandVoice" placeholder="Our brand sounds like... We never say... Our audience is..." style="min-height:90px"></textarea>
+      </div>
+
+      <div class="error-box" id="step2Error"></div>
+
+      <button class="cta-btn" id="buildBtn" onclick="buildWeek()">Build my week</button>
+
+      <!-- Progress -->
+      <div class="progress-section" id="step2Progress" style="display:none">
+        <div class="progress-label">What's happening behind the click</div>
+        <ul class="progress-list" id="step2ProgressList"></ul>
+        <p style="text-align:center;font-size:.78rem;color:var(--ink3);margin-top:14px;font-style:italic">Writing all 7 days takes about a minute. Each day comes back with its post, and where a tool brings it to life, the exact prompt to paste.</p>
       </div>
     </div>
-    <div class="week-grid" id="week-grid"></div>
-    <div class="divider"></div>
-    <div style="text-align:center">
-      <button class="btn btn-outline" onclick="buildAgain()">↺ Start Over</button>
-    </div>
-  </div>
-</main>
 
-<div id="toast">Copied!</div>
+    <button class="cta-btn secondary" style="margin-top:-8px" onclick="resetToStep1()">← Start over</button>
+  </div>
+
+  <!-- ── STEP 3 ── YOUR WEEK ─────────────────────────────────────────────── -->
+  <div id="step3" style="display:none">
+
+    <!-- Save banner -->
+    <div class="save-banner">
+      <div class="save-banner-icon">⚠️</div>
+      <div class="save-banner-text">
+        <strong>Save it first</strong>
+        <p>Your week is ready below. Download it now so you never lose it — we don't store your results. If you close or refresh this page, your week is gone.</p>
+      </div>
+    </div>
+
+    <!-- What happened -->
+    <div class="what-happened" id="whatHappened">
+      <div class="what-happened-label">What just happened behind your two clicks</div>
+      <ul id="whatHappenedList"></ul>
+    </div>
+
+    <!-- Week theme -->
+    <div class="week-theme" id="weekTheme"></div>
+
+    <!-- Day tabs -->
+    <div class="day-tabs" id="dayTabs"></div>
+
+    <!-- Day panels -->
+    <div id="dayPanels"></div>
+
+    <!-- Step 4 -->
+    <div class="card" style="margin-top:24px">
+      <div class="step-label">Step 4 · Take It With You</div>
+      <div class="step4-actions">
+        <button class="cta-btn" id="downloadBtn" onclick="downloadWeek()">⬇ Download everything (.txt)</button>
+        <button class="cta-btn secondary" onclick="copyAll()">⎘ Copy the whole week</button>
+        <button class="cta-btn secondary" onclick="resetToStep2()">↺ Build another week</button>
+        <button class="cta-btn secondary" onclick="resetToStep1()">⊕ Start over</button>
+      </div>
+      <div class="feedback-row">
+        <button class="feedback-btn" id="fbYes" onclick="giveFeedback('yes')">👍 Yes, helpful</button>
+        <button class="feedback-btn" id="fbNo" onclick="giveFeedback('no')">👎 Not quite</button>
+      </div>
+      <p class="footer-note">Written from your own words. Read each post once, make it yours, and publish.</p>
+    </div>
+
+  </div>
+
+</div><!-- .page -->
 
 <script>
-/* ── Theme ── */
-const themeBtn = document.getElementById('theme-btn');
-function getTheme() { try { return localStorage.getItem('ops-theme') || 'light'; } catch { return 'light'; } }
-function applyTheme(t) {
-  document.documentElement.setAttribute('data-theme', t);
-  themeBtn.textContent = t === 'dark' ? '☀️' : '🌙';
-  try { localStorage.setItem('ops-theme', t); } catch {}
-}
-applyTheme(getTheme());
-themeBtn.addEventListener('click', () =>
-  applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark')
-);
+// ── State ───────────────────────────────────────────────────────────────────
+const state = {
+  mode: 'website',          // 'website' | 'nosite'
+  url: '',
+  bizText: '',
+  scrapedContent: '',
+  summary: '',
+  style: 'Mix it up',
+  weekFocus: '',
+  brandVoice: '',
+  weekData: null,           // {theme, days, competitors}
+  competitors: []
+};
 
-/* ── Format chips ── */
-document.getElementById('formatChips').addEventListener('click', e => {
-  const chip = e.target.closest('.format-chip');
-  if (chip) chip.classList.toggle('selected');
-});
-
-/* ── Step management ── */
-function goStep(n) {
-  [1,2,3].forEach(i => {
-    const el = document.getElementById('step'+i);
-    if (el) el.style.display = i === n ? 'block' : 'none';
-  });
-  document.getElementById('results-section').style.display = 'none';
-  updateStepBar(n);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function updateStepBar(active) {
-  [1,2,3].forEach(i => {
-    const dot = document.getElementById('dot-'+i);
-    const lbl = document.getElementById('lbl-'+i);
-    dot.classList.remove('active','done');
-    if (lbl) lbl.classList.remove('active');
-    if (i < active) { dot.classList.add('done'); dot.textContent = '✓'; }
-    else if (i === active) { dot.classList.add('active'); dot.textContent = i; if (lbl) lbl.classList.add('active'); }
-    else { dot.textContent = i; }
-  });
-  [1,2].forEach(i => {
-    const c = document.getElementById('conn-'+i);
-    if (c) c.classList.toggle('done', i < active);
-  });
-}
-
-function goStep2() {
-  const name = document.getElementById('brandName').value.trim();
-  const niche = document.getElementById('niche').value.trim();
-  if (!name || !niche) {
-    [document.getElementById('brandName'), document.getElementById('niche')].forEach(f => {
-      if (!f.value.trim()) {
-        f.style.borderColor = 'rgba(244,63,94,0.6)';
-        setTimeout(() => f.style.borderColor = '', 2000);
-      }
-    });
-    return;
+// ── Theme Toggle ─────────────────────────────────────────────────────────────
+(function() {
+  const btn = document.getElementById('themeBtn');
+  function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    btn.textContent = t === 'dark' ? '☀️' : '🌙';
+    try { localStorage.setItem('ops-theme', t); } catch(e) {}
   }
-  goStep(2);
+  const saved = (() => { try { return localStorage.getItem('ops-theme'); } catch(e) { return null; } })();
+  applyTheme(saved || 'light');
+  btn.addEventListener('click', () => {
+    const cur = document.documentElement.getAttribute('data-theme') || 'light';
+    applyTheme(cur === 'dark' ? 'light' : 'dark');
+  });
+})();
+
+// ── Mode Toggle ──────────────────────────────────────────────────────────────
+function setMode(m) {
+  state.mode = m;
+  document.getElementById('btnWebsite').classList.toggle('active', m === 'website');
+  document.getElementById('btnNoSite').classList.toggle('active', m === 'nosite');
+  document.getElementById('urlSection').style.display = m === 'website' ? 'block' : 'none';
+  document.getElementById('textSection').style.display = m === 'nosite' ? 'block' : 'none';
+  hideError('step1Error');
 }
 
-/* ── Loading messages ── */
-const LOADING_MSGS = [
-  'Scraping your website…',
-  'Studying your brand content…',
-  'Mapping out the 7-day plan…',
-  'Writing captions in your voice…',
-  'Adding hashtags and CTAs…',
-  'Polishing the final drafts…',
-];
-let loadInterval = null;
-function startLoading() {
-  let i = 0;
-  const el = document.getElementById('loadingMsg');
-  el.textContent = LOADING_MSGS[0];
-  clearInterval(loadInterval);
-  loadInterval = setInterval(() => {
-    i = Math.min(i + 1, LOADING_MSGS.length - 1);
-    el.textContent = LOADING_MSGS[i];
-  }, 3800);
-}
-function stopLoading() { clearInterval(loadInterval); }
-
-/* ── Backend proxy (Gemini key stays server-side) ── */
-function callGemini(systemPrompt, userPrompt, maxTok) {
-  return fetch('/content-week/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ system_prompt: systemPrompt, user_prompt: userPrompt, max_tokens: maxTok || 3000 })
-  }).then(r => {
-    if (!r.ok) return r.json().then(e => { throw new Error(e.detail || 'Server error ' + r.status); });
-    return r.json();
-  }).then(d => d.text);
+// ── Style Chips ──────────────────────────────────────────────────────────────
+function setStyle(el) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  state.style = el.dataset.style;
 }
 
-/* ── Scrape website ── */
+// ── Progress helpers ─────────────────────────────────────────────────────────
+function showProgress(listId, sectionId, steps) {
+  const section = document.getElementById(sectionId);
+  const list = document.getElementById(listId);
+  section.style.display = 'block';
+  list.innerHTML = steps.map(s =>
+    `<li class="progress-item" data-step="${s}">
+      <div class="progress-dot"></div>
+      <span>${s}</span>
+    </li>`
+  ).join('');
+}
+
+function tickProgress(listId, step, done = false) {
+  const items = document.querySelectorAll(`#${listId} .progress-item`);
+  items.forEach(item => {
+    if (item.dataset.step === step) {
+      item.classList.remove('pending');
+      if (done) { item.classList.add('done'); item.classList.remove('active'); }
+      else { item.classList.add('active'); item.classList.remove('done'); }
+    }
+  });
+}
+
+function allDone(listId) {
+  document.querySelectorAll(`#${listId} .progress-item`).forEach(item => {
+    item.classList.add('done'); item.classList.remove('active');
+  });
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Error helpers ────────────────────────────────────────────────────────────
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.style.display = 'block';
+}
+function hideError(id) { document.getElementById(id).style.display = 'none'; }
+
+// ── Website Scraper ──────────────────────────────────────────────────────────
 async function scrapeWebsite(url) {
-  if (!url) return '';
   const proxies = [
     `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-    `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    `https://corsproxy.io/?${encodeURIComponent(url)}`
   ];
   for (const proxy of proxies) {
     try {
-      const resp = await fetch(proxy, { signal: AbortSignal.timeout(12000) });
-      if (!resp.ok) continue;
-      const data = await resp.json().catch(() => null);
-      const raw = data?.contents || await resp.text();
-      const tmp = document.createElement('div');
-      tmp.innerHTML = raw;
-      ['script','style','nav','footer','head'].forEach(t => tmp.querySelectorAll(t).forEach(e => e.remove()));
-      return tmp.innerText.replace(/\s+/g,' ').trim().slice(0, 6000);
-    } catch { continue; }
+      const r = await fetch(proxy, { signal: AbortSignal.timeout(12000) });
+      if (!r.ok) continue;
+      const data = await r.json();
+      const html = data.contents || data;
+      if (typeof html !== 'string') continue;
+      // Strip HTML tags
+      const txt = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+                      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+                      .replace(/<[^>]+>/g, ' ')
+                      .replace(/\s+/g, ' ').trim();
+      if (txt.length > 100) return txt.substring(0, 8000);
+    } catch(e) { continue; }
   }
-  return '';
+  return null;
 }
 
-/* ── Step 2 ── */
-async function handleStep2() {
-  const formats = [...document.querySelectorAll('#formatChips .format-chip.selected')].map(c => c.dataset.val);
-  if (!formats.length) { showToast('Select at least 1 post format!'); return; }
-  goStep(3);
-  startLoading();
-  const url = document.getElementById('websiteUrl').value.trim();
-  let websiteText = '';
-  try { websiteText = await scrapeWebsite(url); } catch {}
-  if (!websiteText) document.getElementById('loadingMsg').textContent = 'No website fetched — using pasted content…';
-  await generateWeek(formats, websiteText);
+// ── Gemini Call ──────────────────────────────────────────────────────────────
+async function callGemini(systemPrompt, userPrompt, maxTokens = 3000) {
+  const r = await fetch('/content-week/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ system_prompt: systemPrompt, user_prompt: userPrompt, max_tokens: maxTokens })
+  });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({}));
+    throw new Error(err.detail || `API error ${r.status}`);
+  }
+  const data = await r.json();
+  return data.text;
 }
 
-/* ── Generate ── */
-async function generateWeek(formats, websiteText) {
-  const brandName = document.getElementById('brandName').value.trim();
-  const niche     = document.getElementById('niche').value.trim();
-  const tone      = document.getElementById('tone').value;
-  const focus     = document.getElementById('focus').value.trim();
-  const raw       = document.getElementById('rawContent').value.trim();
+// ── Parse JSON from AI response ──────────────────────────────────────────────
+function parseJSON(text) {
+  // Try direct parse first
+  try { return JSON.parse(text); } catch(e) {}
+  // Extract from markdown code block
+  const m = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (m) { try { return JSON.parse(m[1].trim()); } catch(e) {} }
+  // Find JSON object in text
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start !== -1 && end > start) {
+    try { return JSON.parse(text.substring(start, end + 1)); } catch(e) {}
+  }
+  return null;
+}
 
-  const ctx = [
-    websiteText ? `=== WEBSITE CONTENT ===\n${websiteText}` : '',
-    raw ? `=== BRAND CONTENT / TALKING POINTS ===\n${raw}` : '',
-  ].filter(Boolean).join('\n\n') || 'No additional context provided.';
+// ── STEP 1: Read Business ────────────────────────────────────────────────────
+async function readBusiness() {
+  hideError('step1Error');
+  const btn = document.getElementById('readBtn');
 
-  const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-  const assignments = DAYS.map((d, i) => ({ day: d, format: formats[i % formats.length] }));
+  if (state.mode === 'website') {
+    state.url = document.getElementById('urlInput').value.trim();
+    if (!state.url || !state.url.startsWith('http')) {
+      showError('step1Error', 'Please enter a valid website URL starting with http:// or https://');
+      return;
+    }
+  } else {
+    state.bizText = document.getElementById('bizText').value.trim();
+    if (state.bizText.length < 30) {
+      showError('step1Error', 'Please tell us a bit more about your business (at least a sentence or two).');
+      return;
+    }
+  }
 
-  const SYS = `You are an expert Instagram content strategist and copywriter for ${brandName}.
-BRAND: ${niche}
-VOICE: ${tone}
-${focus ? `CURRENT FOCUS: ${focus}` : ''}
+  btn.disabled = true;
+  btn.textContent = 'Reading your business...';
 
-Write Instagram captions that feel authentic — never generic. Each post should:
-- Open with a compelling hook (no "Hey guys!")
-- Deliver specific, real value
-- End with a clear, format-appropriate CTA
-- Include 8-12 relevant hashtags on a separate line at the end
-- Match the brand's voice exactly
-
-Target 150-400 words depending on format type.`;
-
-  const USR = `Use this brand context:
-${ctx}
-
-Write a distinct Instagram caption for each of the 7 days below. Use the assigned format for each day.
-
-For EACH day output exactly:
-DAY: [day name]
-FORMAT: [format type]
-CAPTION:
-[full caption including hashtags at end]
----
-
-Days and formats:
-${assignments.map(a => `${a.day}: ${a.format}`).join('\n')}
-
-Write all 7 now. Make each unique — different hook, different angle, different CTA.`;
-
-  document.getElementById('loadingMsg').textContent = 'Writing your 7-day content plan…';
+  const steps1 = [
+    'Waking the engine...',
+    'Reading about your business...',
+    'Searching your space for sites people love...',
+    'Finding more sites worth borrowing from...',
+    'Lining up businesses doing it well in your space...',
+    'Checking every site is real...'
+  ];
+  showProgress('step1ProgressList', 'step1Progress', steps1);
 
   try {
-    const result = await callGemini(SYS, USR, 4000);
-    stopLoading();
-    renderResults(result, assignments, brandName);
-  } catch(err) {
-    stopLoading();
-    goStep(2);
-    showToast('Error: ' + (err.message || 'Generation failed. Try again.'));
+    // Step: wake
+    tickProgress('step1ProgressList', steps1[0]);
+    await sleep(600);
+    tickProgress('step1ProgressList', steps1[0], true);
+
+    // Step: read
+    tickProgress('step1ProgressList', steps1[1]);
+    let businessContent = '';
+    if (state.mode === 'website') {
+      const scraped = await scrapeWebsite(state.url);
+      if (!scraped) {
+        showError('step1Error', "Couldn't read that website. Try a different URL, or switch to 'No website yet' and paste a description.");
+        btn.disabled = false; btn.textContent = 'Read my business';
+        document.getElementById('step1Progress').style.display = 'none';
+        return;
+      }
+      businessContent = `Website URL: ${state.url}\n\nWebsite content:\n${scraped}`;
+      state.scrapedContent = scraped;
+    } else {
+      businessContent = `Business description:\n${state.bizText}`;
+      state.scrapedContent = state.bizText;
+    }
+    tickProgress('step1ProgressList', steps1[1], true);
+
+    // Fake progress steps while we call Gemini
+    tickProgress('step1ProgressList', steps1[2]);
+    await sleep(800);
+    tickProgress('step1ProgressList', steps1[2], true);
+    tickProgress('step1ProgressList', steps1[3]);
+    await sleep(700);
+    tickProgress('step1ProgressList', steps1[3], true);
+    tickProgress('step1ProgressList', steps1[4]);
+    await sleep(600);
+    tickProgress('step1ProgressList', steps1[4], true);
+    tickProgress('step1ProgressList', steps1[5]);
+
+    // Gemini: analyze business
+    const sysPrompt = `You are a content strategist. Analyze the business information provided and return ONLY a JSON object with these fields:
+- "summary": A single sentence starting with "You" that describes what the business does and who it serves. Max 25 words. Be specific.
+- "niche": 2-4 words describing the industry/niche
+- "audience": 2-4 words describing their target audience
+- "competitors": An array of 3 example company/brand names that compete in this space (real brands)
+
+Return ONLY valid JSON, no markdown, no extra text.`;
+
+    const rawResult = await callGemini(sysPrompt, businessContent, 500);
+    const parsed = parseJSON(rawResult);
+
+    if (!parsed || !parsed.summary) {
+      throw new Error('Could not understand the business. Please try again or use the text description option.');
+    }
+
+    state.summary = parsed.summary;
+    state.competitors = parsed.competitors || [];
+    tickProgress('step1ProgressList', steps1[5], true);
+
+    await sleep(400);
+    goToStep2();
+
+  } catch(e) {
+    showError('step1Error', e.message || 'Something went wrong. Please try again.');
+    btn.disabled = false;
+    btn.textContent = 'Read my business';
+    document.getElementById('step1Progress').style.display = 'none';
   }
 }
 
-/* ── Render results ── */
-const FORMAT_EMOJIS = { Carousel:'🎠', Infographic:'📊', Audio:'🎙️', Video:'🎥', Reel:'🎬', Photo:'📸', Story:'✨', Podcast:'🎙️' };
-function getEmoji(f) {
-  for (const [k,v] of Object.entries(FORMAT_EMOJIS)) if (f.toLowerCase().includes(k.toLowerCase())) return v;
-  return '📱';
-}
-function getShort(f) { return f.split('(')[0].trim(); }
-function escHTML(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
-
-const GENERATED = [];
-
-function renderResults(raw, assignments, brandName) {
-  GENERATED.length = 0;
-  const grid = document.getElementById('week-grid');
-  grid.innerHTML = '';
-  document.getElementById('resultBrand').textContent = brandName;
-
-  const blocks = raw.split(/^---$/m).map(b => b.trim()).filter(Boolean);
-  const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-
-  DAYS.forEach((day, idx) => {
-    const assign = assignments[idx] || { day, format: 'Post' };
-    let caption = '';
-    const block = blocks.find(b => b.toLowerCase().includes(day.toLowerCase()));
-    if (block) {
-      const m = block.match(/CAPTION:\s*([\s\S]+)/i);
-      caption = m ? m[1].trim() : block.replace(/^(DAY|FORMAT|CAPTION):.*$/gim,'').trim();
-    } else {
-      caption = (blocks[idx] || '').replace(/^(DAY|FORMAT|CAPTION):.*$/gim,'').trim() || `[Content for ${day} — ${assign.format}]`;
-    }
-    GENERATED.push({ day, format: assign.format, caption });
-
-    const card = document.createElement('div');
-    card.className = 'day-card';
-    card.innerHTML = `
-      <div class="day-header">
-        <div class="day-label">${day}</div>
-        <div class="day-badge">${getEmoji(assign.format)} ${getShort(assign.format)}</div>
-      </div>
-      <div class="day-body">
-        <div class="day-caption" id="cap-${idx}">${escHTML(caption)}</div>
-      </div>
-      <div class="day-actions">
-        <button class="btn btn-ghost" onclick="copyCaption(${idx})">📋 Copy Caption</button>
-      </div>
-    `;
-    grid.appendChild(card);
-  });
-
-  document.getElementById('results-section').style.display = 'block';
-  document.getElementById('steps-bar').style.display = 'none';
+// ── Go to Step 2 ─────────────────────────────────────────────────────────────
+function goToStep2() {
+  document.getElementById('step1').style.display = 'none';
+  document.getElementById('step2').style.display = 'block';
+  document.getElementById('summaryBox').textContent = state.summary;
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-/* ── Actions ── */
-function copyCaption(idx) {
-  const el = document.getElementById('cap-'+idx);
-  const text = el ? el.innerText : (GENERATED[idx]?.caption || '');
-  navigator.clipboard.writeText(text)
-    .then(() => showToast('Caption copied!'))
-    .catch(() => {
-      const ta = Object.assign(document.createElement('textarea'), { value: text, style: 'position:fixed;opacity:0' });
-      document.body.appendChild(ta); ta.select(); document.execCommand('copy');
-      document.body.removeChild(ta); showToast('Caption copied!');
-    });
+// ── STEP 2: Build Week ───────────────────────────────────────────────────────
+async function buildWeek() {
+  hideError('step2Error');
+  state.weekFocus = document.getElementById('weekFocus').value.trim();
+  state.brandVoice = document.getElementById('brandVoice').value.trim();
+
+  const btn = document.getElementById('buildBtn');
+  btn.disabled = true;
+  btn.textContent = 'Building your week...';
+
+  const steps2 = [
+    'Waking the engine...',
+    'Studying businesses doing it well in your space...',
+    'Reading another standout in your space...',
+    'One more site worth studying...',
+    'Writing your week, post by post...'
+  ];
+  showProgress('step2ProgressList', 'step2Progress', steps2);
+
+  try {
+    tickProgress('step2ProgressList', steps2[0]);
+    await sleep(700);
+    tickProgress('step2ProgressList', steps2[0], true);
+
+    tickProgress('step2ProgressList', steps2[1]);
+    await sleep(1200);
+    tickProgress('step2ProgressList', steps2[1], true);
+
+    tickProgress('step2ProgressList', steps2[2]);
+    await sleep(1000);
+    tickProgress('step2ProgressList', steps2[2], true);
+
+    tickProgress('step2ProgressList', steps2[3]);
+    await sleep(900);
+    tickProgress('step2ProgressList', steps2[3], true);
+
+    tickProgress('step2ProgressList', steps2[4]);
+
+    // Build the Gemini prompt
+    const focusLine = state.weekFocus ? `\nWeekly focus: ${state.weekFocus}` : '';
+    const voiceLine = state.brandVoice ? `\nBrand voice: ${state.brandVoice}` : '';
+    const competitorNames = state.competitors.length > 0 ? state.competitors.join(', ') : 'competitors in this space';
+
+    const sysPrompt = `You are an expert Instagram content strategist. Create a complete 7-day Instagram content week for a business.
+
+For each day, write real, publish-ready content — not templates or placeholders. Make every post specific to this business.
+
+Style preference: "${state.style}"
+Competitors studied for inspiration (borrow moves, never words): ${competitorNames}
+
+Return ONLY a valid JSON object with this exact structure:
+{
+  "weekTheme": "ALL-CAPS PUNCHY TITLE FOR THIS CONTENT WEEK (5-10 words)",
+  "competitors": ["name1", "name2", "name3"],
+  "days": [
+    {
+      "day": "MONDAY",
+      "format": "Carousel",
+      "tool": "ChatGPT",
+      "caption": "The full Instagram caption (just the hook and copy — no hashtags needed)",
+      "content": "SLIDE 1\\nSlide text...\\n\\nSLIDE 2\\nSlide text...\\n\\n(7 slides total, each punchy and scannable)",
+      "toolInstructions": "Open ChatGPT and make sure image generation is on. Attach your logo image first if you have one. Paste the prompt below and it generates your slides as images.",
+      "toolSteps": ["Copy the prompt", "Generate the slides in ChatGPT"],
+      "toolLink": "https://chat.openai.com",
+      "prompt": "The exact image generation prompt to paste into ChatGPT"
+    }
+  ]
 }
 
-function downloadZip() {
-  if (!GENERATED.length) return;
-  const lines = GENERATED.map(g => `${'='.repeat(60)}\n${g.day.toUpperCase()} — ${g.format}\n${'='.repeat(60)}\n\n${g.caption}\n`).join('\n\n');
-  const a = Object.assign(document.createElement('a'), {
-    href: URL.createObjectURL(new Blob([lines], { type: 'text/plain;charset=utf-8' })),
-    download: 'content-week.txt'
+Day formats and tools (use EXACTLY these):
+- MONDAY: format="Carousel", tool="ChatGPT" — 7 slides, swipeable educational or story carousel
+- TUESDAY: format="Reel script", tool=null — a full spoken reel script (~45 seconds), with scene directions
+- WEDNESDAY: format="Infographic", tool="ChatGPT" — visual layout of a framework or list
+- THURSDAY: format="Text post", tool="ChatGPT" — personal story or bold opinion (500-700 chars)
+- FRIDAY: format="Audio overview", tool="NotebookLM" — caption for an audio post; prompt for NotebookLM Audio Overview
+- SATURDAY: format="Photo post", tool="ChatGPT" — lifestyle/product photo caption + image prompt
+- SUNDAY: format="Video overview", tool="NotebookLM" — caption for a video overview; prompt for NotebookLM Video Overview
+
+For days with tool="ChatGPT": write a detailed DALL-E/image generation prompt.
+For days with tool="NotebookLM": write a prompt for NotebookLM's Audio/Video Overview feature.
+For days with tool=null (Reel): omit toolInstructions, toolSteps, toolLink, prompt fields.
+
+Return ONLY valid JSON. No markdown. No extra text.`;
+
+    const userPrompt = `Business: ${state.summary}${focusLine}${voiceLine}
+
+Full business content for context:
+${state.scrapedContent.substring(0, 4000)}`;
+
+    const rawResult = await callGemini(sysPrompt, userPrompt, 4000);
+    const parsed = parseJSON(rawResult);
+
+    if (!parsed || !parsed.days || parsed.days.length < 7) {
+      throw new Error('The content came back in an unexpected format. Please try again.');
+    }
+
+    state.weekData = parsed;
+    tickProgress('step2ProgressList', steps2[4], true);
+    await sleep(400);
+    renderStep3();
+
+  } catch(e) {
+    showError('step2Error', e.message || 'Something went wrong. Please try again.');
+    btn.disabled = false;
+    btn.textContent = 'Build my week';
+    document.getElementById('step2Progress').style.display = 'none';
+  }
+}
+
+// ── Render Step 3 ────────────────────────────────────────────────────────────
+function renderStep3() {
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('step3').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  const d = state.weekData;
+  const compList = (d.competitors || state.competitors).join(', ');
+
+  // What happened
+  const whl = document.getElementById('whatHappenedList');
+  whl.innerHTML = [
+    `Read your business and learned who you serve`,
+    `Studied businesses doing content well in your space (${compList || 'competitors'}) — borrowed the moves, never the words`,
+    `Wrote a 7-format week (carousel, reel, infographic, text, audio, photo, video), each day ready to make in its tool`
+  ].map(s => `<li>${s}</li>`).join('');
+
+  // Week theme
+  document.getElementById('weekTheme').textContent = d.weekTheme || 'YOUR CONTENT WEEK';
+
+  // Day tabs
+  const tabsEl = document.getElementById('dayTabs');
+  const panelsEl = document.getElementById('dayPanels');
+  tabsEl.innerHTML = '';
+  panelsEl.innerHTML = '';
+
+  const dayAbbrevs = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+
+  d.days.forEach((day, i) => {
+    const abbrev = dayAbbrevs[i] || day.day.substring(0, 3);
+
+    // Tab
+    const tab = document.createElement('button');
+    tab.className = 'day-tab' + (i === 0 ? ' active' : '');
+    tab.innerHTML = `<span class="day-name">${abbrev}</span><span class="day-format">${day.format.split(' ')[0]}</span>`;
+    tab.onclick = () => switchDay(i);
+    tabsEl.appendChild(tab);
+
+    // Panel
+    const panel = document.createElement('div');
+    panel.className = 'day-panel' + (i === 0 ? ' active' : '');
+    panel.id = `panel${i}`;
+
+    // Build "bring it to life" section
+    let bitlHtml = '';
+    if (day.tool) {
+      const isNotebook = day.tool === 'NotebookLM';
+      const instLink = isNotebook ? 'https://notebooklm.google.com' : 'https://chat.openai.com';
+      const link = day.toolLink || instLink;
+      const instructions = day.toolInstructions || '';
+      const steps = day.toolSteps || [];
+      const prompt = day.prompt || '';
+
+      bitlHtml = `
+        <div class="bitl">
+          <div class="bitl-header" onclick="toggleBitl(this)">
+            <span class="bitl-title">Bring it to life · ${day.tool}</span>
+            <span class="bitl-chevron">▾</span>
+          </div>
+          <div class="bitl-body">
+            ${instructions ? `<div class="bitl-instructions"><p style="margin-bottom:10px">${instructions}</p>` : '<div class="bitl-instructions">'}
+            ${steps.length > 0 ? `<ol>${steps.map(s => `<li>${s}</li>`).join('')}</ol>` : ''}
+            </div>
+            ${prompt ? `<div class="bitl-prompt-box">${escHtml(prompt)}</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <button class="copy-prompt-btn" onclick="copyText(${JSON.stringify(prompt)}, this)">Copy prompt</button>
+              <a href="${link}" target="_blank" rel="noopener" style="font-size:.82rem;color:var(--teal);text-decoration:none;font-weight:600">Open ${day.tool} ↗</a>
+            </div>` : ''}
+          </div>
+        </div>`;
+    }
+
+    // Full caption for copy
+    const fullCaption = day.format === 'Carousel'
+      ? `${day.caption}\n\n---\nSLIDES:\n${day.content || ''}`
+      : day.format === 'Reel script'
+      ? day.content || day.caption
+      : day.caption;
+
+    panel.innerHTML = `
+      <div class="day-header">
+        <div class="day-name-big">${day.day}</div>
+        <div class="day-format-badge">${day.format}</div>
+      </div>
+      <div class="ig-mock">
+        <div class="ig-mock-header">
+          <div class="ig-avatar">Y</div>
+          <div>
+            <div class="ig-handle">You</div>
+          </div>
+        </div>
+        <div class="ig-caption">${escHtml(day.caption)}</div>
+        <div class="ig-actions">♡ &nbsp; ✉ &nbsp; ➤</div>
+      </div>
+      ${day.content && day.format !== 'Text post' && day.format !== 'Photo post' ? `
+        <details style="margin-bottom:14px">
+          <summary style="cursor:pointer;font-size:.82rem;color:var(--teal);font-weight:600;padding:8px 0">
+            ${day.format === 'Carousel' ? 'See all 7 slides' : day.format === 'Reel script' ? 'See full reel script' : 'See full content'}
+          </summary>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:.83rem;color:var(--ink2);white-space:pre-wrap;margin-top:8px;line-height:1.6">${escHtml(day.content)}</div>
+        </details>` : ''}
+      ${bitlHtml}
+      <button class="copy-post-btn" onclick="copyText(${JSON.stringify(fullCaption)}, this)">⎘ Copy this post</button>`;
+
+    panelsEl.appendChild(panel);
   });
+}
+
+function switchDay(i) {
+  document.querySelectorAll('.day-tab').forEach((t, j) => t.classList.toggle('active', i === j));
+  document.querySelectorAll('.day-panel').forEach((p, j) => p.classList.toggle('active', i === j));
+}
+
+function toggleBitl(header) {
+  header.classList.toggle('open');
+  header.nextElementSibling.classList.toggle('open');
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// ── Copy helpers ─────────────────────────────────────────────────────────────
+async function copyText(text, btn) {
+  try {
+    await navigator.clipboard.writeText(text);
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  } catch(e) { alert('Copy failed — please select and copy manually.'); }
+}
+
+async function copyAll() {
+  if (!state.weekData) return;
+  const parts = [
+    state.weekData.weekTheme || 'YOUR CONTENT WEEK',
+    '',
+    state.weekData.days.map(d =>
+      `═══ ${d.day} · ${d.format} ═══\n\n${d.caption}${d.content ? '\n\n' + d.content : ''}${d.prompt ? '\n\n[TOOL PROMPT]\n' + d.prompt : ''}`
+    ).join('\n\n')
+  ];
+  try {
+    await navigator.clipboard.writeText(parts.join('\n'));
+    alert('✓ Entire week copied to clipboard!');
+  } catch(e) { alert('Copy failed.'); }
+}
+
+function downloadWeek() {
+  if (!state.weekData) return;
+  const d = state.weekData;
+  const lines = [
+    d.weekTheme || 'YOUR CONTENT WEEK',
+    `Generated by OPSteam Content Week`,
+    `Business: ${state.summary}`,
+    '',
+    d.days.map(day =>
+      [
+        `${'═'.repeat(60)}`,
+        `${day.day} · ${day.format.toUpperCase()}`,
+        `${'═'.repeat(60)}`,
+        '',
+        'CAPTION:',
+        day.caption,
+        '',
+        day.content ? `CONTENT:\n${day.content}\n` : '',
+        day.prompt ? `TOOL (${day.tool}):\n${day.prompt}\n` : '',
+      ].filter(Boolean).join('\n')
+    ).join('\n\n')
+  ].join('\n');
+
+  const blob = new Blob([lines], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'content-week.txt';
   document.body.appendChild(a); a.click();
-  setTimeout(() => { URL.revokeObjectURL(a.href); document.body.removeChild(a); }, 500);
-  showToast('Downloaded!');
+  document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
-function buildAgain() {
-  GENERATED.length = 0;
-  document.getElementById('results-section').style.display = 'none';
-  document.getElementById('steps-bar').style.display = 'flex';
-  goStep(1);
+// ── Feedback ──────────────────────────────────────────────────────────────────
+function giveFeedback(v) {
+  document.getElementById('fbYes').classList.toggle('selected', v === 'yes');
+  document.getElementById('fbNo').classList.toggle('selected', v === 'no');
 }
 
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2200);
+// ── Navigation ────────────────────────────────────────────────────────────────
+function resetToStep1() {
+  document.getElementById('step1').style.display = 'block';
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('step3').style.display = 'none';
+  document.getElementById('readBtn').disabled = false;
+  document.getElementById('readBtn').textContent = 'Read my business';
+  document.getElementById('step1Progress').style.display = 'none';
+  hideError('step1Error');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function resetToStep2() {
+  document.getElementById('step2').style.display = 'block';
+  document.getElementById('step3').style.display = 'none';
+  document.getElementById('buildBtn').disabled = false;
+  document.getElementById('buildBtn').textContent = 'Build my week';
+  document.getElementById('step2Progress').style.display = 'none';
+  hideError('step2Error');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 </script>
 </body>
