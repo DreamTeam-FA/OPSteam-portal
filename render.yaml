@@ -1,9 +1,3 @@
-databases:
-  - name: hi-amy-db
-    plan: free
-    databaseName: hiamy
-    user: hiamy
-
 services:
   - type: web
     name: hi-amy-assistant
@@ -18,6 +12,4 @@ services:
       - key: DRIVE_FOLDER_ID
         value: 1uRY6rOo2_M9YKxRuIVLMCZ0gt12_fPJn
       - key: DATABASE_URL
-        fromDatabase:
-          name: hi-amy-db
-          property: connectionString
+        sync: false
