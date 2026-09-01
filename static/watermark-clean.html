@@ -55,54 +55,55 @@ body {
   flex-direction: column;
 }
 
-/* ── Nav ────────────────────────────────────────────────────────────────────── */
-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  height: 52px;
+/* ── Side Nav ───────────────────────────────────────────────────────────────── */
+.app-shell { display: flex; min-height: 100vh; }
+.side-nav {
+  width: 190px; flex-shrink: 0;
+  position: sticky; top: 0; height: 100vh;
   background: var(--glass-hi);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  padding: 24px 10px 20px;
+  overflow-y: auto; z-index: 100;
 }
-.ops-brand {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 800;
-  font-size: 18px;
-  letter-spacing: 0.06em;
-  text-decoration: none;
-  color: var(--purple);
+.side-logo {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+  font-size: 18px; letter-spacing: 0.08em; color: var(--purple);
+  text-decoration: none; display: block;
+  padding: 0 6px 18px; border-bottom: 1px solid var(--border);
+  margin-bottom: 14px; line-height: 1;
 }
-.ops-tabs { display: flex; gap: 4px; }
-.ops-tab {
-  font-size: 13px;
-  font-weight: 500;
-  padding: 5px 12px;
-  border-radius: 8px;
-  color: var(--ink2);
-  text-decoration: none;
+.side-links { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.side-link {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 10px; border-radius: 9px; text-decoration: none;
+  font-size: 13px; font-weight: 500; color: var(--ink2);
   transition: color 0.15s, background 0.15s;
 }
-.ops-tab:hover { color: var(--purple); background: var(--purple-dim); }
-.ops-tab.active { color: var(--purple); background: var(--purple-dim); font-weight: 600; }
-.ops-right { display: flex; align-items: center; gap: 8px; }
+.side-link:hover { color: var(--purple); background: var(--purple-dim); }
+.side-link.active { color: var(--purple); background: var(--purple-dim); font-weight: 600; }
+.side-icon { font-size: 14px; flex-shrink: 0; line-height: 1; }
+.side-bottom { padding-top: 14px; border-top: 1px solid var(--border); }
 .theme-btn {
-  background: none;
-  border: 1px solid var(--border-hi);
-  border-radius: 8px;
-  padding: 5px 8px;
-  cursor: pointer;
-  color: var(--ink2);
-  font-size: 14px;
-  line-height: 1;
+  background: none; border: 1px solid var(--border-hi);
+  border-radius: 8px; padding: 8px 10px;
+  cursor: pointer; color: var(--ink2);
+  font-size: 13px; line-height: 1; width: 100%;
+  display: flex; align-items: center; gap: 8px;
   transition: border-color 0.15s, color 0.15s;
+  font-family: 'Inter', sans-serif;
 }
 .theme-btn:hover { border-color: var(--purple); color: var(--purple); }
+.app-main { flex: 1; min-width: 0; }
+@media (max-width: 600px) {
+  .side-nav { width: 52px; padding: 14px 6px; }
+  .side-link-text { display: none; }
+  .side-link { padding: 9px; justify-content: center; gap: 0; }
+  .side-logo { font-size: 10px; padding: 0 2px 14px; }
+  .theme-btn-label { display: none; }
+  .theme-btn { justify-content: center; padding: 8px; }
+}
 
 /* ── Page ───────────────────────────────────────────────────────────────────── */
 .page { flex: 1; max-width: 1060px; width: 100%; margin: 0 auto; padding: 40px 20px 60px; }
@@ -496,20 +497,33 @@ textarea::placeholder { color: var(--ink3); }
 </head>
 <body>
 
-<!-- ── Nav ── -->
-<nav>
-  <a href="/" class="ops-brand">OPSTEAM</a>
-  <div class="ops-tabs">
-    <a href="/" class="ops-tab">Hi, Amy!</a>
-    <a href="/content-week.html" class="ops-tab">Content Week</a>
-    <a href="/watermark-clean.html" class="ops-tab active">Watermark Cleaner</a>
+<!-- ── App Shell ── -->
+<div class="app-shell">
+
+<!-- ── Side Nav ── -->
+<aside class="side-nav">
+  <a href="/" class="side-logo">OPSTEAM</a>
+  <div class="side-links">
+    <a href="/" class="side-link">
+      <span class="side-icon">💬</span>
+      <span class="side-link-text">Hi, Amy!</span>
+    </a>
+    <a href="/content-week.html" class="side-link">
+      <span class="side-icon">📅</span>
+      <span class="side-link-text">Content Week</span>
+    </a>
+    <a href="/watermark-clean.html" class="side-link active">
+      <span class="side-icon">🧹</span>
+      <span class="side-link-text">Watermark Cleaner</span>
+    </a>
   </div>
-  <div class="ops-right">
+  <div class="side-bottom">
     <button class="theme-btn" id="theme-btn" aria-label="Toggle theme">🌙</button>
   </div>
-</nav>
+</aside>
 
-<!-- ── Page ── -->
+<!-- ── Main ── -->
+<div class="app-main">
 <div class="page">
 
   <!-- Hero -->
@@ -1048,5 +1062,7 @@ document.getElementById('text-input').addEventListener('keydown', e => {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) cleanText();
 });
 </script>
+</div><!-- /.app-main -->
+</div><!-- /.app-shell -->
 </body>
 </html>

@@ -60,7 +60,7 @@ body {
   background-color: var(--bg);
   color: var(--ink);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   height: 100dvh;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
@@ -89,87 +89,92 @@ html[data-theme="dark"] body::before {
 }
 
 /* Stack everything above the glow */
-.ops-nav, .ops-header, #welcome, #messages, #input-area { position: relative; z-index: 1; }
+.side-nav, .app-main { position: relative; z-index: 1; }
 
-/* ── Navigation ─────────────────────────────────────────────────────────────── */
-.ops-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 18px;
-  height: 52px;
-  background: var(--glass-hi);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-bottom: 1px solid var(--border-hi);
+/* ── Side Nav ───────────────────────────────────────────────────────────────── */
+.side-nav {
+  width: 190px;
   flex-shrink: 0;
-  gap: 12px;
+  height: 100dvh;
+  background: var(--glass-hi);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid var(--border-hi);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 10px 20px;
+  overflow-y: auto;
 }
-
-.ops-logo {
+.side-logo {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 0.08em;
+  color: var(--purple);
+  text-decoration: none;
+  display: block;
+  padding: 0 6px 18px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+  line-height: 1;
+}
+.side-links {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.side-link {
   display: flex;
   align-items: center;
   gap: 9px;
+  padding: 9px 10px;
+  border-radius: 9px;
   text-decoration: none;
-  flex-shrink: 0;
-}
-.ops-wordmark { display: flex; flex-direction: column; line-height: 1; }
-.ops-name {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 800;
-  font-size: 17px;
-  letter-spacing: 0.04em;
-  color: var(--ink);
-  text-transform: uppercase;
-}
-.ops-tag {
-  font-size: 8.5px;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--teal);
-  margin-top: 2px;
-}
-
-.ops-tabs {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex: 1;
-  justify-content: center;
-}
-.ops-tab {
-  padding: 6px 14px;
-  border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
   color: var(--ink2);
-  text-decoration: none;
-  white-space: nowrap;
   transition: color 0.15s, background 0.15s;
 }
-.ops-tab:hover { color: var(--purple); background: var(--purple-dim); }
-html[data-theme="dark"] .ops-tab:hover,
-html:not([data-theme="light"]) .ops-tab:hover { background: rgba(255,255,255,0.06); }
-.ops-tab.active {
-  color: var(--purple);
-  background: var(--purple-dim);
-  font-weight: 600;
+.side-link:hover { color: var(--purple); background: var(--purple-dim); }
+.side-link.active { color: var(--purple); background: var(--purple-dim); font-weight: 600; }
+.side-icon { font-size: 14px; flex-shrink: 0; line-height: 1; }
+.side-bottom {
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
 }
-
-.ops-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .theme-btn {
   background: none;
   border: 1px solid var(--border-hi);
   border-radius: 8px;
-  padding: 5px 8px;
+  padding: 8px 10px;
   cursor: pointer;
   color: var(--ink2);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   transition: border-color 0.15s, color 0.15s;
+  font-family: 'Inter', sans-serif;
 }
 .theme-btn:hover { border-color: var(--purple); color: var(--purple); }
+.app-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+@media (max-width: 600px) {
+  .side-nav { width: 52px; padding: 14px 6px; }
+  .side-link-text { display: none; }
+  .side-link { padding: 9px; justify-content: center; gap: 0; }
+  .side-logo { font-size: 10px; padding: 0 2px 14px; }
+  .theme-btn-label { display: none; }
+  .theme-btn { justify-content: center; padding: 8px; }
+}
 
 /* ── Amy Identity Header ────────────────────────────────────────────────────── */
 .ops-header {
@@ -476,26 +481,28 @@ html:not([data-theme="light"]) .ops-tab:hover { background: rgba(255,255,255,0.0
 </head>
 <body>
 
-<!-- ── Navigation ── -->
-<nav class="ops-nav">
-  <a href="/" class="ops-logo">
-    <svg width="11" height="15" viewBox="0 0 11 15" fill="none" aria-hidden="true">
-      <path d="M5.5 0L11 6.5H7.5V15H3.5V6.5H0L5.5 0Z" fill="#2DD4C8"/>
-    </svg>
-    <div class="ops-wordmark">
-      <span class="ops-name">OPSteam</span>
-      <span class="ops-tag">Portal</span>
-    </div>
-  </a>
-  <div class="ops-tabs">
-    <a href="/" class="ops-tab active">Hi, Amy!</a>
-    <a href="/content-week.html" class="ops-tab">Content Week</a>
-    <a href="/watermark-clean.html" class="ops-tab">Watermark Cleaner</a>
+<!-- ── Side Nav ── -->
+<aside class="side-nav">
+  <a href="/" class="side-logo">OPSTEAM</a>
+  <div class="side-links">
+    <a href="/" class="side-link active">
+      <span class="side-icon">💬</span>
+      <span class="side-link-text">Hi, Amy!</span>
+    </a>
+    <a href="/content-week.html" class="side-link">
+      <span class="side-icon">📅</span>
+      <span class="side-link-text">Content Week</span>
+    </a>
+    <a href="/watermark-clean.html" class="side-link">
+      <span class="side-icon">🧹</span>
+      <span class="side-link-text">Watermark Cleaner</span>
+    </a>
   </div>
-  <div class="ops-right">
+  <div class="side-bottom">
     <button class="theme-btn" id="theme-btn" aria-label="Toggle theme">🌙</button>
   </div>
-</nav>
+</aside>
+<div class="app-main">
 
 <!-- ── Amy Identity Bar ── -->
 <div class="ops-header">
@@ -540,6 +547,7 @@ html:not([data-theme="light"]) .ops-tab:hover { background: rgba(255,255,255,0.0
   </div>
   <div class="input-hint">OPSteam Portal · Powered by Amy Porterfield's course · Internal use only</div>
 </div>
+</div><!-- /.app-main -->
 
 <script>
 // ── State ──
