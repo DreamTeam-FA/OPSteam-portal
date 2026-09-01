@@ -347,9 +347,43 @@ header {
   .dot { animation: none; opacity: 0.6; }
   .msg { animation: none; }
 }
+
+/* ── Tool nav ── */
+.tool-nav {
+  display: flex;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+.tool-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  text-decoration: none;
+  border-bottom: 2.5px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s;
+  white-space: nowrap;
+}
+.tool-nav-link:hover { color: var(--text); }
+.tool-nav-link.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
 </style>
 </head>
 <body>
+
+<!-- Tool navigation -->
+<nav class="tool-nav">
+  <a href="/" class="tool-nav-link active">💬 Hi, Amy!</a>
+  <a href="/content-week.html" class="tool-nav-link">📅 Content Week</a>
+</nav>
 
 <!-- Header -->
 <header>

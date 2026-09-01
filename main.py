@@ -4,6 +4,7 @@ FastAPI app serving the chat UI and AI responses.
 """
 
 import os
+import asyncio
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -67,6 +68,11 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
 
+class ContentWeekRequest(BaseModel):
+    system_prompt: str
+    user_prompt: str
+    max_tokens: int = 3000
+
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     try:
@@ -80,6 +86,32 @@ async def chat(req: ChatRequest):
 @app.get("/health")
 async def health():
     return {"status": "ok", "app": "Hi, Amy!"}
+
+@app.post("/content-week/generate")
+async def content_week_generate(req: ContentWeekRequest):
+    """Proxy Gemini calls for the Content Week tool — key stays server-side."""
+    from google.genai import types
+    config = types.GenerateContentConfig(
+        system_instruction=req.system_prompt,
+        max_output_tokens=req.max_tokens,
+        temperature=0.9,
+    )
+    for attempt in range(5):
+        try:
+            resp = gemini.models.generate_content(
+                model=ACTIVE_MODEL,
+                contents=req.user_prompt,
+                config=config,
+            )
+            return {"text": resp.text}
+        except Exception as e:
+            err = str(e)
+            if "429" in err or "RESOURCE_EXHAUSTED" in err:
+                wait = 30 * (attempt + 1)
+                await asyncio.sleep(wait)
+            else:
+                raise HTTPException(status_code=500, detail=err)
+    raise HTTPException(status_code=429, detail="Rate limit exceeded after retries")
 
 @app.get("/content-count")
 async def content_count():
