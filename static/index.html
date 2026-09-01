@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hi, Amy!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lora:ital,wght@0,500;1,400&display=swap" />
+<style>
+/* ── Tokens ── */
+:root {
+  --bg:          #FAF8F5;
+  --surface:     #FFFFFF;
+  --surface-2:   #F2EDE8;
+  --border:      #E8E0D8;
+  --text:        #1C1917;
+  --text-2:      #78716C;
+  --accent:      #D95F2B;
+  --accent-soft: #FDEEE6;
+  --amy-bubble:  #FFFFFF;
+  --user-bubble: #D95F2B;
+  --user-text:   #FFFFFF;
+  --shadow:      0 1px 3px rgba(0,0,0,0.08);
+  --radius:      16px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:          #1A1714;
+    --surface:     #242019;
+    --surface-2:   #2E2A25;
+    --border:      #3A3530;
+    --text:        #F0EAE3;
+    --text-2:      #A09890;
+    --accent:      #E8724A;
+    --accent-soft: #3A2218;
+    --amy-bubble:  #2E2A25;
+    --user-bubble: #E8724A;
+    --user-text:   #FFFFFF;
+    --shadow:      0 1px 3px rgba(0,0,0,0.3);
+  }
+}
+:root[data-theme="dark"] {
+  --bg:          #1A1714;
+  --surface:     #242019;
+  --surface-2:   #2E2A25;
+  --border:      #3A3530;
+  --text:        #F0EAE3;
+  --text-2:      #A09890;
+  --accent:      #E8724A;
+  --accent-soft: #3A2218;
+  --amy-bubble:  #2E2A25;
+  --user-bubble: #E8724A;
+  --user-text:   #FFFFFF;
+  --shadow:      0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* ── Header ── */
+header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  flex-shrink: 0;
+}
+.avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #E8724A, #C94E20);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.header-info { flex: 1; min-width: 0; }
+.header-name {
+  font-family: 'Lora', Georgia, serif;
+  font-weight: 500;
+  font-size: 16px;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.header-status {
+  font-size: 12px;
+  color: var(--text-2);
+  display: flex; align-items: center; gap: 5px;
+}
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #22C55E;
+  flex-shrink: 0;
+}
+.theme-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  color: var(--text-2);
+  font-size: 15px;
+  transition: background 0.15s;
+}
+.theme-btn:hover { background: var(--surface-2); }
+
+/* ── Messages ── */
+#messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scroll-behavior: smooth;
+}
+#messages::-webkit-scrollbar { width: 4px; }
+#messages::-webkit-scrollbar-track { background: transparent; }
+#messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* ── Welcome screen ── */
+#welcome {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 32px 24px;
+  text-align: center;
+}
+.welcome-avatar {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #E8724A, #C94E20);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px;
+  box-shadow: 0 8px 24px rgba(217,95,43,0.25);
+}
+.welcome-title {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.welcome-subtitle {
+  font-size: 15px;
+  color: var(--text-2);
+  max-width: 380px;
+  line-height: 1.6;
+  text-wrap: balance;
+}
+.welcome-hint {
+  background: var(--accent-soft);
+  border: 1px solid rgba(217,95,43,0.2);
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-size: 14px;
+  color: var(--accent);
+  font-weight: 500;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* ── Message bubbles ── */
+.msg {
+  display: flex;
+  gap: 10px;
+  max-width: 720px;
+  width: 100%;
+  align-self: flex-start;
+  animation: fadeUp 0.2s ease;
+}
+.msg.user { align-self: flex-end; flex-direction: row-reverse; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.msg-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #E8724A, #C94E20);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.msg.user .msg-avatar {
+  background: var(--surface-2);
+  font-size: 13px;
+}
+
+.bubble {
+  background: var(--amy-bubble);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  border-top-left-radius: 4px;
+  padding: 12px 16px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text);
+  box-shadow: var(--shadow);
+  max-width: calc(100% - 44px);
+  word-wrap: break-word;
+}
+.msg.user .bubble {
+  background: var(--user-bubble);
+  border-color: transparent;
+  color: var(--user-text);
+  border-radius: var(--radius);
+  border-top-right-radius: 4px;
+  border-top-left-radius: var(--radius);
+  box-shadow: 0 2px 8px rgba(217,95,43,0.3);
+}
+
+/* Markdown-style formatting in bubbles */
+.bubble strong { font-weight: 600; }
+.bubble em { font-style: italic; }
+.bubble p { margin-bottom: 8px; }
+.bubble p:last-child { margin-bottom: 0; }
+.bubble ul, .bubble ol {
+  padding-left: 20px;
+  margin: 6px 0;
+}
+.bubble li { margin-bottom: 4px; }
+.bubble h3, .bubble h4 {
+  font-family: 'Lora', Georgia, serif;
+  font-weight: 500;
+  margin: 10px 0 4px;
+  color: var(--accent);
+}
+.msg.user .bubble h3,
+.msg.user .bubble h4 { color: rgba(255,255,255,0.9); }
+.bubble code {
+  background: var(--surface-2);
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: monospace;
+}
+
+/* ── Typing indicator ── */
+.typing-bubble {
+  display: flex; gap: 5px;
+  align-items: center;
+  padding: 14px 16px;
+}
+.dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--text-2);
+  animation: bounce 1.2s infinite;
+}
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
+  40% { transform: translateY(-6px); opacity: 1; }
+}
+
+/* ── Input area ── */
+#input-area {
+  padding: 12px 16px 16px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.input-wrapper {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 8px 8px 8px 14px;
+  transition: border-color 0.15s;
+}
+.input-wrapper:focus-within {
+  border-color: var(--accent);
+}
+#user-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  color: var(--text);
+  resize: none;
+  max-height: 140px;
+  line-height: 1.5;
+  padding: 4px 0;
+}
+#user-input::placeholder { color: var(--text-2); }
+#send-btn {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, transform 0.1s;
+}
+#send-btn:hover { background: #C94E20; }
+#send-btn:active { transform: scale(0.95); }
+#send-btn:disabled { background: var(--border); cursor: default; }
+#send-btn svg { width: 16px; height: 16px; }
+.input-hint {
+  font-size: 11px;
+  color: var(--text-2);
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* ── Responsive ── */
+@media (min-width: 640px) {
+  #messages { padding: 32px 24px; }
+  .msg { max-width: 600px; }
+  #input-area { padding: 14px 24px 20px; }
+}
+@media (min-width: 900px) {
+  #messages { padding: 32px; align-items: center; }
+  #messages > * { width: 100%; max-width: 700px; }
+  #input-area { padding: 14px 32px 24px; }
+  .input-wrapper { max-width: 700px; margin: 0 auto; }
+  .input-hint { max-width: 700px; margin: 8px auto 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dot { animation: none; opacity: 0.6; }
+  .msg { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="avatar">✨</div>
+  <div class="header-info">
+    <div class="header-name">Hi, Amy!</div>
+    <div class="header-status">
+      <span class="status-dot"></span>
+      Course Assistant · Amy Porterfield
+    </div>
+  </div>
+  <button class="theme-btn" id="theme-btn" title="Toggle theme" aria-label="Toggle dark/light mode">🌙</button>
+</header>
+
+<!-- Welcome screen (shown before activation) -->
+<div id="welcome">
+  <div class="welcome-avatar">✨</div>
+  <div class="welcome-title">Hey there! I'm Amy.</div>
+  <div class="welcome-subtitle">
+    I'm your course assistant, trained on Amy Porterfield's materials.
+    Ask me anything about the course — tasks, frameworks, strategies, you name it!
+  </div>
+  <div class="welcome-hint">
+    💬 Say <strong>Hi, Amy!</strong> to get started
+  </div>
+</div>
+
+<!-- Chat messages (hidden until activation) -->
+<div id="messages" style="display:none"></div>
+
+<!-- Input -->
+<div id="input-area">
+  <div class="input-wrapper">
+    <textarea
+      id="user-input"
+      rows="1"
+      placeholder="Say Hi, Amy! to get started…"
+      aria-label="Message input"
+    ></textarea>
+    <button id="send-btn" aria-label="Send message">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
+    </button>
+  </div>
+  <div class="input-hint">Powered by Amy Porterfield's course · Internal use only</div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let activated = false;
+const welcome  = document.getElementById('welcome');
+const messages = document.getElementById('messages');
+const input    = document.getElementById('user-input');
+const sendBtn  = document.getElementById('send-btn');
+const themeBtn = document.getElementById('theme-btn');
+
+// ── Theme ──────────────────────────────────────────────────────────────────
+function getStoredTheme() {
+  try { return localStorage.getItem('hi-amy-theme') || 'light'; } catch { return 'light'; }
+}
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  themeBtn.textContent = t === 'dark' ? '☀️' : '🌙';
+  try { localStorage.setItem('hi-amy-theme', t); } catch {}
+}
+applyTheme(getStoredTheme());
+themeBtn.addEventListener('click', () => {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+});
+
+// ── Auto-resize textarea ───────────────────────────────────────────────────
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 140) + 'px';
+});
+
+// ── Markdown renderer (lightweight) ───────────────────────────────────────
+function renderMarkdown(text) {
+  return text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
+    .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/^(?!<[hul])/gm, '')
+    .replace(/(.+)/s, '<p>$1</p>')
+    .replace(/<p><\/p>/g, '')
+    .replace(/<p>(<[hul])/g, '$1')
+    .replace(/(<\/[hul][^>]*>)<\/p>/g, '$1');
+}
+
+// ── Append message bubble ──────────────────────────────────────────────────
+function appendMessage(role, content) {
+  const isAmy = role === 'amy';
+  const div   = document.createElement('div');
+  div.className = `msg${isAmy ? '' : ' user'}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar';
+  avatar.textContent = isAmy ? '✨' : '👤';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  if (isAmy) {
+    bubble.innerHTML = renderMarkdown(content);
+  } else {
+    bubble.textContent = content;
+  }
+
+  div.appendChild(avatar);
+  div.appendChild(bubble);
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+  return div;
+}
+
+// ── Typing indicator ───────────────────────────────────────────────────────
+function showTyping() {
+  const div = document.createElement('div');
+  div.className = 'msg';
+  div.id = 'typing';
+  div.innerHTML = `
+    <div class="msg-avatar">✨</div>
+    <div class="bubble typing-bubble">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>`;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+function hideTyping() {
+  const t = document.getElementById('typing');
+  if (t) t.remove();
+}
+
+// ── Activation check ───────────────────────────────────────────────────────
+function activate() {
+  activated = true;
+  welcome.style.display = 'none';
+  messages.style.display = 'flex';
+  messages.style.flexDirection = 'column';
+  input.placeholder = 'Ask Amy anything about the course…';
+}
+
+// ── Send message ───────────────────────────────────────────────────────────
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text) return;
+
+  // Check activation phrase
+  if (!activated) {
+    const normalized = text.toLowerCase().replace(/[^a-z,! ]/g, '').trim();
+    if (normalized !== 'hi, amy!' && normalized !== 'hi amy!' && normalized !== 'hi amy') {
+      // Shake the welcome hint
+      const hint = document.querySelector('.welcome-hint');
+      hint.style.animation = 'none';
+      hint.style.transition = 'transform 0.1s';
+      [0, -6, 6, -6, 6, 0].forEach((x, i) => {
+        setTimeout(() => hint.style.transform = `translateX(${x}px)`, i * 60);
+      });
+      setTimeout(() => hint.style.transform = '', 400);
+      return;
+    }
+    activate();
+  }
+
+  // Clear input
+  input.value = '';
+  input.style.height = 'auto';
+  sendBtn.disabled = true;
+
+  // Show user message
+  appendMessage('user', text);
+
+  // Show typing
+  showTyping();
+
+  try {
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text }),
+    });
+
+    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+    const data = await res.json();
+
+    hideTyping();
+    appendMessage('amy', data.response);
+  } catch (err) {
+    hideTyping();
+    appendMessage('amy', "Oops! Something went wrong on my end. Please try again in a moment. 💛");
+    console.error(err);
+  } finally {
+    sendBtn.disabled = false;
+    input.focus();
+  }
+}
+
+// ── Event listeners ────────────────────────────────────────────────────────
+sendBtn.addEventListener('click', sendMessage);
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+// Focus input on load
+input.focus();
+</script>
+</body>
+</html>

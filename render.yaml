@@ -1,0 +1,23 @@
+databases:
+  - name: hi-amy-db
+    plan: free
+    databaseName: hiamy
+    user: hiamy
+
+services:
+  - type: web
+    name: hi-amy-assistant
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GOOGLE_SERVICE_ACCOUNT_FILE
+        value: hi-amy-service-account.json
+      - key: DRIVE_FOLDER_ID
+        value: 1uRY6rOo2_M9YKxRuIVLMCZ0gt12_fPJn
+      - key: DATABASE_URL
+        fromDatabase:
+          name: hi-amy-db
+          property: connectionString
