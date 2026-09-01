@@ -82,8 +82,8 @@ nav {
   font-size: .85rem; font-weight: 500; color: var(--ink3);
   transition: background .18s, color .18s;
 }
-.nav-tab:hover { background: var(--teal-dim); color: var(--teal); }
-.nav-tab.active { background: var(--teal-dim); color: var(--teal); font-weight: 600; }
+.nav-tab:hover { background: rgba(76,53,168,0.08); color: var(--purple); }
+.nav-tab.active { background: rgba(76,53,168,0.1); color: var(--purple); font-weight: 600; }
 .nav-spacer { flex: 1; }
 .theme-btn {
   width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border);
@@ -93,17 +93,36 @@ nav {
 .theme-btn:hover { background: var(--teal-dim); border-color: var(--teal); }
 
 /* ── Page Layout ────────────────────────────────────────────────────────── */
-.page { max-width: 680px; margin: 0 auto; padding: 40px 20px 80px; }
+.page { max-width: 680px; margin: 0 auto; padding: 0 20px 80px; }
 
-/* ── Header ─────────────────────────────────────────────────────────────── */
-.page-header { text-align: center; margin-bottom: 32px; }
-.page-header h1 {
-  font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
-  font-size: 2.6rem; letter-spacing: -.01em; line-height: 1;
-  margin-bottom: 10px;
+/* ── Hero Header ─────────────────────────────────────────────────────────── */
+.page-hero {
+  text-align: center;
+  padding: 48px 20px 40px;
+  margin: 0 -20px 36px;
+  background: linear-gradient(160deg, rgba(76,53,168,0.12) 0%, rgba(13,148,136,0.06) 60%, transparent 100%);
+  border-bottom: 1px solid rgba(76,53,168,0.1);
+  position: relative;
+  overflow: hidden;
 }
-.page-header h1 span { color: var(--teal); }
-.page-header p { color: var(--ink2); font-size: .97rem; line-height: 1.55; }
+.page-hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(76,53,168,0.18) 0%, transparent 70%);
+  pointer-events: none;
+}
+.page-hero h1 {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+  font-size: 2.8rem; letter-spacing: -.01em; line-height: 1;
+  margin-bottom: 12px; position: relative;
+}
+.page-hero h1 .word-content { color: var(--purple); }
+.page-hero h1 .word-week {
+  background: linear-gradient(90deg, var(--purple), var(--teal));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.page-hero p { color: var(--ink2); font-size: .97rem; line-height: 1.55; position: relative; }
 
 /* ── Card ────────────────────────────────────────────────────────────────── */
 .card {
@@ -118,7 +137,7 @@ nav {
 /* ── Step label ──────────────────────────────────────────────────────────── */
 .step-label {
   font-size: .7rem; font-weight: 700; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--teal); margin-bottom: 10px;
+  text-transform: uppercase; color: var(--purple); margin-bottom: 10px;
 }
 .step-question {
   font-size: 1.15rem; font-weight: 600; color: var(--ink); margin-bottom: 16px;
@@ -132,9 +151,9 @@ nav {
   cursor: pointer; transition: all .18s; font-family: 'Inter', sans-serif;
 }
 .toggle-btn.active {
-  background: var(--teal); border-color: var(--teal); color: #fff; font-weight: 600;
+  background: linear-gradient(135deg, var(--purple), #3B7BCC); border-color: var(--purple); color: #fff; font-weight: 600;
 }
-.toggle-btn:hover:not(.active) { border-color: var(--teal); color: var(--teal); }
+.toggle-btn:hover:not(.active) { border-color: var(--purple); color: var(--purple); }
 
 /* ── Inputs ──────────────────────────────────────────────────────────────── */
 .field-hint {
@@ -159,12 +178,12 @@ textarea { min-height: 120px; }
 /* ── CTA Button ──────────────────────────────────────────────────────────── */
 .cta-btn {
   width: 100%; padding: 15px; border-radius: 10px; border: none;
-  background: linear-gradient(135deg, #0D9488, #2DD4C8);
-  color: #060E1A; font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 700;
+  background: linear-gradient(135deg, #4C35A8, #3B7BCC, #0D9488);
+  color: #fff; font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 700;
   cursor: pointer; margin-top: 18px; transition: opacity .2s, box-shadow .2s;
-  box-shadow: var(--lift-shadow);
+  box-shadow: 0 8px 28px rgba(76,53,168,0.35);
 }
-.cta-btn:hover:not(:disabled) { opacity: .92; box-shadow: 0 10px 32px rgba(13,148,136,0.45); }
+.cta-btn:hover:not(:disabled) { opacity: .92; box-shadow: 0 10px 32px rgba(76,53,168,0.5); }
 .cta-btn:disabled { opacity: .55; cursor: not-allowed; }
 .cta-btn.secondary {
   background: var(--glass); border: 1.5px solid var(--border-hi);
@@ -199,7 +218,8 @@ textarea { min-height: 120px; }
 
 /* ── Business Summary ────────────────────────────────────────────────────── */
 .summary-box {
-  background: var(--teal-dim); border: 1px solid var(--teal-glow);
+  background: linear-gradient(135deg, rgba(76,53,168,0.08), rgba(59,123,204,0.06));
+  border: 1px solid rgba(76,53,168,0.2);
   border-radius: 10px; padding: 14px 16px; font-size: .95rem; font-weight: 500;
   color: var(--ink); line-height: 1.5; margin-bottom: 20px; text-align: center;
   font-style: italic;
@@ -212,8 +232,8 @@ textarea { min-height: 120px; }
   background: var(--glass); color: var(--ink2); font-size: .88rem; font-weight: 500;
   cursor: pointer; transition: all .18s; font-family: 'Inter', sans-serif;
 }
-.chip.active { background: var(--teal); border-color: var(--teal); color: #fff; font-weight: 600; }
-.chip:hover:not(.active) { border-color: var(--teal); color: var(--teal); }
+.chip.active { background: linear-gradient(135deg, var(--purple), #3B7BCC); border-color: var(--purple); color: #fff; font-weight: 600; }
+.chip:hover:not(.active) { border-color: var(--purple); color: var(--purple); }
 
 /* ── Day Tabs ────────────────────────────────────────────────────────────── */
 .day-tabs {
@@ -228,7 +248,7 @@ textarea { min-height: 120px; }
 }
 .day-tab .day-name { display: block; }
 .day-tab .day-format { display: block; font-size: .6rem; font-weight: 400; margin-top: 1px; opacity: .7; }
-.day-tab.active { background: var(--glass-hi); color: var(--teal); box-shadow: 0 1px 6px rgba(0,0,0,.08); }
+.day-tab.active { background: var(--glass-hi); color: var(--purple); box-shadow: 0 1px 6px rgba(76,53,168,.12); }
 .day-tab:hover:not(.active) { color: var(--ink2); }
 
 /* ── Day Card ────────────────────────────────────────────────────────────── */
@@ -390,9 +410,9 @@ textarea { min-height: 120px; }
 <!-- ── Page ─────────────────────────────────────────────────────────────── -->
 <div class="page">
 
-  <!-- Header -->
-  <div class="page-header">
-    <h1>Content <span>Week</span></h1>
+  <!-- Hero Header -->
+  <div class="page-hero">
+    <h1><span class="word-content">Content</span> <span class="word-week">Week</span></h1>
     <p>Paste your website. Two steps. A full week of Instagram content,<br>written for your business, ready to publish.</p>
   </div>
 
