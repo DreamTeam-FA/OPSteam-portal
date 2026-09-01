@@ -105,7 +105,24 @@ nav {
 .theme-btn:hover { border-color: var(--purple); color: var(--purple); }
 
 /* ── Page ───────────────────────────────────────────────────────────────────── */
-.page { flex: 1; max-width: 780px; width: 100%; margin: 0 auto; padding: 40px 20px 60px; }
+.page { flex: 1; max-width: 1060px; width: 100%; margin: 0 auto; padding: 40px 20px 60px; }
+
+/* ── Two-column layout ──────────────────────────────────────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.sidebar {
+  position: sticky;
+  top: 72px; /* below nav */
+}
+.main-col { min-width: 0; }
+@media (max-width: 720px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { position: static; }
+}
 
 /* ── Hero ───────────────────────────────────────────────────────────────────── */
 .hero { margin-bottom: 36px; }
@@ -432,28 +449,38 @@ textarea::placeholder { color: var(--ink3); }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── How It Works ───────────────────────────────────────────────────────────── */
-.how-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-top: 16px;
+.how-sidebar-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 12px;
+  padding: 0 2px;
+}
+.how-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 .how-card {
   background: var(--glass);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 18px;
+  padding: 14px 16px;
+  position: relative;
+  border-left: 3px solid var(--purple);
 }
 .how-num {
   font-family: 'Barlow Condensed', sans-serif;
   font-weight: 800;
-  font-size: 28px;
+  font-size: 22px;
   color: var(--purple);
   line-height: 1;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
-.how-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
-.how-desc { font-size: 12px; color: var(--ink2); line-height: 1.55; }
+.how-title { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
+.how-desc { font-size: 11.5px; color: var(--ink2); line-height: 1.5; }
 
 /* ── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
@@ -498,6 +525,34 @@ textarea::placeholder { color: var(--ink3); }
       <span class="pill">🖼️ Image EXIF</span>
     </div>
   </div>
+
+  <!-- Two-column layout -->
+  <div class="layout">
+
+  <!-- LEFT: How it works sidebar -->
+  <div class="sidebar">
+    <div class="how-sidebar-label">How it works</div>
+    <div class="how-stack">
+      <div class="how-card">
+        <div class="how-num">A</div>
+        <div class="how-title">Hidden character strip</div>
+        <div class="how-desc">Removes zero-width spaces, invisible Unicode chars, odd spaces, and hidden direction marks.</div>
+      </div>
+      <div class="how-card">
+        <div class="how-num">B</div>
+        <div class="how-title">AI rewrite (optional)</div>
+        <div class="how-desc">Rephrases your text via Gemini, defeating word-choice watermarks like Google's SynthID.</div>
+      </div>
+      <div class="how-card">
+        <div class="how-num">C</div>
+        <div class="how-title">File metadata strip</div>
+        <div class="how-desc">Extracts clean text from PDFs, Word docs, HTML. Strips EXIF from images via canvas.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: main tool -->
+  <div class="main-col">
 
   <!-- Main card -->
   <div class="card">
@@ -582,27 +637,8 @@ textarea::placeholder { color: var(--ink3); }
     </div>
   </div>
 
-  <!-- How it works -->
-  <div class="card" style="margin-top: 8px;">
-    <div class="label">How it works</div>
-    <div class="how-grid">
-      <div class="how-card">
-        <div class="how-num">A</div>
-        <div class="how-title">Hidden character strip</div>
-        <div class="how-desc">Removes zero-width spaces, invisible Unicode chars, odd spaces, and hidden direction marks that encode watermarks in text.</div>
-      </div>
-      <div class="how-card">
-        <div class="how-num">B</div>
-        <div class="how-title">AI rewrite (optional)</div>
-        <div class="how-desc">Sends your text through Gemini to rephrase it, defeating word-choice steganography watermarks like Google's SynthID.</div>
-      </div>
-      <div class="how-card">
-        <div class="how-num">C</div>
-        <div class="how-title">File metadata strip</div>
-        <div class="how-desc">Extracts clean text from PDFs, Word docs, and HTML. Strips EXIF/metadata from images and returns a clean version.</div>
-      </div>
-    </div>
-  </div>
+  </div><!-- /.main-col -->
+  </div><!-- /.layout -->
 
 </div><!-- /.page -->
 
