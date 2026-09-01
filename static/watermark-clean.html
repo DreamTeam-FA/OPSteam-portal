@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Watermark Cleaner — OPSteam Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* ── Tokens ─────────────────────────────────────────────────────────────────── */
+:root {
+  --bg:          #EDEEFF;
+  --bg2:         #E2E3FA;
+  --glass:       rgba(255,255,255,0.55);
+  --glass-hi:    rgba(255,255,255,0.82);
+  --border:      rgba(76,53,168,0.12);
+  --border-hi:   rgba(76,53,168,0.22);
+  --purple:      #4C35A8;
+  --purple-dim:  rgba(76,53,168,0.1);
+  --teal:        #0D9488;
+  --teal-dim:    rgba(13,148,136,0.1);
+  --ink:         #1A1040;
+  --ink2:        rgba(26,16,64,0.65);
+  --ink3:        rgba(26,16,64,0.35);
+  --radius:      14px;
+  --card-shadow: 0 2px 16px rgba(76,53,168,0.08);
+  --lift-shadow: 0 8px 28px rgba(76,53,168,0.35);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#0D1235; --bg2:#141945; --glass:rgba(18,24,68,0.65); --glass-hi:rgba(14,19,55,0.92);
+    --border:rgba(255,255,255,0.08); --border-hi:rgba(255,255,255,0.14);
+    --purple:#7C6AD4; --purple-dim:rgba(124,106,212,0.15);
+    --teal:#2DD4C8; --teal-dim:rgba(45,212,200,0.13);
+    --ink:#FFFFFF; --ink2:rgba(255,255,255,0.65); --ink3:rgba(255,255,255,0.32);
+  }
+}
+:root[data-theme="dark"] {
+  --bg:#0D1235; --bg2:#141945; --glass:rgba(18,24,68,0.65); --glass-hi:rgba(14,19,55,0.92);
+  --border:rgba(255,255,255,0.08); --border-hi:rgba(255,255,255,0.14);
+  --purple:#7C6AD4; --purple-dim:rgba(124,106,212,0.15);
+  --teal:#2DD4C8; --teal-dim:rgba(45,212,200,0.13);
+  --ink:#FFFFFF; --ink2:rgba(255,255,255,0.65); --ink3:rgba(255,255,255,0.32);
+}
+
+/* ── Reset ──────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Nav ────────────────────────────────────────────────────────────────────── */
+nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 52px;
+  background: var(--glass-hi);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.ops-brand {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  color: var(--purple);
+}
+.ops-tabs { display: flex; gap: 4px; }
+.ops-tab {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 8px;
+  color: var(--ink2);
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+}
+.ops-tab:hover { color: var(--purple); background: var(--purple-dim); }
+.ops-tab.active { color: var(--purple); background: var(--purple-dim); font-weight: 600; }
+.ops-right { display: flex; align-items: center; gap: 8px; }
+.theme-btn {
+  background: none;
+  border: 1px solid var(--border-hi);
+  border-radius: 8px;
+  padding: 5px 8px;
+  cursor: pointer;
+  color: var(--ink2);
+  font-size: 14px;
+  line-height: 1;
+  transition: border-color 0.15s, color 0.15s;
+}
+.theme-btn:hover { border-color: var(--purple); color: var(--purple); }
+
+/* ── Page ───────────────────────────────────────────────────────────────────── */
+.page { flex: 1; max-width: 780px; width: 100%; margin: 0 auto; padding: 40px 20px 60px; }
+
+/* ── Hero ───────────────────────────────────────────────────────────────────── */
+.hero { margin-bottom: 36px; }
+.hero-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 10px;
+}
+.hero-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: clamp(36px, 6vw, 54px);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.hero-title span { color: var(--purple); }
+.hero-title .grad {
+  background: linear-gradient(90deg, var(--purple), var(--teal));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-sub {
+  font-size: 15px;
+  color: var(--ink2);
+  max-width: 540px;
+  line-height: 1.65;
+}
+.hero-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+.pill {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: var(--glass);
+  border: 1px solid var(--border-hi);
+  color: var(--ink2);
+  backdrop-filter: blur(8px);
+}
+
+/* ── Card ───────────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  padding: 28px;
+  margin-bottom: 20px;
+}
+
+/* ── Mode Tabs ──────────────────────────────────────────────────────────────── */
+.mode-tabs { display: flex; gap: 6px; margin-bottom: 24px; }
+.mode-tab {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border-hi);
+  background: none;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink2);
+  transition: all 0.15s;
+  text-align: center;
+}
+.mode-tab.active {
+  background: linear-gradient(135deg, #4C35A8, #3B7BCC, #0D9488);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 3px 16px rgba(76,53,168,0.3);
+}
+.mode-tab:not(.active):hover { border-color: var(--purple); color: var(--purple); }
+
+/* ── Text Panel ─────────────────────────────────────────────────────────────── */
+#text-panel { display: block; }
+#file-panel { display: none; }
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 8px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 180px;
+  background: var(--glass-hi);
+  border: 1.5px solid var(--border-hi);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  resize: vertical;
+  outline: none;
+  line-height: 1.65;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+textarea:focus { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-dim); }
+textarea::placeholder { color: var(--ink3); }
+
+/* ── Toggle ─────────────────────────────────────────────────────────────────── */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.toggle-info { flex: 1; }
+.toggle-info strong { font-size: 14px; font-weight: 600; color: var(--ink); }
+.toggle-info p { font-size: 12px; color: var(--ink2); margin-top: 2px; line-height: 1.5; }
+.toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: var(--border-hi);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  left: 3px; top: 3px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+}
+.toggle input:checked + .toggle-track { background: var(--purple); }
+.toggle input:checked + .toggle-track::after { transform: translateX(20px); }
+
+/* ── File Drop ──────────────────────────────────────────────────────────────── */
+.drop-zone {
+  border: 2px dashed var(--border-hi);
+  border-radius: 12px;
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  background: var(--glass-hi);
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: var(--purple);
+  background: var(--purple-dim);
+}
+.drop-icon {
+  font-size: 36px;
+  margin-bottom: 12px;
+  line-height: 1;
+}
+.drop-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.drop-sub { font-size: 13px; color: var(--ink2); }
+.drop-types { font-size: 11px; color: var(--ink3); margin-top: 8px; }
+#file-input { display: none; }
+
+/* ── Action Row ─────────────────────────────────────────────────────────────── */
+.action-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #4C35A8, #3B7BCC, #0D9488);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 11px 28px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 3px 16px rgba(76,53,168,0.3);
+  white-space: nowrap;
+}
+.btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: var(--lift-shadow); }
+.btn-primary:disabled { opacity: 0.5; cursor: default; transform: none; }
+.btn-ghost {
+  background: none;
+  border: 1.5px solid var(--border-hi);
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink2);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btn-ghost:hover { border-color: var(--purple); color: var(--purple); }
+
+/* ── Stats Banner ───────────────────────────────────────────────────────────── */
+#stats-bar {
+  display: none;
+  background: var(--purple-dim);
+  border: 1px solid var(--purple);
+  border-radius: 10px;
+  padding: 12px 18px;
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--purple);
+  font-weight: 500;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+#stats-bar.show { display: flex; }
+.stat-chip {
+  background: var(--glass);
+  border: 1px solid var(--border-hi);
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 12px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* ── Output ─────────────────────────────────────────────────────────────────── */
+#output-section { display: none; }
+#output-section.show { display: block; }
+.output-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.output-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+.copy-btn {
+  background: none;
+  border: 1.5px solid var(--border-hi);
+  border-radius: 8px;
+  padding: 5px 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.copy-btn:hover { border-color: var(--purple); color: var(--purple); }
+.copy-btn.copied { border-color: var(--teal); color: var(--teal); }
+
+.output-box {
+  background: var(--glass-hi);
+  border: 1.5px solid var(--border-hi);
+  border-left: 3px solid var(--purple);
+  border-radius: 10px;
+  padding: 16px 18px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.output-box::-webkit-scrollbar { width: 3px; }
+.output-box::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 4px; }
+
+.output-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+/* ── Progress ───────────────────────────────────────────────────────────────── */
+#progress-row {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ink2);
+  margin-top: 16px;
+}
+#progress-row.show { display: flex; }
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid var(--border-hi);
+  border-top-color: var(--purple);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── How It Works ───────────────────────────────────────────────────────────── */
+.how-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+.how-card {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+}
+.how-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 28px;
+  color: var(--purple);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.how-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+.how-desc { font-size: 12px; color: var(--ink2); line-height: 1.55; }
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .mode-tabs { flex-direction: column; }
+  .action-row { flex-direction: column; align-items: stretch; }
+  .btn-primary, .btn-ghost { text-align: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
+  .btn-primary, .btn-ghost, .theme-btn { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav>
+  <a href="/" class="ops-brand">OPSTEAM</a>
+  <div class="ops-tabs">
+    <a href="/" class="ops-tab">Hi, Amy!</a>
+    <a href="/content-week.html" class="ops-tab">Content Week</a>
+    <a href="/watermark-clean.html" class="ops-tab active">Watermark Cleaner</a>
+  </div>
+  <div class="ops-right">
+    <button class="theme-btn" id="theme-btn" aria-label="Toggle theme">🌙</button>
+  </div>
+</nav>
+
+<!-- ── Page ── -->
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-eyebrow">OPSteam Portal</div>
+    <h1 class="hero-title"><span>Watermark</span> <span class="grad">Cleaner</span></h1>
+    <p class="hero-sub">Strip hidden AI watermarks from your text and files before you share them. No sign-in needed.</p>
+    <div class="hero-pills">
+      <span class="pill">🔤 Hidden Unicode chars</span>
+      <span class="pill">↔️ Direction marks</span>
+      <span class="pill">🤖 AI rewrite (text)</span>
+      <span class="pill">📄 PDFs &amp; Word docs</span>
+      <span class="pill">🖼️ Image EXIF</span>
+    </div>
+  </div>
+
+  <!-- Main card -->
+  <div class="card">
+    <!-- Mode tabs -->
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tab-text" onclick="switchMode('text')">📝 Paste Text</button>
+      <button class="mode-tab" id="tab-file" onclick="switchMode('file')">📎 Upload File</button>
+    </div>
+
+    <!-- TEXT PANEL -->
+    <div id="text-panel">
+      <!-- AI Rewrite toggle -->
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <strong>AI Rewrite</strong>
+          <p>Uses Gemini to rephrase your text, defeating word-choice watermarks (e.g. SynthID). Runs after the character clean.</p>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="ai-rewrite-toggle">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+
+      <div class="label">Paste your text</div>
+      <textarea id="text-input" placeholder="Paste AI-generated text here — captions, emails, articles, anything…"></textarea>
+
+      <div id="stats-bar">
+        <span id="stats-msg"></span>
+      </div>
+
+      <div class="action-row">
+        <button class="btn-primary" id="clean-text-btn" onclick="cleanText()">✨ Clean my text</button>
+        <button class="btn-ghost" onclick="clearAll()">Clear</button>
+      </div>
+
+      <div id="progress-row">
+        <div class="spinner"></div>
+        <span id="progress-msg">Rewriting with AI…</span>
+      </div>
+    </div>
+
+    <!-- FILE PANEL -->
+    <div id="file-panel">
+      <div
+        class="drop-zone"
+        id="drop-zone"
+        onclick="document.getElementById('file-input').click()"
+        ondragover="onDragOver(event)"
+        ondragleave="onDragLeave(event)"
+        ondrop="onDrop(event)"
+      >
+        <div class="drop-icon">📂</div>
+        <div class="drop-title">Drop a file here</div>
+        <div class="drop-sub">or click to browse</div>
+        <div class="drop-types">PDF · DOCX · TXT · HTML · Images (JPG, PNG)</div>
+      </div>
+      <input type="file" id="file-input" accept=".pdf,.docx,.txt,.html,.htm,.jpg,.jpeg,.png,.webp" onchange="handleFile(event)">
+
+      <div id="stats-bar-file" class="show" style="display:none; margin-top:16px; background:var(--purple-dim); border:1px solid var(--purple); border-radius:10px; padding:12px 18px; font-size:13px; color:var(--purple); font-weight:500;">
+        <span id="file-stats-msg"></span>
+      </div>
+
+      <div id="file-progress-row" style="display:none; align-items:center; gap:10px; font-size:13px; color:var(--ink2); margin-top:16px;">
+        <div class="spinner"></div>
+        <span id="file-progress-msg">Processing…</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Output -->
+  <div id="output-section">
+    <div class="card">
+      <div class="output-header">
+        <div class="output-label">✅ Cleaned Output</div>
+        <button class="copy-btn" id="copy-btn" onclick="copyOutput()">Copy</button>
+      </div>
+      <div class="output-box" id="output-box"></div>
+      <div class="output-actions">
+        <button class="btn-ghost" onclick="downloadOutput()">⬇️ Download .txt</button>
+        <button class="btn-ghost" onclick="clearAll()">Clean another</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- How it works -->
+  <div class="card" style="margin-top: 8px;">
+    <div class="label">How it works</div>
+    <div class="how-grid">
+      <div class="how-card">
+        <div class="how-num">A</div>
+        <div class="how-title">Hidden character strip</div>
+        <div class="how-desc">Removes zero-width spaces, invisible Unicode chars, odd spaces, and hidden direction marks that encode watermarks in text.</div>
+      </div>
+      <div class="how-card">
+        <div class="how-num">B</div>
+        <div class="how-title">AI rewrite (optional)</div>
+        <div class="how-desc">Sends your text through Gemini to rephrase it, defeating word-choice steganography watermarks like Google's SynthID.</div>
+      </div>
+      <div class="how-card">
+        <div class="how-num">C</div>
+        <div class="how-title">File metadata strip</div>
+        <div class="how-desc">Extracts clean text from PDFs, Word docs, and HTML. Strips EXIF/metadata from images and returns a clean version.</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.page -->
+
+<script>
+// ── Theme ──
+const themeBtn = document.getElementById('theme-btn');
+const root = document.documentElement;
+const saved = (() => { try { return localStorage.getItem('ops-theme'); } catch { return null; } })();
+if (saved) { root.setAttribute('data-theme', saved); themeBtn.textContent = saved === 'dark' ? '☀️' : '🌙'; }
+themeBtn.onclick = () => {
+  const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  themeBtn.textContent = next === 'dark' ? '☀️' : '🌙';
+  try { localStorage.setItem('ops-theme', next); } catch {}
+};
+
+// ── Mode switch ──
+function switchMode(mode) {
+  document.getElementById('text-panel').style.display = mode === 'text' ? 'block' : 'none';
+  document.getElementById('file-panel').style.display = mode === 'file' ? 'block' : 'none';
+  document.getElementById('tab-text').classList.toggle('active', mode === 'text');
+  document.getElementById('tab-file').classList.toggle('active', mode === 'file');
+  hideOutput();
+}
+
+// ── Hidden character removal (Layer A) ──
+// This is purely client-side — no server needed.
+const HIDDEN_CHARS = [
+  // Zero-width characters
+  '​', // zero-width space
+  '‌', // zero-width non-joiner
+  '‍', // zero-width joiner
+  '⁠', // word joiner
+  '﻿', // byte order mark / zero-width no-break space
+  '­', // soft hyphen
+  '᠎', // mongolian vowel separator
+  '‎', // left-to-right mark
+  '‏', // right-to-left mark
+  '‪', // left-to-right embedding
+  '‫', // right-to-left embedding
+  '‬', // pop directional formatting
+  '‭', // left-to-right override
+  '‮', // right-to-left override
+  ' ', // line separator
+  ' ', // paragraph separator
+  '⁡', // function application
+  '⁢', // invisible times
+  '⁣', // invisible separator
+  '⁤', // invisible plus
+  '⁪', '⁫', '⁬', '⁭', '⁮', '⁯', // deprecated formatting
+  '1', // language tag
+];
+
+const ODD_SPACES = [
+  ' ', // non-breaking space → regular space
+  ' ', // thin space
+  ' ', // hair space
+  ' ', // narrow no-break space
+  ' ', // medium mathematical space
+  '　', // ideographic space
+  ' ', ' ', ' ', ' ', ' ', ' ',
+  ' ', ' ', ' ',
+];
+
+function stripHiddenChars(text) {
+  let cleaned = text;
+  let removedCount = 0;
+
+  for (const ch of HIDDEN_CHARS) {
+    const re = new RegExp(ch, 'gu');
+    const before = cleaned.length;
+    cleaned = cleaned.replace(re, '');
+    removedCount += before - cleaned.length;
+  }
+
+  for (const ch of ODD_SPACES) {
+    const re = new RegExp(ch, 'gu');
+    const before = cleaned.length;
+    cleaned = cleaned.replace(re, ' ');
+    removedCount += before - cleaned.length;
+  }
+
+  // Normalize unicode (compose canonical forms)
+  try { cleaned = cleaned.normalize('NFC'); } catch {}
+
+  // Collapse multiple spaces (but preserve newlines)
+  cleaned = cleaned.replace(/[^\S\n]+/g, ' ');
+  cleaned = cleaned.replace(/ +\n/g, '\n');
+  cleaned = cleaned.replace(/\n +/g, '\n');
+
+  return { cleaned, removedCount };
+}
+
+// ── Clean text (main flow) ──
+let cleanedText = '';
+
+async function cleanText() {
+  const raw = document.getElementById('text-input').value;
+  if (!raw.trim()) { alert('Please paste some text first.'); return; }
+
+  hideOutput();
+  document.getElementById('stats-bar').classList.remove('show');
+
+  // Step 1: strip hidden chars (instant)
+  const { cleaned: layerA, removedCount } = stripHiddenChars(raw);
+
+  // Step 2: AI rewrite if toggled
+  const wantAI = document.getElementById('ai-rewrite-toggle').checked;
+  let final = layerA;
+  let aiDone = false;
+
+  if (wantAI) {
+    showProgress('Rewriting with Gemini…');
+    document.getElementById('clean-text-btn').disabled = true;
+    try {
+      const resp = await fetch('/watermark/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: layerA }),
+      });
+      if (!resp.ok) throw new Error(await resp.text());
+      const data = await resp.json();
+      // Run Layer A again on AI output to catch any new invisible chars
+      const { cleaned: layerB } = stripHiddenChars(data.text || layerA);
+      final = layerB;
+      aiDone = true;
+    } catch (err) {
+      console.error(err);
+      // Fall back to just Layer A result
+    }
+    hideProgress();
+    document.getElementById('clean-text-btn').disabled = false;
+  }
+
+  cleanedText = final;
+
+  // Show stats
+  const statsBar = document.getElementById('stats-bar');
+  const statsMsg = document.getElementById('stats-msg');
+  const chips = [];
+  if (removedCount > 0) chips.push(`<span class="stat-chip">🧹 ${removedCount} hidden char${removedCount !== 1 ? 's' : ''} removed</span>`);
+  if (aiDone) chips.push(`<span class="stat-chip">🤖 AI rewritten</span>`);
+  if (removedCount === 0 && !aiDone) chips.push(`<span class="stat-chip">✅ No hidden characters found</span>`);
+  statsMsg.innerHTML = chips.join(' ');
+  statsBar.classList.add('show');
+
+  showOutput(final);
+}
+
+// ── File handling ──
+async function handleFile(event) {
+  const file = event.target.files[0];
+  if (file) await processFile(file);
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.add('drag-over');
+}
+function onDragLeave() {
+  document.getElementById('drop-zone').classList.remove('drag-over');
+}
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+
+async function processFile(file) {
+  hideOutput();
+  showFileProgress(`Reading ${file.name}…`);
+
+  const type = file.type.toLowerCase();
+  const name = file.name.toLowerCase();
+
+  try {
+    let text = '';
+    let note = '';
+
+    if (type === 'text/plain' || name.endsWith('.txt')) {
+      text = await readAsText(file);
+
+    } else if (type === 'text/html' || name.endsWith('.html') || name.endsWith('.htm')) {
+      const html = await readAsText(file);
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      // Remove script/style
+      doc.querySelectorAll('script, style').forEach(el => el.remove());
+      text = doc.body ? doc.body.innerText : doc.documentElement.innerText;
+
+    } else if (type === 'application/pdf' || name.endsWith('.pdf')) {
+      // Extract text using FileReader + basic parsing
+      // Without pdf.js we can do a best-effort extraction
+      text = await extractPDFText(file);
+      note = 'PDF text extracted (metadata stripped).';
+
+    } else if (name.endsWith('.docx') || type.includes('wordprocessingml')) {
+      text = await extractDocxText(file);
+      note = 'Word doc text extracted (metadata stripped).';
+
+    } else if (type.startsWith('image/')) {
+      // For images: strip EXIF by re-encoding via canvas
+      showFileProgress('Stripping image metadata…');
+      const result = await stripImageMeta(file);
+      hideFileProgress();
+      showFileStatsMsg(`🖼️ Image metadata stripped — downloading clean copy.`);
+      downloadBlob(result, 'clean_' + file.name.replace(/\.[^.]+$/, '.png'), 'image/png');
+      return;
+
+    } else {
+      text = await readAsText(file);
+    }
+
+    // Clean the extracted text
+    const { cleaned, removedCount } = stripHiddenChars(text);
+    cleanedText = cleaned;
+
+    hideFileProgress();
+
+    let msg = `📄 ${file.name} — text extracted`;
+    if (removedCount > 0) msg += ` · 🧹 ${removedCount} hidden char${removedCount !== 1 ? 's' : ''} removed`;
+    if (note) msg += ` · ${note}`;
+    showFileStatsMsg(msg);
+    showOutput(cleaned);
+
+  } catch (err) {
+    hideFileProgress();
+    showFileStatsMsg(`❌ Could not read file: ${err.message}`);
+  }
+}
+
+function readAsText(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(new Error('File read failed'));
+    r.readAsText(file, 'utf-8');
+  });
+}
+
+// Basic PDF text extraction via raw string parsing (no library)
+async function extractPDFText(file) {
+  const ab = await file.arrayBuffer();
+  const bytes = new Uint8Array(ab);
+  // Decode as latin1 so we don't corrupt byte sequences
+  let raw = '';
+  for (let i = 0; i < bytes.length; i++) raw += String.fromCharCode(bytes[i]);
+
+  // Extract text between BT and ET (PDF text objects)
+  const chunks = [];
+  const re = /BT[\s\S]*?ET/g;
+  let m;
+  while ((m = re.exec(raw)) !== null) {
+    const block = m[0];
+    // Find all string literals in parentheses and hex strings
+    const strRe = /\(([^)\\]*(?:\\.[^)\\]*)*)\)|<([0-9A-Fa-f]+)>/g;
+    let sm;
+    while ((sm = strRe.exec(block)) !== null) {
+      if (sm[1] !== undefined) {
+        // Parenthesis string: unescape PDF escape sequences
+        const s = sm[1]
+          .replace(/\\n/g, '\n').replace(/\\r/g, '\r').replace(/\\t/g, '\t')
+          .replace(/\\\(/g, '(').replace(/\\\)/g, ')').replace(/\\\\/g, '\\')
+          .replace(/\\([0-7]{1,3})/g, (_, o) => String.fromCharCode(parseInt(o, 8)));
+        chunks.push(s);
+      } else if (sm[2] !== undefined) {
+        // Hex string
+        const hex = sm[2];
+        let hs = '';
+        for (let i = 0; i < hex.length; i += 2) hs += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+        chunks.push(hs);
+      }
+    }
+  }
+  const result = chunks.join(' ').replace(/  +/g, ' ').trim();
+  if (!result) throw new Error('No readable text found in this PDF. It may be a scanned image — try copying text from it manually first.');
+  return result;
+}
+
+// DOCX text extraction (docx = zip with XML)
+async function extractDocxText(file) {
+  const ab = await file.arrayBuffer();
+  // Minimal ZIP parser to find word/document.xml
+  const bytes = new Uint8Array(ab);
+  const text = await findDocxContent(bytes);
+  if (!text) throw new Error('Could not extract text from this Word document.');
+  return text;
+}
+
+async function findDocxContent(bytes) {
+  // We'll use the browser's DecompressionStream to read the ZIP if available
+  // Fallback: scan for XML text patterns in the raw bytes
+  try {
+    // Try to use a Blob URL and fetch to decompress
+    const blob = new Blob([bytes], { type: 'application/zip' });
+    // Read as text and grep for w:t elements
+    const text = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+    // Find all <w:t> content (Word text runs) in the raw compressed stream
+    // This works because XML text isn't compressed at the character level
+    const matches = [...text.matchAll(/<w:t[^>]*>([^<]+)<\/w:t>/g)];
+    if (matches.length > 0) {
+      return matches.map(m => m[1]).join(' ');
+    }
+    // Fallback: extract any readable ASCII strings
+    const readable = text.replace(/[^\x20-\x7E\n\r\t]/g, ' ').replace(/ {3,}/g, '\n').trim();
+    return readable || null;
+  } catch {
+    return null;
+  }
+}
+
+// Image EXIF strip via canvas re-encode
+function stripImageMeta(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob(blob => {
+        if (blob) resolve(blob);
+        else reject(new Error('Canvas encode failed'));
+      }, 'image/png');
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not load image')); };
+    img.src = url;
+  });
+}
+
+function downloadBlob(blob, filename, type) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+}
+
+// ── UI helpers ──
+function showOutput(text) {
+  cleanedText = text;
+  document.getElementById('output-box').textContent = text;
+  document.getElementById('output-section').classList.add('show');
+  document.getElementById('output-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function hideOutput() {
+  document.getElementById('output-section').classList.remove('show');
+  document.getElementById('copy-btn').textContent = 'Copy';
+  document.getElementById('copy-btn').classList.remove('copied');
+}
+
+function showProgress(msg) {
+  const row = document.getElementById('progress-row');
+  document.getElementById('progress-msg').textContent = msg;
+  row.classList.add('show');
+}
+function hideProgress() { document.getElementById('progress-row').classList.remove('show'); }
+
+function showFileProgress(msg) {
+  const row = document.getElementById('file-progress-row');
+  document.getElementById('file-progress-msg').textContent = msg;
+  row.style.display = 'flex';
+}
+function hideFileProgress() { document.getElementById('file-progress-row').style.display = 'none'; }
+
+function showFileStatsMsg(msg) {
+  const el = document.getElementById('file-stats-msg');
+  el.textContent = msg;
+  document.getElementById('stats-bar-file').style.display = 'flex';
+}
+
+function clearAll() {
+  document.getElementById('text-input').value = '';
+  document.getElementById('file-input').value = '';
+  document.getElementById('stats-bar').classList.remove('show');
+  document.getElementById('stats-bar-file').style.display = 'none';
+  hideOutput();
+  hideProgress();
+  hideFileProgress();
+  cleanedText = '';
+}
+
+function copyOutput() {
+  if (!cleanedText) return;
+  navigator.clipboard.writeText(cleanedText).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function downloadOutput() {
+  if (!cleanedText) return;
+  const blob = new Blob([cleanedText], { type: 'text/plain' });
+  downloadBlob(blob, 'cleaned_text.txt', 'text/plain');
+}
+
+// ── Enter on textarea ──
+document.getElementById('text-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) cleanText();
+});
+</script>
+</body>
+</html>

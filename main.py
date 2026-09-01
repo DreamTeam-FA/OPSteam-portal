@@ -73,6 +73,9 @@ class ContentWeekRequest(BaseModel):
     user_prompt: str
     max_tokens: int = 3000
 
+class WatermarkRewriteRequest(BaseModel):
+    text: str
+
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     try:
@@ -109,6 +112,38 @@ async def content_week_generate(req: ContentWeekRequest):
             if "429" in err or "RESOURCE_EXHAUSTED" in err:
                 wait = 30 * (attempt + 1)
                 await asyncio.sleep(wait)
+            else:
+                raise HTTPException(status_code=500, detail=err)
+    raise HTTPException(status_code=429, detail="Rate limit exceeded after retries")
+
+@app.post("/watermark/rewrite")
+async def watermark_rewrite(req: WatermarkRewriteRequest):
+    """Rewrite text via Gemini to defeat word-choice AI watermarks (e.g. SynthID)."""
+    from google.genai import types
+    system = (
+        "You are a neutral rewriting assistant. Your only job is to rewrite the provided text "
+        "in natural, human-sounding language. Preserve the full meaning and all facts exactly. "
+        "Do NOT add commentary, headers, or explanations — output only the rewritten text. "
+        "Vary sentence structure, word choices, and phrasing so the result reads as naturally "
+        "human-written. Do not start your reply with phrases like 'Here is' or 'Sure'."
+    )
+    config = types.GenerateContentConfig(
+        system_instruction=system,
+        max_output_tokens=4096,
+        temperature=0.85,
+    )
+    for attempt in range(5):
+        try:
+            resp = gemini.models.generate_content(
+                model=ACTIVE_MODEL,
+                contents=f"Rewrite this text:\n\n{req.text}",
+                config=config,
+            )
+            return {"text": resp.text}
+        except Exception as e:
+            err = str(e)
+            if "429" in err or "RESOURCE_EXHAUSTED" in err:
+                await asyncio.sleep(30 * (attempt + 1))
             else:
                 raise HTTPException(status_code=500, detail=err)
     raise HTTPException(status_code=429, detail="Rate limit exceeded after retries")
