@@ -3,9 +3,11 @@ Database setup — PostgreSQL via SQLAlchemy.
 """
 
 import os
+from dotenv import load_dotenv
 from sqlalchemy import create_engine, Column, Integer, Text, DateTime, func, text
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 
 # Render gives postgres:// but SQLAlchemy needs postgresql://

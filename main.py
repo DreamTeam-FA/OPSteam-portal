@@ -8,15 +8,27 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from google.oauth2 import service_account
-import google.generativeai as genai
+from google import genai
 from database import init_db, search_chunks
 
 load_dotenv()
 
 # ── Init ──────────────────────────────────────────────────────────────────────
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-1.5-flash")
+gemini = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+def _pick_model():
+    for m in ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
+        try:
+            gemini.models.generate_content(model=m, contents="hi")
+            return m
+        except Exception:
+            continue
+    return "gemini-3.6-flash"
+
+ACTIVE_MODEL = _pick_model()
+
+def generate(contents):
+    return gemini.models.generate_content(model=ACTIVE_MODEL, contents=contents).text
 
 app = FastAPI(title="Hi, Amy!")
 
@@ -61,8 +73,7 @@ async def chat(req: ChatRequest):
         context = search_chunks(req.message)
         prompt  = AMY_SYSTEM_PROMPT.format(context=context)
         full    = f"{prompt}\n\nUser: {req.message}\n\nAmy:"
-        resp    = model.generate_content(full)
-        return ChatResponse(response=resp.text)
+        return ChatResponse(response=generate(full))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
