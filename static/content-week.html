@@ -105,9 +105,9 @@ body {
 .nav-collapse-btn:hover { background: var(--purple-dim); color: var(--purple); }
 .nav-collapse-btn .ci { display: inline-block; transition: transform 0.26s cubic-bezier(0.4,0,0.2,1); }
 .side-nav.collapsed .nav-collapse-btn .ci { transform: rotate(180deg); }
-.side-nav.collapsed .nav-brand { justify-content: center; gap: 0; }
-.side-nav.collapsed .nav-brand-info,
-.side-nav.collapsed .nav-collapse-btn { display: none; }
+.side-nav.collapsed .nav-brand { flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding-bottom: 12px; }
+.side-nav.collapsed .nav-brand-info { display: none; }
+.side-nav.collapsed .nav-collapse-btn { margin-left: 0; }
 .side-links { display: flex; flex-direction: column; gap: 2px; flex: 1; }
 .side-link {
   display: flex; align-items: center; gap: 10px;
@@ -135,9 +135,65 @@ body {
 }
 .theme-btn:hover { border-color: var(--purple); color: var(--purple); }
 .app-main { flex: 1; min-width: 0; }
-@media (max-width: 600px) {
-  .side-nav { width: 56px; }
-  .side-nav.collapsed { width: 56px; }
+
+/* ── Mobile nav overlay & topbar ─────────────────────────────────────────── */
+.nav-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.42); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+  z-index: 199;
+}
+.nav-overlay.open { display: block; }
+.mobile-topbar {
+  display: none;
+  align-items: center; gap: 12px;
+  padding: 10px 16px;
+  background: var(--glass-hi);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+}
+.hamburger-btn {
+  width: 34px; height: 34px; flex-shrink: 0;
+  background: var(--glass); border: 1px solid var(--border);
+  border-radius: 8px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; color: var(--ink2);
+  transition: background 0.15s, color 0.15s;
+}
+.hamburger-btn:hover { background: var(--purple-dim); color: var(--purple); }
+.mobile-topbar-brand {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+  font-size: 16px; letter-spacing: 0.05em; color: var(--purple);
+}
+@media (max-width: 660px) {
+  .app-shell { flex-direction: column; }
+  .side-nav {
+    position: fixed !important;
+    top: 0; left: 0; height: 100dvh !important;
+    z-index: 200;
+    transform: translateX(-100%);
+    transition: transform 0.26s cubic-bezier(0.4,0,0.2,1), box-shadow 0.26s;
+    width: 214px !important;
+  }
+  .side-nav.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 32px rgba(0,0,0,0.22);
+  }
+  .side-nav.collapsed { width: 214px !important; }
+  .side-nav.collapsed .nav-brand { flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; padding-bottom: 14px; }
+  .side-nav.collapsed .nav-brand-info { display: block; }
+  .side-nav.collapsed .nav-collapse-btn { display: flex; margin-left: auto; }
+  .side-nav.collapsed .side-link { justify-content: flex-start; padding: 9px 10px; gap: 10px; }
+  .side-nav.collapsed .side-link-text { display: inline; }
+  .mobile-topbar { display: flex; }
+  .app-main { width: 100%; }
+  .nav-overlay { display: none; }
+  .nav-overlay.open { display: block; }
+  .page { padding: 0 16px 60px; }
+}
+@media (min-width: 661px) {
+  .mobile-topbar { display: none !important; }
+  .nav-overlay { display: none !important; }
 }
 
 /* ── Page Layout ────────────────────────────────────────────────────────── */
@@ -437,6 +493,7 @@ textarea { min-height: 120px; }
 
 <!-- ── App Shell ── -->
 <div class="app-shell">
+<div class="nav-overlay" id="nav-overlay"></div>
 
 <!-- ── Side Nav ── -->
 <aside class="side-nav" id="side-nav">
@@ -472,6 +529,10 @@ textarea { min-height: 120px; }
 
 <!-- ── Main ── -->
 <div class="app-main">
+<div class="mobile-topbar">
+  <button class="hamburger-btn" id="hamburger-btn" aria-label="Open navigation">☰</button>
+  <span class="mobile-topbar-brand">OPSteam</span>
+</div>
 <div class="page">
 
   <!-- Hero Header -->
@@ -696,41 +757,37 @@ function showError(id, msg) {
 function hideError(id) { document.getElementById(id).style.display = 'none'; }
 
 // ── Website Scraper ──────────────────────────────────────────────────────────
+// ── Website scraping — via backend (avoids CORS issues) ──────────────────────
 async function scrapeWebsite(url) {
-  const proxies = [
-    `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-    `https://corsproxy.io/?${encodeURIComponent(url)}`
-  ];
-  for (const proxy of proxies) {
-    try {
-      const r = await fetch(proxy, { signal: AbortSignal.timeout(12000) });
-      if (!r.ok) continue;
-      const data = await r.json();
-      const html = data.contents || data;
-      if (typeof html !== 'string') continue;
-      // Strip HTML tags
-      const txt = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-                      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-                      .replace(/<[^>]+>/g, ' ')
-                      .replace(/\s+/g, ' ').trim();
-      if (txt.length > 100) return txt.substring(0, 8000);
-    } catch(e) { continue; }
+  try {
+    const r = await fetch(`/content-week/scrape?url=${encodeURIComponent(url)}`, {
+      signal: AbortSignal.timeout(18000)
+    });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.detail || `Could not read that URL (status ${r.status})`);
+    }
+    const data = await r.json();
+    return data.text || null;
+  } catch(e) {
+    if (e.name === 'TimeoutError') throw new Error("That website took too long to load. Try 'No website yet' and paste a description instead.");
+    throw e;
   }
-  return null;
 }
 
 // ── Gemini Call ──────────────────────────────────────────────────────────────
-async function callGemini(systemPrompt, userPrompt, maxTokens = 3000) {
+async function callGemini(systemPrompt, userPrompt, maxTokens = 3000, jsonMode = false) {
   const r = await fetch('/content-week/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ system_prompt: systemPrompt, user_prompt: userPrompt, max_tokens: maxTokens })
+    body: JSON.stringify({ system_prompt: systemPrompt, user_prompt: userPrompt, max_tokens: maxTokens, json_mode: jsonMode })
   });
   if (!r.ok) {
     const err = await r.json().catch(() => ({}));
     throw new Error(err.detail || `API error ${r.status}`);
   }
   const data = await r.json();
+  if (!data.text) throw new Error('AI returned an empty response. Please try again.');
   return data.text;
 }
 
@@ -794,7 +851,7 @@ async function readBusiness() {
     if (state.mode === 'website') {
       const scraped = await scrapeWebsite(state.url);
       if (!scraped) {
-        showError('step1Error', "Couldn't read that website. Try a different URL, or switch to 'No website yet' and paste a description.");
+        showError('step1Error', "Couldn't read that website. Try a different URL, or switch to 'No website yet' and paste a description instead.");
         btn.disabled = false; btn.textContent = 'Read my business';
         document.getElementById('step1Progress').style.display = 'none';
         return;
@@ -828,11 +885,11 @@ async function readBusiness() {
 
 Return ONLY valid JSON, no markdown, no extra text.`;
 
-    const rawResult = await callGemini(sysPrompt, businessContent, 500);
+    const rawResult = await callGemini(sysPrompt, businessContent, 600, true);
     const parsed = parseJSON(rawResult);
 
     if (!parsed || !parsed.summary) {
-      throw new Error('Could not understand the business. Please try again or use the text description option.');
+      throw new Error('The AI could not extract business details from your input. Please try again, or rephrase your description.');
     }
 
     state.summary = parsed.summary;
@@ -947,7 +1004,7 @@ Return ONLY valid JSON. No markdown. No extra text.`;
 Full business content for context:
 ${state.scrapedContent.substring(0, 4000)}`;
 
-    const rawResult = await callGemini(sysPrompt, userPrompt, 4000);
+    const rawResult = await callGemini(sysPrompt, userPrompt, 4000, true);
     const parsed = parseJSON(rawResult);
 
     if (!parsed || !parsed.days || parsed.days.length < 7) {
@@ -1178,12 +1235,25 @@ function resetToStep2() {
 <script>
 (function() {
   var nav = document.getElementById('side-nav');
-  var btn = document.getElementById('nav-collapse-btn');
+  var collapseBtn = document.getElementById('nav-collapse-btn');
+  var overlay = document.getElementById('nav-overlay');
+  var hamburger = document.getElementById('hamburger-btn');
   if (!nav) return;
+
+  // Desktop collapse (persisted)
   try { if (localStorage.getItem('nav-collapsed') === '1') nav.classList.add('collapsed'); } catch(e) {}
-  btn && btn.addEventListener('click', function() {
+  collapseBtn && collapseBtn.addEventListener('click', function() {
     var c = nav.classList.toggle('collapsed');
     try { localStorage.setItem('nav-collapsed', c ? '1' : '0'); } catch(e) {}
+  });
+
+  // Mobile drawer open/close
+  function openNav() { nav.classList.add('open'); if (overlay) overlay.classList.add('open'); document.body.style.overflow = 'hidden'; }
+  function closeNav() { nav.classList.remove('open'); if (overlay) overlay.classList.remove('open'); document.body.style.overflow = ''; }
+  hamburger && hamburger.addEventListener('click', openNav);
+  overlay && overlay.addEventListener('click', closeNav);
+  nav.querySelectorAll('.side-link').forEach(function(l) {
+    l.addEventListener('click', function() { if (window.innerWidth <= 660) closeNav(); });
   });
 })();
 </script>

@@ -72,6 +72,7 @@ class ContentWeekRequest(BaseModel):
     system_prompt: str
     user_prompt: str
     max_tokens: int = 3000
+    json_mode: bool = False   # when True, use response_mime_type=application/json + low temp
 
 class WatermarkRewriteRequest(BaseModel):
     text: str
@@ -90,15 +91,39 @@ async def chat(req: ChatRequest):
 async def health():
     return {"status": "ok", "app": "Hi, Amy!"}
 
+@app.get("/content-week/scrape")
+async def content_week_scrape(url: str):
+    """Scrape a URL server-side (avoids CORS, more reliable than client-side proxies)."""
+    import requests as req_lib
+    from bs4 import BeautifulSoup
+    try:
+        headers = {"User-Agent": "Mozilla/5.0 (compatible; OPSteam-bot/1.0)"}
+        r = req_lib.get(url, headers=headers, timeout=12, allow_redirects=True)
+        r.raise_for_status()
+        soup = BeautifulSoup(r.text, "html.parser")
+        for tag in soup(["script", "style", "nav", "footer", "header"]):
+            tag.decompose()
+        text = " ".join(soup.get_text(separator=" ").split())
+        if len(text) < 80:
+            raise HTTPException(status_code=422, detail="Page has too little readable text.")
+        return {"text": text[:8000]}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Could not read that URL: {e}")
+
 @app.post("/content-week/generate")
 async def content_week_generate(req: ContentWeekRequest):
     """Proxy Gemini calls for the Content Week tool — key stays server-side."""
     from google.genai import types
-    config = types.GenerateContentConfig(
+    config_kwargs = dict(
         system_instruction=req.system_prompt,
         max_output_tokens=req.max_tokens,
-        temperature=0.9,
+        temperature=0.4 if req.json_mode else 0.9,
     )
+    if req.json_mode:
+        config_kwargs["response_mime_type"] = "application/json"
+    config = types.GenerateContentConfig(**config_kwargs)
     for attempt in range(5):
         try:
             resp = gemini.models.generate_content(
@@ -106,7 +131,15 @@ async def content_week_generate(req: ContentWeekRequest):
                 contents=req.user_prompt,
                 config=config,
             )
-            return {"text": resp.text}
+            try:
+                text = resp.text
+            except Exception as te:
+                raise HTTPException(status_code=500, detail=f"Model response error: {te}")
+            if not text:
+                raise HTTPException(status_code=500, detail="Model returned an empty response. Please try again.")
+            return {"text": text}
+        except HTTPException:
+            raise
         except Exception as e:
             err = str(e)
             if "429" in err or "RESOURCE_EXHAUSTED" in err:
