@@ -5,7 +5,8 @@ Amy Porterfield course assistant — searches DB, generates response via Groq.
 
 import json
 import os
-import psycopg2
+import urllib.parse
+import pg8000.native
 from groq import Groq
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
@@ -35,34 +36,40 @@ COURSE CONTENT (use this as your knowledge base):
 Remember: You ARE Amy's assistant — speak with her warmth, her clarity, and her "you can do this" energy!"""
 
 
-def search_chunks(query, top_n=6):
-    conn = psycopg2.connect(DATABASE_URL, connect_timeout=8)
-    try:
-        with conn.cursor() as cur:
-            cur.execute("""
-                SELECT file_name, source_type, content,
-                       ts_rank(to_tsvector('english', content),
-                               plainto_tsquery('english', %s)) AS rank
-                FROM course_chunks
-                WHERE to_tsvector('english', content) @@ plainto_tsquery('english', %s)
-                ORDER BY rank DESC
-                LIMIT %s
-            """, (query, query, top_n))
-            rows = cur.fetchall()
+def _get_conn():
+    p = urllib.parse.urlparse(DATABASE_URL)
+    return pg8000.native.Connection(
+        user=p.username, password=p.password,
+        host=p.hostname, port=p.port or 5432,
+        database=p.path.lstrip("/"), ssl_context=True,
+        timeout=8,
+    )
 
-            if not rows:
-                cur.execute(
-                    "SELECT file_name, source_type, content FROM course_chunks ORDER BY id DESC LIMIT %s",
-                    (top_n,)
-                )
-                rows = cur.fetchall()
+def search_chunks(query, top_n=6):
+    conn = _get_conn()
+    try:
+        rows = conn.run("""
+            SELECT file_name, source_type, content,
+                   ts_rank(to_tsvector('english', content),
+                           plainto_tsquery('english', :q)) AS rank
+            FROM course_chunks
+            WHERE to_tsvector('english', content) @@ plainto_tsquery('english', :q)
+            ORDER BY rank DESC
+            LIMIT :n
+        """, q=query, n=top_n)
+
+        if not rows:
+            rows = conn.run(
+                "SELECT file_name, source_type, content FROM course_chunks ORDER BY id DESC LIMIT :n",
+                n=top_n
+            )
     finally:
         conn.close()
 
     if not rows:
         return "No specific course content matched. Answer based on general Amy Porterfield principles."
 
-    parts = [f"[Source: {r[0]} ({r[1]})]\n{r[2]}" for r in rows]
+    parts = [f"[Source: {r[0]} ({r[1]})]\n{r[2]}" for r in (rows or [])]
     return "\n\n---\n\n".join(parts)
 
 

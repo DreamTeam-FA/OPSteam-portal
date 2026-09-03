@@ -1,7 +1,8 @@
 """Netlify Function: /content-count"""
 import json
 import os
-import psycopg2
+import urllib.parse
+import pg8000.native
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "").replace("postgres://", "postgresql://", 1)
 
@@ -9,11 +10,16 @@ DATABASE_URL = os.environ.get("DATABASE_URL", "").replace("postgres://", "postgr
 def handler(event, context):
     headers = {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"}
     try:
-        conn = psycopg2.connect(DATABASE_URL, connect_timeout=8)
+        p = urllib.parse.urlparse(DATABASE_URL)
+        conn = pg8000.native.Connection(
+            user=p.username, password=p.password,
+            host=p.hostname, port=p.port or 5432,
+            database=p.path.lstrip("/"), ssl_context=True,
+            timeout=8,
+        )
         try:
-            with conn.cursor() as cur:
-                cur.execute("SELECT COUNT(*) FROM course_chunks")
-                count = cur.fetchone()[0]
+            rows = conn.run("SELECT COUNT(*) FROM course_chunks")
+            count = rows[0][0] if rows else 0
         finally:
             conn.close()
 
