@@ -1,7 +1,10 @@
+# Root requirements — for local development only (Render/local server).
+# Netlify Functions use netlify/functions/requirements.txt instead.
+
 fastapi==0.111.0
 uvicorn==0.30.1
+groq==1.7.0
 python-dotenv==1.0.1
-google-genai>=1.0.0
 google-auth==2.35.0
 google-api-python-client==2.151.0
 PyPDF2==3.0.1
