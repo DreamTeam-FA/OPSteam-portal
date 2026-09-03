@@ -54,7 +54,7 @@ def list_drive_files(folder_id):
 def get_processed_file_ids():
     """Return a set of Drive file IDs that are already in the database."""
     with SessionLocal() as db:
-        rows = db.execute(text("SELECT DISTINCT source_id FROM course_chunks")).fetchall()
+        rows = db.execute(text("SELECT DISTINCT file_id FROM course_chunks")).fetchall()
     return {row[0] for row in rows}
 
 

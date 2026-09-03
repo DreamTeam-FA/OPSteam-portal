@@ -1,78 +1,277 @@
-"""
+﻿"""
 Hi, Amy! - Course Content Ingestion Script
 Run this once to process all files from Google Drive into PostgreSQL.
 Run again anytime the course content is updated.
+
+AI backend: Groq (llama-3.3-70b-versatile + whisper-large-v3)
+NOTE: Video transcription requires FFmpeg installed on this machine.
+  Windows: winget install ffmpeg
+  Mac:     brew install ffmpeg
 """
 
 import os
 import io
 import time
+import base64
 import tempfile
+import subprocess
 from dotenv import load_dotenv
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
-from google import genai
+from groq import Groq
 import PyPDF2
 from docx import Document
 from bs4 import BeautifulSoup
-import PIL.Image
 from database import init_db, already_processed, store_chunks
 
 load_dotenv()
 
-# ── Config ────────────────────────────────────────────────────────────────────
+# â”€â”€ Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE")
 DRIVE_FOLDER_ID      = os.getenv("DRIVE_FOLDER_ID")
-GEMINI_API_KEY       = os.getenv("GEMINI_API_KEY")
+GROQ_API_KEY         = os.getenv("GROQ_API_KEY")
 
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
-# ── Init ──────────────────────────────────────────────────────────────────────
-creds     = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-drive_svc = build("drive", "v3", credentials=creds)
-gemini    = genai.Client(api_key=GEMINI_API_KEY)
+# â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+creds       = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+drive_svc   = build("drive", "v3", credentials=creds)
+groq_client = Groq(api_key=GROQ_API_KEY)
 
-# ── Auto-detect best available Gemini model ───────────────────────────────────
-def _pick_model():
-    """Find the first available model (skip 404s, stop on 429/success)."""
-    candidates = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
-    for m in candidates:
-        try:
-            gemini.models.generate_content(model=m, contents="hi")
-            print(f"🤖 Using Gemini model: {m}")
-            return m
-        except Exception as e:
-            err = str(e)
-            if "429" in err or "RESOURCE_EXHAUSTED" in err:
-                # Rate limited but model exists — use it
-                print(f"🤖 Using Gemini model: {m} (rate limited, will retry automatically)")
-                return m
-            elif "404" in err or "no longer available" in err.lower():
-                print(f"   ⏭  {m} not available, trying next...")
-                continue
-            else:
-                print(f"   ❌ {m}: {e}")
-                continue
-    raise RuntimeError("No working Gemini model found. Check your API key.")
+ACTIVE_MODEL = "qwen/qwen3.8-27b"         # text generation
+VISION_MODEL = "groq/compound"                              # image description (vision)
+WHISPER_MODEL = "whisper-large-v3"          # audio/video transcription
 
-ACTIVE_MODEL = _pick_model()
+GROQ_WHISPER_LIMIT = 24 * 1024 * 1024  # 24 MB (Groq's limit is 25 MB)
 
-def generate(contents):
-    """Call Gemini with auto-retry on rate limits."""
+print(f"ðŸ¤– Using Groq models: {ACTIVE_MODEL} | {WHISPER_MODEL}")
+
+
+# â”€â”€ Check FFmpeg â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+def _ffmpeg_available():
+    try:
+        subprocess.run(["ffmpeg", "-version"], capture_output=True, timeout=5)
+        return True
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return False
+
+FFMPEG_OK = _ffmpeg_available()
+if not FFMPEG_OK:
+    print("âš ï¸  FFmpeg not found â€” large video files will be skipped.")
+    print("   Install: winget install ffmpeg  (then restart terminal)")
+
+
+# â”€â”€ AI Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+def generate(prompt, system=None):
+    """Call Groq LLM with auto-retry on rate limits."""
+    messages = []
+    if system:
+        messages.append({"role": "system", "content": system})
+    messages.append({"role": "user", "content": prompt})
+
     for attempt in range(5):
         try:
-            return gemini.models.generate_content(model=ACTIVE_MODEL, contents=contents).text
+            resp = groq_client.chat.completions.create(
+                model=ACTIVE_MODEL,
+                messages=messages,
+                max_tokens=4000,
+                temperature=0.3,
+            )
+            return resp.choices[0].message.content
         except Exception as e:
-            if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+            err = str(e)
+            if "429" in err or "rate_limit" in err.lower() or "rate limit" in err.lower():
                 wait = 30 * (attempt + 1)
-                print(f"   ⏳ Rate limit hit — waiting {wait}s before retry...")
+                print(f"   â³ Rate limit â€” waiting {wait}s before retry...")
                 time.sleep(wait)
             else:
                 raise
-    raise RuntimeError("Gemini rate limit exceeded after 5 retries")
+    raise RuntimeError("Groq rate limit exceeded after 5 retries")
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def ai_summarize(text, file_name):
+    prompt = f"""You are processing Amy Porterfield's training course material.
+
+File: {file_name}
+
+Content:
+{text[:12000]}
+
+Extract and clearly organize:
+1. Key concepts and frameworks taught
+2. Step-by-step action items
+3. Important strategies and techniques
+4. Specific instructions for tasks
+5. Quotes or memorable insights
+
+Be thorough â€” this will be used to answer team questions about the course."""
+    return generate(prompt)
+
+
+def ai_describe_image(img_bytes, file_name):
+    """Describe an image using Groq vision model."""
+    img_b64 = base64.b64encode(img_bytes).decode("utf-8")
+    prompt = f"""This is a slide or image from Amy Porterfield's course: {file_name}
+
+Describe in full detail:
+1. All text visible in the image
+2. Any diagrams, frameworks, or models shown
+3. Key takeaways from this visual
+4. Any action steps or strategies depicted"""
+
+    for attempt in range(5):
+        try:
+            resp = groq_client.chat.completions.create(
+                model=VISION_MODEL,
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/png;base64,{img_b64}"}
+                        },
+                        {"type": "text", "text": prompt}
+                    ]
+                }],
+                max_tokens=2000,
+            )
+            return resp.choices[0].message.content
+        except Exception as e:
+            err = str(e)
+            if "429" in err or "rate_limit" in err.lower():
+                wait = 30 * (attempt + 1)
+                print(f"   â³ Rate limit â€” waiting {wait}s...")
+                time.sleep(wait)
+            else:
+                raise
+    raise RuntimeError("Groq rate limit exceeded after 5 retries")
+
+
+def _transcribe_audio_file(audio_path, label):
+    """Send an audio file (â‰¤24MB) to Groq Whisper and return text."""
+    with open(audio_path, "rb") as f:
+        resp = groq_client.audio.transcriptions.create(
+            model=WHISPER_MODEL,
+            file=(os.path.basename(audio_path), f),
+            response_format="text",
+        )
+    return resp if isinstance(resp, str) else resp.text
+
+
+def _extract_audio(video_path):
+    """Extract audio from video to a temp MP3 file. Returns path."""
+    audio_path = video_path + "_audio.mp3"
+    subprocess.run(
+        [
+            "ffmpeg", "-i", video_path,
+            "-vn",                  # no video
+            "-acodec", "mp3",
+            "-ab", "64k",           # 64kbps â€” good for speech, small file
+            "-ac", "1",             # mono
+            "-y",                   # overwrite if exists
+            audio_path,
+        ],
+        capture_output=True,
+        timeout=600,
+        check=True,
+    )
+    return audio_path
+
+
+def _transcribe_in_chunks(audio_path, file_name):
+    """Split large audio into 10-min chunks and transcribe each."""
+    chunk_duration = 600  # seconds
+    transcripts = []
+    offset = 0
+    chunk_num = 0
+
+    while True:
+        chunk_path = audio_path + f".chunk{chunk_num}.mp3"
+        result = subprocess.run(
+            [
+                "ffmpeg", "-i", audio_path,
+                "-ss", str(offset), "-t", str(chunk_duration),
+                "-acodec", "mp3", "-ab", "64k", "-ac", "1",
+                "-y", chunk_path,
+            ],
+            capture_output=True,
+            timeout=120,
+        )
+        # If output file is tiny or missing, we've hit the end
+        if not os.path.exists(chunk_path) or os.path.getsize(chunk_path) < 2000:
+            if os.path.exists(chunk_path):
+                os.unlink(chunk_path)
+            break
+
+        try:
+            print(f"      ðŸ“ Transcribing chunk {chunk_num + 1}...")
+            t = _transcribe_audio_file(chunk_path, f"chunk_{chunk_num}.mp3")
+            transcripts.append(t)
+        finally:
+            if os.path.exists(chunk_path):
+                os.unlink(chunk_path)
+
+        offset += chunk_duration
+        chunk_num += 1
+        time.sleep(1)  # be polite to the API
+
+    return "\n\n".join(transcripts)
+
+
+def ai_transcribe_video(video_path, file_name):
+    """Transcribe a video using Groq Whisper. Extracts audio first."""
+    if not FFMPEG_OK:
+        raise RuntimeError(
+            "FFmpeg is required for video transcription. "
+            "Install with: winget install ffmpeg"
+        )
+
+    print(f"    ðŸŽµ Extracting audio from video...")
+    audio_path = None
+    try:
+        audio_path = _extract_audio(video_path)
+        audio_size = os.path.getsize(audio_path)
+        print(f"    ðŸŽµ Audio extracted: {audio_size / (1024*1024):.1f} MB")
+
+        if audio_size <= GROQ_WHISPER_LIMIT:
+            # Small enough â€” send directly
+            raw_transcript = _transcribe_audio_file(audio_path, file_name + ".mp3")
+        else:
+            # Too large â€” split into chunks
+            print(f"    âœ‚ï¸  Audio too large for single request â€” splitting into chunks...")
+            raw_transcript = _transcribe_in_chunks(audio_path, file_name)
+
+    finally:
+        if audio_path and os.path.exists(audio_path):
+            os.unlink(audio_path)
+
+    # Summarize the raw transcript into structured course notes
+    print(f"    ðŸ“‹ Summarizing transcript...")
+    return generate(
+        f"""This is a raw transcript from Amy Porterfield's training video: {file_name}
+
+Transcript:
+{raw_transcript[:15000]}
+
+Provide a comprehensive summary including:
+1. All instructions and how-to steps explained
+2. Key concepts and frameworks discussed
+3. Specific strategies and techniques taught
+4. Action items the viewer should take
+5. Any tools, platforms, or resources mentioned
+6. Important quotes and insights"""
+    )
+
+
+# Legacy aliases so reingest_failed.py continues to work unchanged
+gemini_summarize       = ai_summarize
+gemini_describe_image  = ai_describe_image
+gemini_transcribe_video = ai_transcribe_video
+
+
+# â”€â”€ Drive Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def list_drive_files(folder_id):
     files, page_token = [], None
@@ -106,7 +305,7 @@ def download_file(file_id, mime_type):
         req = drive_svc.files().get_media(fileId=file_id)
 
     buf = io.BytesIO()
-    dl  = MediaIoBaseDownload(buf, req)
+    dl = MediaIoBaseDownload(buf, req)
     done = False
     while not done:
         _, done = dl.next_chunk()
@@ -124,67 +323,11 @@ def extract_text_docx(buf):
     return "\n".join(p.text for p in doc.paragraphs)
 
 
-def gemini_summarize(text, file_name):
-    prompt = f"""You are processing Amy Porterfield's training course material.
-
-File: {file_name}
-
-Content:
-{text[:12000]}
-
-Extract and clearly organize:
-1. Key concepts and frameworks taught
-2. Step-by-step action items
-3. Important strategies and techniques
-4. Specific instructions for tasks
-5. Quotes or memorable insights
-
-Be thorough — this will be used to answer team questions about the course."""
-    return generate(prompt)
-
-
-def gemini_describe_image(img_bytes, file_name):
-    from google.genai import types
-    prompt = f"""This is a slide or image from Amy Porterfield's course: {file_name}
-
-Describe in full detail:
-1. All text visible in the image
-2. Any diagrams, frameworks, or models shown
-3. Key takeaways from this visual
-4. Any action steps or strategies depicted"""
-    return generate([
-        types.Part.from_bytes(data=img_bytes, mime_type="image/png"),
-        prompt
-    ])
-
-
-def gemini_transcribe_video(video_path, file_name):
-    print(f"    Uploading video to Gemini: {file_name}")
-    video_file = gemini.files.upload(file=video_path)
-    while video_file.state.name == "PROCESSING":
-        time.sleep(5)
-        video_file = gemini.files.get(name=video_file.name)
-    if video_file.state.name == "FAILED":
-        return f"[Video processing failed for {file_name}]"
-
-    from google.genai import types
-    prompt = f"""This is a training video from Amy Porterfield's course: {file_name}
-
-Provide a comprehensive summary including:
-1. All instructions and how-to steps explained
-2. Key concepts and frameworks discussed
-3. Specific strategies and techniques taught
-4. Action items the viewer should take
-5. Any tools, platforms, or resources mentioned
-6. Important quotes and insights"""
-    return generate([video_file, prompt])
-
-
-# ── Main ──────────────────────────────────────────────────────────────────────
+# â”€â”€ Main â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def ingest():
-    print(f"\n🎓 Hi, Amy! — Course Ingestion")
-    print(f"📂 Drive folder: {DRIVE_FOLDER_ID}\n")
+    print(f"\nðŸŽ“ Hi, Amy! â€” Course Ingestion")
+    print(f"ðŸ“‚ Drive folder: {DRIVE_FOLDER_ID}\n")
 
     init_db()
 
@@ -196,18 +339,18 @@ def ingest():
         fid  = f["id"]
         mime = f["mimeType"]
 
-        print(f"📄 {name}")
+        print(f"ðŸ“„ {name}")
         print(f"   Type: {mime}")
 
         if already_processed(fid):
-            print("   ⏭  Already processed, skipping\n")
+            print("   â­  Already processed, skipping\n")
             continue
 
         try:
             if mime == "application/pdf":
                 buf  = download_file(fid, mime)
                 text = extract_text_pdf(buf)
-                processed = gemini_summarize(text, name)
+                processed = ai_summarize(text, name)
                 n = store_chunks(name, fid, processed, "pdf")
 
             elif mime in (
@@ -216,8 +359,12 @@ def ingest():
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             ):
                 buf = download_file(fid, mime)
-                text = buf.read().decode("utf-8", errors="ignore") if mime == "application/vnd.google-apps.document" else extract_text_docx(buf)
-                processed = gemini_summarize(text, name)
+                text = (
+                    buf.read().decode("utf-8", errors="ignore")
+                    if mime == "application/vnd.google-apps.document"
+                    else extract_text_docx(buf)
+                )
+                processed = ai_summarize(text, name)
                 n = store_chunks(name, fid, processed, "document")
 
             elif mime in (
@@ -226,20 +373,20 @@ def ingest():
             ):
                 buf  = download_file(fid, mime)
                 text = buf.read().decode("utf-8", errors="ignore")
-                processed = gemini_summarize(text, name)
+                processed = ai_summarize(text, name)
                 n = store_chunks(name, fid, processed, "slides")
 
             elif mime.startswith("image/"):
                 buf = download_file(fid, mime)
                 img_bytes = buf.read()
-                processed = gemini_describe_image(img_bytes, name)
+                processed = ai_describe_image(img_bytes, name)
                 n = store_chunks(name, fid, processed, "image")
 
             elif mime.startswith("video/"):
                 meta = drive_svc.files().get(fileId=fid, fields="size,webViewLink").execute()
                 size_mb = int(meta.get("size", 0)) / (1024 * 1024)
                 link = meta.get("webViewLink", "")
-                print(f"   📹 Size: {size_mb:.0f} MB — attempting transcription...")
+                print(f"   ðŸ“¹ Size: {size_mb:.0f} MB â€” downloading & transcribing...")
                 tmp_path = None
                 try:
                     buf = download_file(fid, mime)
@@ -247,11 +394,10 @@ def ingest():
                     with tempfile.NamedTemporaryFile(suffix=f".{ext}", delete=False) as tmp:
                         tmp.write(buf.read())
                         tmp_path = tmp.name
-                    processed = gemini_transcribe_video(tmp_path, name)
+                    processed = ai_transcribe_video(tmp_path, name)
                     n = store_chunks(name, fid, processed, "video")
                 except Exception as vid_err:
-                    # Fallback: store as reference so Amy still knows it exists
-                    print(f"   ⚠️  Transcription failed ({vid_err}) — storing as reference")
+                    print(f"   âš ï¸  Transcription failed ({vid_err}) â€” storing as reference")
                     summary = (
                         f"Video lesson: {name}\n"
                         f"Size: {size_mb:.0f} MB\n"
@@ -268,21 +414,21 @@ def ingest():
                 buf  = download_file(fid, mime)
                 html = buf.read().decode("utf-8", errors="ignore")
                 text = BeautifulSoup(html, "html.parser").get_text(separator="\n")
-                processed = gemini_summarize(text, name)
+                processed = ai_summarize(text, name)
                 n = store_chunks(name, fid, processed, "html")
 
             else:
-                print("   ⚠️  Unsupported type, skipping\n")
+                print("   âš ï¸  Unsupported type, skipping\n")
                 continue
 
-            print(f"   ✅ Stored {n} chunk(s)\n")
+            print(f"   âœ… Stored {n} chunk(s)\n")
 
         except Exception as e:
-            print(f"   ❌ Error: {e}\n")
+            print(f"   âŒ Error: {e}\n")
 
         time.sleep(1)
 
-    print("🎉 Ingestion complete!")
+    print("ðŸŽ‰ Ingestion complete!")
 
 
 if __name__ == "__main__":

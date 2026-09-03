@@ -1,6 +1,7 @@
-"""
-Hi, Amy! — Course Assistant Backend
+﻿"""
+Hi, Amy! â€” Course Assistant Backend
 FastAPI app serving the chat UI and AI responses.
+AI backend: Groq (llama-3.3-70b-versatile)
 """
 
 import os
@@ -9,27 +10,29 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from google import genai
+from groq import Groq
 from database import init_db, search_chunks
 
 load_dotenv()
 
-# ── Init ──────────────────────────────────────────────────────────────────────
-gemini = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+# â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+groq_client  = Groq(api_key=os.getenv("GROQ_API_KEY"))
+ACTIVE_MODEL = "qwen/qwen3.8-27b"
 
-def _pick_model():
-    for m in ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
-        try:
-            gemini.models.generate_content(model=m, contents="hi")
-            return m
-        except Exception:
-            continue
-    return "gemini-3.6-flash"
-
-ACTIVE_MODEL = _pick_model()
-
-def generate(contents):
-    return gemini.models.generate_content(model=ACTIVE_MODEL, contents=contents).text
+def generate(system_prompt, user_prompt, max_tokens=3000, json_mode=False):
+    kwargs = dict(
+        model=ACTIVE_MODEL,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user",   "content": user_prompt},
+        ],
+        max_tokens=max_tokens,
+        temperature=0.4 if json_mode else 0.85,
+    )
+    if json_mode:
+        kwargs["response_format"] = {"type": "json_object"}
+    resp = groq_client.chat.completions.create(**kwargs)
+    return resp.choices[0].message.content
 
 app = FastAPI(title="Hi, Amy!")
 
@@ -37,11 +40,11 @@ app = FastAPI(title="Hi, Amy!")
 def startup():
     init_db()
 
-# ── Amy's Persona ─────────────────────────────────────────────────────────────
-AMY_SYSTEM_PROMPT = """You are Amy — a warm, knowledgeable AI assistant built from Amy Porterfield's training course materials.
+# â”€â”€ Amy's Persona â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+AMY_SYSTEM_PROMPT = """You are Amy â€” a warm, knowledgeable AI assistant built from Amy Porterfield's training course materials.
 
 YOUR PERSONALITY:
-- Warm, encouraging, and deeply practical — just like Amy Porterfield herself
+- Warm, encouraging, and deeply practical â€” just like Amy Porterfield herself
 - You speak with genuine enthusiasm: "You've got this!", "Let's dive in!", "Here's the thing..."
 - You break every concept into clear, actionable steps
 - You celebrate wins and make complex things feel achievable
@@ -50,17 +53,17 @@ YOUR PERSONALITY:
 YOUR RULES:
 - Answer ONLY based on the course content provided below
 - If a topic isn't in the course materials, say: "That's a great question! I don't have specific course material on that, but based on what Amy teaches about [related topic], here's what I'd suggest..."
-- Always give practical, specific, actionable advice — not vague generalities
+- Always give practical, specific, actionable advice â€” not vague generalities
 - When relevant, reference which part of the course the information comes from
 - For task instructions, give clear numbered steps
-- Keep answers focused and digestible — don't overwhelm
+- Keep answers focused and digestible â€” don't overwhelm
 
 COURSE CONTENT (use this as your knowledge base):
 {context}
 
-Remember: You ARE Amy's assistant — speak with her warmth, her clarity, and her "you can do this" energy!"""
+Remember: You ARE Amy's assistant â€” speak with her warmth, her clarity, and her "you can do this" energy!"""
 
-# ── Routes ────────────────────────────────────────────────────────────────────
+# â”€â”€ Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class ChatRequest(BaseModel):
     message: str
@@ -72,7 +75,7 @@ class ContentWeekRequest(BaseModel):
     system_prompt: str
     user_prompt: str
     max_tokens: int = 3000
-    json_mode: bool = False   # when True, use response_mime_type=application/json + low temp
+    json_mode: bool = False
 
 class WatermarkRewriteRequest(BaseModel):
     text: str
@@ -81,15 +84,15 @@ class WatermarkRewriteRequest(BaseModel):
 async def chat(req: ChatRequest):
     try:
         context = search_chunks(req.message)
-        prompt  = AMY_SYSTEM_PROMPT.format(context=context)
-        full    = f"{prompt}\n\nUser: {req.message}\n\nAmy:"
-        return ChatResponse(response=generate(full))
+        system  = AMY_SYSTEM_PROMPT.format(context=context)
+        resp    = generate(system, req.message, max_tokens=2000)
+        return ChatResponse(response=resp)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "app": "Hi, Amy!"}
+    return {"status": "ok", "app": "Hi, Amy!", "model": ACTIVE_MODEL}
 
 @app.get("/content-week/scrape")
 async def content_week_scrape(url: str):
@@ -114,27 +117,15 @@ async def content_week_scrape(url: str):
 
 @app.post("/content-week/generate")
 async def content_week_generate(req: ContentWeekRequest):
-    """Proxy Gemini calls for the Content Week tool — key stays server-side."""
-    from google.genai import types
-    config_kwargs = dict(
-        system_instruction=req.system_prompt,
-        max_output_tokens=req.max_tokens,
-        temperature=0.4 if req.json_mode else 0.9,
-    )
-    if req.json_mode:
-        config_kwargs["response_mime_type"] = "application/json"
-    config = types.GenerateContentConfig(**config_kwargs)
+    """Proxy Groq calls for the Content Week tool â€” key stays server-side."""
     for attempt in range(5):
         try:
-            resp = gemini.models.generate_content(
-                model=ACTIVE_MODEL,
-                contents=req.user_prompt,
-                config=config,
+            text = generate(
+                req.system_prompt,
+                req.user_prompt,
+                max_tokens=req.max_tokens,
+                json_mode=req.json_mode,
             )
-            try:
-                text = resp.text
-            except Exception as te:
-                raise HTTPException(status_code=500, detail=f"Model response error: {te}")
             if not text:
                 raise HTTPException(status_code=500, detail="Model returned an empty response. Please try again.")
             return {"text": text}
@@ -142,7 +133,7 @@ async def content_week_generate(req: ContentWeekRequest):
             raise
         except Exception as e:
             err = str(e)
-            if "429" in err or "RESOURCE_EXHAUSTED" in err:
+            if "429" in err or "rate_limit" in err.lower():
                 wait = 30 * (attempt + 1)
                 await asyncio.sleep(wait)
             else:
@@ -151,31 +142,21 @@ async def content_week_generate(req: ContentWeekRequest):
 
 @app.post("/watermark/rewrite")
 async def watermark_rewrite(req: WatermarkRewriteRequest):
-    """Rewrite text via Gemini to defeat word-choice AI watermarks (e.g. SynthID)."""
-    from google.genai import types
+    """Rewrite text via Groq to defeat word-choice AI watermarks (e.g. SynthID)."""
     system = (
         "You are a neutral rewriting assistant. Your only job is to rewrite the provided text "
         "in natural, human-sounding language. Preserve the full meaning and all facts exactly. "
-        "Do NOT add commentary, headers, or explanations — output only the rewritten text. "
+        "Do NOT add commentary, headers, or explanations â€” output only the rewritten text. "
         "Vary sentence structure, word choices, and phrasing so the result reads as naturally "
         "human-written. Do not start your reply with phrases like 'Here is' or 'Sure'."
     )
-    config = types.GenerateContentConfig(
-        system_instruction=system,
-        max_output_tokens=4096,
-        temperature=0.85,
-    )
     for attempt in range(5):
         try:
-            resp = gemini.models.generate_content(
-                model=ACTIVE_MODEL,
-                contents=f"Rewrite this text:\n\n{req.text}",
-                config=config,
-            )
-            return {"text": resp.text}
+            text = generate(system, f"Rewrite this text:\n\n{req.text}", max_tokens=4096)
+            return {"text": text}
         except Exception as e:
             err = str(e)
-            if "429" in err or "RESOURCE_EXHAUSTED" in err:
+            if "429" in err or "rate_limit" in err.lower():
                 await asyncio.sleep(30 * (attempt + 1))
             else:
                 raise HTTPException(status_code=500, detail=err)
@@ -192,5 +173,5 @@ async def content_count():
     except Exception as e:
         return {"chunks": 0, "ready": False, "error": str(e)}
 
-# Serve static files (chat UI) — must be last
+# Serve static files (chat UI) â€” must be last
 app.mount("/", StaticFiles(directory="static", html=True), name="static")

@@ -1,0 +1,36 @@
+[build]
+  publish = "static"
+
+[functions]
+  directory = "netlify/functions"
+
+# ── API Redirects (invisible to the browser — same origin) ────────────────────
+[[redirects]]
+  from = "/chat"
+  to   = "/.netlify/functions/chat"
+  status = 200
+
+[[redirects]]
+  from = "/content-week/generate"
+  to   = "/.netlify/functions/content-week-generate"
+  status = 200
+
+[[redirects]]
+  from = "/content-week/scrape"
+  to   = "/.netlify/functions/content-week-scrape"
+  status = 200
+
+[[redirects]]
+  from = "/watermark/rewrite"
+  to   = "/.netlify/functions/watermark-rewrite"
+  status = 200
+
+[[redirects]]
+  from = "/health"
+  to   = "/.netlify/functions/health"
+  status = 200
+
+[[redirects]]
+  from = "/content-count"
+  to   = "/.netlify/functions/content-count"
+  status = 200
