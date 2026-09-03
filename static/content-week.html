@@ -886,7 +886,7 @@ async function readBusiness() {
 Return ONLY valid JSON, no markdown, no extra text.`;
 
     const rawResult = await callGemini(sysPrompt, businessContent, 600, true);
-    const parsed = parseJSON(rawResult);
+    const parsed = parseJSON(rawResult.replace(/<think>[\s\S]*?<\/think>/gi, '').trim());
 
     if (!parsed || !parsed.summary) {
       throw new Error('The AI could not extract business details from your input. Please try again, or rephrase your description.');
@@ -1004,11 +1004,12 @@ Return ONLY valid JSON. No markdown. No extra text.`;
 Full business content for context:
 ${state.scrapedContent.substring(0, 4000)}`;
 
-    const rawResult = await callGemini(sysPrompt, userPrompt, 7000, true);
-    const parsed = parseJSON(rawResult);
+    const rawResult = await callGemini(sysPrompt, userPrompt, 4000, true);
+    const cleaned  = rawResult.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+    const parsed = parseJSON(cleaned);
 
     if (!parsed || !parsed.days || parsed.days.length < 5) {
-      throw new Error('The content came back incomplete. Please try again — this sometimes happens when the AI response is too long.');
+      throw new Error('The content came back incomplete. Please try again.');
     }
 
     state.weekData = parsed;

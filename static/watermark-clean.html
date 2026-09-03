@@ -661,7 +661,7 @@ textarea::placeholder { color: var(--ink3); }
       <div class="how-card">
         <div class="how-num">B</div>
         <div class="how-title">AI rewrite (optional)</div>
-        <div class="how-desc">Rephrases your text via Gemini, defeating word-choice watermarks like Google's SynthID.</div>
+        <div class="how-desc">Rephrases your text via AI, defeating word-choice watermarks like Google's SynthID.</div>
       </div>
       <div class="how-card">
         <div class="how-num">C</div>
@@ -688,7 +688,7 @@ textarea::placeholder { color: var(--ink3); }
       <div class="toggle-row">
         <div class="toggle-info">
           <strong>AI Rewrite</strong>
-          <p>Uses Gemini to rephrase your text, defeating word-choice watermarks (e.g. SynthID). Runs after the character clean.</p>
+          <p>Uses AI to rephrase your text, defeating word-choice watermarks (e.g. SynthID). Runs after the character clean.</p>
         </div>
         <label class="toggle">
           <input type="checkbox" id="ai-rewrite-toggle">
@@ -871,7 +871,7 @@ async function cleanText() {
   let aiDone = false;
 
   if (wantAI) {
-    showProgress('Rewriting with Gemini…');
+    showProgress('Rewriting with AI…');
     document.getElementById('clean-text-btn').disabled = true;
     try {
       const resp = await fetch('/watermark/rewrite', {
@@ -887,7 +887,8 @@ async function cleanText() {
       aiDone = true;
     } catch (err) {
       console.error(err);
-      // Fall back to just Layer A result
+      aiDone = false;
+      // Fall back to Layer A result — note shown in stats bar below
     }
     hideProgress();
     document.getElementById('clean-text-btn').disabled = false;
@@ -901,7 +902,8 @@ async function cleanText() {
   const chips = [];
   if (removedCount > 0) chips.push(`<span class="stat-chip">🧹 ${removedCount} hidden char${removedCount !== 1 ? 's' : ''} removed</span>`);
   if (aiDone) chips.push(`<span class="stat-chip">🤖 AI rewritten</span>`);
-  if (removedCount === 0 && !aiDone) chips.push(`<span class="stat-chip">✅ No hidden characters found</span>`);
+  if (wantAI && !aiDone) chips.push(`<span class="stat-chip" style="color:#ef4444">⚠️ AI rewrite failed — hidden chars still cleaned</span>`);
+  if (removedCount === 0 && !wantAI) chips.push(`<span class="stat-chip">✅ No hidden characters found</span>`);
   statsMsg.innerHTML = chips.join(' ');
   statsBar.classList.add('show');
 

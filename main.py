@@ -1,10 +1,11 @@
-﻿"""
-Hi, Amy! â€” Course Assistant Backend
+﻿“””
+Hi, Amy! — Course Assistant Backend
 FastAPI app serving the chat UI and AI responses.
-AI backend: Groq (llama-3.3-70b-versatile)
-"""
+AI backend: Groq (qwen/qwen3.8-27b)
+“””
 
 import os
+import re
 import asyncio
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -15,30 +16,38 @@ from database import init_db, search_chunks
 
 load_dotenv()
 
-# â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-groq_client  = Groq(api_key=os.getenv("GROQ_API_KEY"))
-ACTIVE_MODEL = "qwen/qwen3.8-27b"
+# ── Init ──────────────────────────────────────────────────────────────────────
+groq_client  = Groq(api_key=os.getenv(“GROQ_API_KEY”))
+ACTIVE_MODEL = “qwen/qwen3.8-27b”
+
+def strip_thinking(text: str) -> str:
+    “””Remove <think>...</think> blocks that qwen emits before its answer.”””
+    return re.sub(r”<think>[\s\S]*?</think>”, “”, text, flags=re.IGNORECASE).strip()
 
 def generate(system_prompt, user_prompt, max_tokens=3000, json_mode=False):
     kwargs = dict(
         model=ACTIVE_MODEL,
         messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user",   "content": user_prompt},
+            {“role”: “system”, “content”: system_prompt},
+            {“role”: “user”,   “content”: user_prompt},
         ],
         max_tokens=max_tokens,
         temperature=0.4 if json_mode else 0.85,
     )
     if json_mode:
-        kwargs["response_format"] = {"type": "json_object"}
+        kwargs[“response_format”] = {“type”: “json_object”}
     resp = groq_client.chat.completions.create(**kwargs)
-    return resp.choices[0].message.content
+    content = resp.choices[0].message.content or “”
+    return strip_thinking(content)
 
-app = FastAPI(title="Hi, Amy!")
+app = FastAPI(title=”Hi, Amy!”)
 
-@app.on_event("startup")
+@app.on_event(“startup”)
 def startup():
-    init_db()
+    try:
+        init_db()
+    except Exception as e:
+        print(f”[startup] DB init warning: {e} — continuing without DB”)
 
 # â”€â”€ Amy's Persona â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 AMY_SYSTEM_PROMPT = """You are Amy â€” a warm, knowledgeable AI assistant built from Amy Porterfield's training course materials.
@@ -100,7 +109,11 @@ async def content_week_scrape(url: str):
     import requests as req_lib
     from bs4 import BeautifulSoup
     try:
-        headers = {"User-Agent": "Mozilla/5.0 (compatible; OPSteam-bot/1.0)"}
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+        }
         r = req_lib.get(url, headers=headers, timeout=12, allow_redirects=True)
         r.raise_for_status()
         soup = BeautifulSoup(r.text, "html.parser")
