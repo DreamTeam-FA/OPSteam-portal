@@ -1004,11 +1004,11 @@ Return ONLY valid JSON. No markdown. No extra text.`;
 Full business content for context:
 ${state.scrapedContent.substring(0, 4000)}`;
 
-    const rawResult = await callGemini(sysPrompt, userPrompt, 4000, true);
+    const rawResult = await callGemini(sysPrompt, userPrompt, 7000, true);
     const parsed = parseJSON(rawResult);
 
-    if (!parsed || !parsed.days || parsed.days.length < 7) {
-      throw new Error('The content came back in an unexpected format. Please try again.');
+    if (!parsed || !parsed.days || parsed.days.length < 5) {
+      throw new Error('The content came back incomplete. Please try again — this sometimes happens when the AI response is too long.');
     }
 
     state.weekData = parsed;
