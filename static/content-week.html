@@ -777,18 +777,28 @@ async function scrapeWebsite(url) {
 
 // ── Gemini Call ──────────────────────────────────────────────────────────────
 async function callGemini(systemPrompt, userPrompt, maxTokens = 3000, jsonMode = false) {
-  const r = await fetch('/content-week/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ system_prompt: systemPrompt, user_prompt: userPrompt, max_tokens: maxTokens, json_mode: jsonMode })
-  });
-  if (!r.ok) {
-    const err = await r.json().catch(() => ({}));
-    throw new Error(err.detail || `API error ${r.status}`);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 90000); // 90s timeout
+  try {
+    const r = await fetch('/content-week/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ system_prompt: systemPrompt, user_prompt: userPrompt, max_tokens: maxTokens, json_mode: jsonMode }),
+      signal: controller.signal,
+    });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.detail || `API error ${r.status}`);
+    }
+    const data = await r.json();
+    if (!data.text) throw new Error('AI returned an empty response. Please try again.');
+    return data.text;
+  } catch(e) {
+    if (e.name === 'AbortError') throw new Error('Request timed out. The AI is busy — please try again in a moment.');
+    throw e;
+  } finally {
+    clearTimeout(timeout);
   }
-  const data = await r.json();
-  if (!data.text) throw new Error('AI returned an empty response. Please try again.');
-  return data.text;
 }
 
 // ── Parse JSON from AI response ──────────────────────────────────────────────
@@ -958,53 +968,21 @@ async function buildWeek() {
     const voiceLine = state.brandVoice ? `\nBrand voice: ${state.brandVoice}` : '';
     const competitorNames = state.competitors.length > 0 ? state.competitors.join(', ') : 'competitors in this space';
 
-    const sysPrompt = `You are an expert Instagram content strategist. Create a complete 7-day Instagram content week for a business.
+    const sysPrompt = `You are an Instagram content strategist. Create a 7-day content plan. Be concise.
 
-For each day, write real, publish-ready content — not templates or placeholders. Make every post specific to this business.
+Style: "${state.style}". Learn from: ${competitorNames}.
 
-Style preference: "${state.style}"
-Competitors studied for inspiration (borrow moves, never words): ${competitorNames}
+Return ONLY valid JSON:
+{"weekTheme":"THEME IN CAPS","competitors":["name1","name2","name3"],"days":[{"day":"MONDAY","format":"Carousel","tool":"ChatGPT","caption":"caption text","content":"slide content","prompt":"image prompt"},{"day":"TUESDAY","format":"Reel script","tool":null,"caption":"caption","content":"reel script"},{"day":"WEDNESDAY","format":"Infographic","tool":"ChatGPT","caption":"caption","content":"infographic content","prompt":"image prompt"},{"day":"THURSDAY","format":"Text post","tool":null,"caption":"caption text"},{"day":"FRIDAY","format":"Audio overview","tool":"NotebookLM","caption":"caption","prompt":"notebooklm prompt"},{"day":"SATURDAY","format":"Photo post","tool":"ChatGPT","caption":"caption","prompt":"photo prompt"},{"day":"SUNDAY","format":"Video overview","tool":"NotebookLM","caption":"caption","prompt":"notebooklm prompt"}]}
 
-Return ONLY a valid JSON object with this exact structure:
-{
-  "weekTheme": "ALL-CAPS PUNCHY TITLE FOR THIS CONTENT WEEK (5-10 words)",
-  "competitors": ["name1", "name2", "name3"],
-  "days": [
-    {
-      "day": "MONDAY",
-      "format": "Carousel",
-      "tool": "ChatGPT",
-      "caption": "The full Instagram caption (just the hook and copy — no hashtags needed)",
-      "content": "SLIDE 1\\nSlide text...\\n\\nSLIDE 2\\nSlide text...\\n\\n(7 slides total, each punchy and scannable)",
-      "toolInstructions": "Open ChatGPT and make sure image generation is on. Attach your logo image first if you have one. Paste the prompt below and it generates your slides as images.",
-      "toolSteps": ["Copy the prompt", "Generate the slides in ChatGPT"],
-      "toolLink": "https://chat.openai.com",
-      "prompt": "The exact image generation prompt to paste into ChatGPT"
-    }
-  ]
-}
-
-Day formats and tools (use EXACTLY these):
-- MONDAY: format="Carousel", tool="ChatGPT" — 7 slides, swipeable educational or story carousel
-- TUESDAY: format="Reel script", tool=null — a full spoken reel script (~45 seconds), with scene directions
-- WEDNESDAY: format="Infographic", tool="ChatGPT" — visual layout of a framework or list
-- THURSDAY: format="Text post", tool="ChatGPT" — personal story or bold opinion (500-700 chars)
-- FRIDAY: format="Audio overview", tool="NotebookLM" — caption for an audio post; prompt for NotebookLM Audio Overview
-- SATURDAY: format="Photo post", tool="ChatGPT" — lifestyle/product photo caption + image prompt
-- SUNDAY: format="Video overview", tool="NotebookLM" — caption for a video overview; prompt for NotebookLM Video Overview
-
-For days with tool="ChatGPT": write a detailed DALL-E/image generation prompt.
-For days with tool="NotebookLM": write a prompt for NotebookLM's Audio/Video Overview feature.
-For days with tool=null (Reel): omit toolInstructions, toolSteps, toolLink, prompt fields.
-
-Return ONLY valid JSON. No markdown. No extra text.`;
+Make every caption specific to this business. No placeholders. No markdown. No extra text.`;
 
     const userPrompt = `Business: ${state.summary}${focusLine}${voiceLine}
 
 Full business content for context:
 ${state.scrapedContent.substring(0, 4000)}`;
 
-    const rawResult = await callGemini(sysPrompt, userPrompt, 4000, true);
+    const rawResult = await callGemini(sysPrompt, userPrompt, 2000, true);
     const cleaned  = rawResult.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
     const parsed = parseJSON(cleaned);
 
