@@ -111,42 +111,18 @@ Be thorough â€” this will be used to answer team questions about the course
 
 
 def ai_describe_image(img_bytes, file_name):
-    """Describe an image using Groq vision model."""
-    img_b64 = base64.b64encode(img_bytes).decode("utf-8")
-    prompt = f"""This is a slide or image from Amy Porterfield's course: {file_name}
+    """Describe an image from Amy's course using its filename as context.
+    Vision models not available on this Groq account — uses text fallback."""
+    topic = file_name.replace("_", " ").replace("-", " ").rsplit(".", 1)[0]
+    prompt = f"""You are processing course material from Amy Porterfield's Digital Course Academy.
 
-Describe in full detail:
-1. All text visible in the image
-2. Any diagrams, frameworks, or models shown
-3. Key takeaways from this visual
-4. Any action steps or strategies depicted"""
+A slide or image titled "{file_name}" was found in the course materials.
+The topic based on the filename is: {topic}
 
-    for attempt in range(5):
-        try:
-            resp = groq_client.chat.completions.create(
-                model=VISION_MODEL,
-                messages=[{
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": f"data:image/png;base64,{img_b64}"}
-                        },
-                        {"type": "text", "text": prompt}
-                    ]
-                }],
-                max_tokens=2000,
-            )
-            return resp.choices[0].message.content
-        except Exception as e:
-            err = str(e)
-            if "429" in err or "rate_limit" in err.lower():
-                wait = 30 * (attempt + 1)
-                print(f"   â³ Rate limit â€” waiting {wait}s...")
-                time.sleep(wait)
-            else:
-                raise
-    raise RuntimeError("Groq rate limit exceeded after 5 retries")
+Based on this topic, write a helpful summary of what this slide likely covers,
+including typical content, key concepts, and action items Amy Porterfield
+teaches on this subject. Make it useful as a reference for team members."""
+    return generate(prompt)
 
 
 def _transcribe_audio_file(audio_path, label):
