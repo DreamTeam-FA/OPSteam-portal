@@ -874,36 +874,26 @@ async function readBusiness() {
     }
     tickProgress('step1ProgressList', steps1[1], true);
 
-    // Fake progress steps while we call Gemini
+    // Extract summary locally — no AI call here, reserves rate limit for the week generation
     tickProgress('step1ProgressList', steps1[2]);
-    await sleep(800);
+    await sleep(600);
     tickProgress('step1ProgressList', steps1[2], true);
     tickProgress('step1ProgressList', steps1[3]);
-    await sleep(700);
+    await sleep(500);
     tickProgress('step1ProgressList', steps1[3], true);
     tickProgress('step1ProgressList', steps1[4]);
-    await sleep(600);
+    await sleep(500);
     tickProgress('step1ProgressList', steps1[4], true);
     tickProgress('step1ProgressList', steps1[5]);
 
-    // Gemini: analyze business
-    const sysPrompt = `You are a content strategist. Analyze the business information provided and return ONLY a JSON object with these fields:
-- "summary": A single sentence starting with "You" that describes what the business does and who it serves. Max 25 words. Be specific.
-- "niche": 2-4 words describing the industry/niche
-- "audience": 2-4 words describing their target audience
-- "competitors": An array of 3 example company/brand names that compete in this space (real brands)
-
-Return ONLY valid JSON, no markdown, no extra text.`;
-
-    const rawResult = await callGemini(sysPrompt, businessContent, 600, true);
-    const parsed = parseJSON(rawResult.replace(/<think>[\s\S]*?<\/think>/gi, '').trim());
-
-    if (!parsed || !parsed.summary) {
-      throw new Error('The AI could not extract business details from your input. Please try again, or rephrase your description.');
-    }
-
-    state.summary = parsed.summary;
-    state.competitors = parsed.competitors || [];
+    // Build a quick local summary from scraped/entered text (one API call total = no rate-limit collision)
+    const rawText = state.scrapedContent || '';
+    const firstSentence = rawText.split(/[.!?\n]/)[0].trim();
+    const snippet = firstSentence.length > 20 && firstSentence.length < 220
+      ? firstSentence
+      : rawText.substring(0, 150).trim();
+    state.summary = snippet || 'Your business';
+    state.competitors = [];
     tickProgress('step1ProgressList', steps1[5], true);
 
     await sleep(400);
