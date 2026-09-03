@@ -1,8 +1,6 @@
-﻿“””
-Hi, Amy! — Course Assistant Backend
-FastAPI app serving the chat UI and AI responses.
-AI backend: Groq (qwen/qwen3.8-27b)
-“””
+﻿# Hi, Amy! - Course Assistant Backend
+# FastAPI app serving the chat UI and AI responses.
+# AI backend: Groq (qwen/qwen3.8-27b)
 
 import os
 import re
