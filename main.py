@@ -143,7 +143,7 @@ async def watermark_rewrite(req: WatermarkRewriteRequest):
     system = "You are a neutral rewriting assistant. Rewrite the provided text in natural, human-sounding language. Preserve the full meaning. Output only the rewritten text."
     for attempt in range(5):
         try:
-            text = generate(system, "Rewrite this text:\n\n" + req.text, max_tokens=4096)
+            text = generate(system, "Rewrite this text:\n\n" + req.text, max_tokens=1500)
             return {"text": text}
         except Exception as e:
             err = str(e)

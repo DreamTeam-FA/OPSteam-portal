@@ -199,7 +199,7 @@ def main():
             print(f"   ❌ Error: {e}")
             errors.append({"file": name, "error": str(e)})
 
-        time.sleep(1)  # Gentle rate limiting
+        time.sleep(60)  # 60s between files -- lets rate-limit window reset
 
     # Summary
     print(f"\n{'='*50}")

@@ -874,11 +874,22 @@ async function cleanText() {
     showProgress('Rewriting with AI…');
     document.getElementById('clean-text-btn').disabled = true;
     try {
-      const resp = await fetch('/watermark/rewrite', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: layerA }),
-      });
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 90000);
+      let resp;
+      try {
+        resp = await fetch('/watermark/rewrite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: layerA }),
+          signal: controller.signal,
+        });
+      } catch (fetchErr) {
+        if (fetchErr.name === 'AbortError') throw new Error('AI rewrite timed out — try again in a moment.');
+        throw fetchErr;
+      } finally {
+        clearTimeout(timeout);
+      }
       if (!resp.ok) throw new Error(await resp.text());
       const data = await resp.json();
       // Run Layer A again on AI output to catch any new invisible chars
