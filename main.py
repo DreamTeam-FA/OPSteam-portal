@@ -82,7 +82,7 @@ async def chat(req: ChatRequest):
     try:
         context = search_chunks(req.message)
         system  = AMY_SYSTEM_PROMPT.format(context=context)
-        resp    = generate(system, req.message, max_tokens=2000)
+        resp    = generate(system, req.message, max_tokens=800)
         return ChatResponse(response=resp)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
