@@ -4,7 +4,6 @@
 
 import os
 import re
-import random
 import asyncio
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -20,16 +19,41 @@ load_dotenv()
 
 # -- Init
 groq_client  = Groq(api_key=os.getenv("GROQ_API_KEY"))
-ACTIVE_MODELS = [
-    "llama-3.3-70b-versatile",
-    "qwen/qwen3.8-27b",
+MODEL_SMART  = "llama-3.3-70b-versatile"   # deep reasoning, strategy, multi-step
+MODEL_FAST   = "qwen/qwen3.8-27b"           # quick lookups, simple questions
+
+# Keywords that signal a complex question needing the smarter model
+_COMPLEX_SIGNALS = [
+    "how do i", "how can i", "help me", "step by step", "walk me through",
+    "strategy", "plan", "framework", "build", "create", "launch", "design",
+    "explain", "analyze", "compare", "difference between", "why", "should i",
+    "what's the best", "what is the best", "how to", "advice", "recommend",
+    "outline", "structure", "write", "draft", "sequence", "roadmap",
+    "funnel", "email", "webinar", "course", "workshop", "audience",
+    "sales", "marketing", "pricing", "validate", "niche", "topic",
 ]
+
+def pick_model(message: str) -> str:
+    """Return the appropriate model based on question complexity."""
+    ml = message.lower()
+    word_count = len(ml.split())
+    # Long messages are inherently complex
+    if word_count >= 20:
+        return MODEL_SMART
+    # Short but substantive questions
+    if any(sig in ml for sig in _COMPLEX_SIGNALS):
+        return MODEL_SMART
+    # Multi-sentence = complex
+    if message.count("?") > 1 or message.count(".") > 1:
+        return MODEL_SMART
+    # Simple: short, single-clause, lookup-style
+    return MODEL_FAST
 
 def strip_thinking(text):
     return re.sub(r"<think>[\s\S]*?</think>", "", text, flags=re.IGNORECASE).strip()
 
-def generate(system_prompt, user_prompt, max_tokens=3000, json_mode=False):
-    model = random.choice(ACTIVE_MODELS)
+def generate(system_prompt, user_prompt, max_tokens=3000, json_mode=False, message_for_routing: str = None):
+    model = pick_model(message_for_routing or user_prompt)
     kwargs = dict(
         model=model,
         messages=[
@@ -117,14 +141,14 @@ async def chat(req: ChatRequest):
 
         context = "\n\n===\n\n".join(parts)
         system  = AMY_SYSTEM_PROMPT.format(context=context)
-        resp    = generate(system, req.message, max_tokens=1000)
+        resp    = generate(system, req.message, max_tokens=1000, message_for_routing=req.message)
         return ChatResponse(response=resp)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "app": "Hi, Amy!", "models": ACTIVE_MODELS}
+    return {"status": "ok", "app": "Hi, Amy!", "models": [MODEL_SMART, MODEL_FAST]}
 
 @app.get("/content-week/scrape")
 async def content_week_scrape(url: str):
@@ -337,7 +361,7 @@ async def librarian_chat(req: LibrarianChatRequest):
         web_note = "\n\nWhen using web results, cite sources by name and URL." if sources else ""
         system = LIBRARIAN_SYSTEM_PROMPT.format(context=combined) + web_note
 
-        resp = generate(system, req.message, max_tokens=900)
+        resp = generate(system, req.message, max_tokens=900, message_for_routing=req.message)
 
         # 5. Parse offer flag (only when web wasn't searched and library was empty)
         offer_search = "[[OFFER_SEARCH]]" in resp
