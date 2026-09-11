@@ -170,6 +170,8 @@ html[data-theme="dark"] body::before{
 .pill{font-size:11px;border-radius:20px;padding:2px 9px;font-weight:500}
 .pill-cat{background:var(--purple-dim);color:var(--purple)}
 .pill-type{background:var(--teal-dim);color:var(--teal)}
+.pill-slides{background:rgba(234,88,12,0.12);color:#EA580C}
+.pill-transcript{background:rgba(16,185,129,0.12);color:#059669}
 .pill-size{background:var(--glass-hi);color:var(--ink3)}
 
 /* Video card extras */
@@ -215,7 +217,14 @@ html[data-theme="dark"] body::before{
 .detail-title{font-weight:700;font-size:15px;flex:1;line-height:1.3}
 .detail-subtitle{font-size:12px;color:var(--ink3);margin-top:2px}
 .detail-content{flex:1;overflow-y:auto;padding:20px}
-.doc-text{font-size:13px;line-height:1.75;color:var(--ink2);white-space:pre-wrap;font-family:'Inter',monospace}
+/* ── Document viewer ─────────────────────────────────────────────────────── */
+.doc-body{font-size:13.5px;line-height:1.8;color:var(--ink2);max-width:620px}
+.doc-body p{margin-bottom:10px}
+.doc-body h2{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--ink);margin:22px 0 6px;letter-spacing:.03em;border-bottom:1px solid var(--border);padding-bottom:4px}
+.doc-body h3{font-size:13px;font-weight:700;color:var(--purple);margin:16px 0 4px;text-transform:uppercase;letter-spacing:.06em}
+.doc-body li{margin-left:18px;margin-bottom:4px}
+.doc-body ul{margin-bottom:10px}
+.doc-body .doc-meta{font-size:11px;color:var(--ink3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:16px;background:var(--glass)}
 .video-embed{width:100%;aspect-ratio:16/9;border-radius:10px;border:none;background:#000}
 .video-info{margin-top:14px;padding:14px;background:var(--glass);border-radius:10px;border:1px solid var(--border)}
 .video-info-label{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px}
@@ -522,7 +531,7 @@ function renderGrid() {
   grid.style.display = 'grid';
 
   if (activeTab === 'docs') {
-    grid.innerHTML = items.map(doc => renderDocCard(doc)).join('');
+    grid.innerHTML = smartSort(items, 'file_name').map(doc => renderDocCard(doc)).join('');
   } else {
     // Group by category then subcategory
     const grouped = {};
@@ -534,9 +543,13 @@ function renderGrid() {
 
     let html = '';
     Object.entries(grouped).sort(([a],[b]) => a.localeCompare(b)).forEach(([group, vids]) => {
-      html += `<div style="grid-column:1/-1;padding:8px 2px 2px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)">${group}</div>`;
-      vids.forEach(v => { html += renderVideoCard(v); });
+      html += `<div style="grid-column:1/-1;padding:14px 2px 6px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);border-bottom:1px solid var(--border);margin-bottom:4px">${group}</div>`;
+      smartSort(vids, 'file_name').forEach(v => { html += renderVideoCard(v); });
     });
+    // GHL placeholder if selected with no items
+    if (activeCat === 'GHL Webinar' && items.length === 0) {
+      html = renderGHLPlaceholder();
+    }
     grid.innerHTML = html;
   }
 }
@@ -547,22 +560,78 @@ const docIcons = {
   'Sales & Marketing': '📈', 'Resources': '🗃️', 'GHL Webinar': '🎥',
   'Content Week': '📅', 'General': '📂'
 };
-const typeLabels = {
-  'pdf':'PDF', 'document':'Doc', 'plain':'TXT', 'presentation':'Slides',
-  'msword':'Doc', 'vnd.openxmlformats':'Doc'
-};
+
+function cleanType(raw) {
+  if (!raw) return 'Doc';
+  if (raw.includes('pdf')) return 'PDF';
+  if (raw.includes('presentation') || raw.includes('pptx')) return 'Slides';
+  if (raw.includes('word') || raw.includes('docx') || raw.includes('msword')) return 'Word';
+  if (raw === 'plain' || raw.includes('text')) return 'TXT';
+  if (raw === 'transcript') return 'Transcript';
+  if (raw.includes('document')) return 'Doc';
+  return 'Doc';
+}
+
+// Smart sort: numbered → sequential, dated → chronological, else → alphabetical
+function smartSort(items, nameKey) {
+  return [...items].sort((a, b) => {
+    const na = a[nameKey] || '', nb = b[nameKey] || '';
+    // Extract leading number (#N or NN)
+    const numA = na.match(/[#\s](\d+)/), numB = nb.match(/[#\s](\d+)/);
+    if (numA && numB) return parseInt(numA[1]) - parseInt(numB[1]);
+    // Extract year-month date (2025, 2026)
+    const dateA = na.match(/(20\d\d)[_\s-](\d\d)?/), dateB = nb.match(/(20\d\d)[_\s-](\d\d)?/);
+    if (dateA && dateB) return na.localeCompare(nb);
+    // Day prefix (Day 1, Day 2)
+    const dayA = na.match(/\bDay\s*(\d+)/i), dayB = nb.match(/\bDay\s*(\d+)/i);
+    if (dayA && dayB) return parseInt(dayA[1]) - parseInt(dayB[1]);
+    // Weekday prefix (00 Monday, 01 Tuesday…)
+    const wdA = na.match(/^(\d{2})\s/), wdB = nb.match(/^(\d{2})\s/);
+    if (wdA && wdB) return parseInt(wdA[1]) - parseInt(wdB[1]);
+    return na.localeCompare(nb);
+  });
+}
+
+function cleanName(raw) {
+  return raw
+    .replace(/_/g, ' ')
+    .replace(/\.txt$/i, '').replace(/\.pdf$/i, '').replace(/\.docx$/i, '')
+    .replace(/\.pptx$/i, '').replace(/\.mp4$/i, '').replace(/\.m4a$/i, '')
+    .replace(/\s{2,}/g, ' ').trim();
+}
 
 function renderDocCard(doc) {
   const icon = docIcons[doc.category] || '📄';
-  const type = typeLabels[doc.source_type] || doc.source_type || 'Doc';
-  const name = doc.file_name.replace(/_/g,' ');
+  const type = cleanType(doc.source_type);
+  const name = cleanName(doc.file_name);
+  const typeColor = type === 'PDF' ? 'pill-type' : type === 'Slides' ? 'pill-slides' : type === 'Transcript' ? 'pill-transcript' : 'pill-type';
   return `
     <div class="card" onclick="openDoc('${doc.file_id}','${escHtml(doc.file_name)}','${escHtml(doc.category)}')">
       <div class="card-icon">${icon}</div>
       <div class="card-title">${escHtml(name)}</div>
       <div class="card-meta">
         <span class="pill pill-cat">${escHtml(doc.category)}</span>
-        <span class="pill pill-type">${type}</span>
+        <span class="pill ${typeColor}">${type}</span>
+      </div>
+    </div>`;
+}
+
+function renderGHLPlaceholder() {
+  return `
+    <div style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 20px;text-align:center">
+      <div style="font-size:48px">🎥</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--ink)">GHL Webinar Transcripts</div>
+      <div style="font-size:13px;color:var(--ink3);max-width:340px;line-height:1.6">
+        Day 1 &amp; Day 2 transcripts are being processed right now.<br>
+        Once the transcription finishes, they'll appear here automatically.
+      </div>
+      <div style="display:flex;gap:12px;margin-top:8px">
+        <div style="background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:14px 20px;font-size:13px;color:var(--ink2)">
+          📅 <strong>Day 1</strong><br><span style="color:var(--ink3);font-size:11px">Build Mini Web Apps for<br>AI Client Activation</span>
+        </div>
+        <div style="background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:14px 20px;font-size:13px;color:var(--ink2)">
+          📅 <strong>Day 2</strong><br><span style="color:var(--ink3);font-size:11px">AI Client Engagement<br>&amp; Ongoing Strategy</span>
+        </div>
       </div>
     </div>`;
 }
@@ -627,10 +696,10 @@ async function openDoc(fileId, name, category) {
     const r = await fetch('/library/doc/' + fileId);
     const d = await r.json();
     document.getElementById('detailContent').innerHTML =
-      `<div class="doc-text">${escHtml(d.content)}</div>`;
+      `<div class="doc-body">${formatDocText(d.content)}</div>`;
   } catch(e) {
     document.getElementById('detailContent').innerHTML =
-      `<div class="doc-text" style="color:var(--ink3)">Could not load document content.</div>`;
+      `<div class="doc-body" style="color:var(--ink3)">Could not load document content.</div>`;
   }
 }
 
@@ -769,6 +838,46 @@ function toggleTheme() {
 
 function toggleNav() {
   document.getElementById('sideNav').classList.toggle('collapsed');
+}
+
+// ── Document formatter ────────────────────────────────────────────────────────
+function formatDocText(raw) {
+  if (!raw) return '<p style="color:var(--ink3)">No content.</p>';
+
+  // Strip ingest header (first 2 lines: "Document: ...\nCategory: ...\n")
+  const stripped = raw.replace(/^Document:.*\nCategory:.*\n\n?/i, '');
+
+  // Split into blocks separated by blank lines
+  const blocks = stripped.split(/\n{2,}/);
+  const html = blocks.map(block => {
+    const lines = block.trim().split('\n').filter(l => l.trim());
+    if (!lines.length) return '';
+
+    const first = lines[0].trim();
+
+    // ALL-CAPS short line → section heading
+    if (first.length < 90 && first === first.toUpperCase() && /[A-Z]{3}/.test(first)) {
+      const rest = lines.slice(1).map(l => `<p>${escHtml(l)}</p>`).join('');
+      return `<h2>${escHtml(first)}</h2>${rest}`;
+    }
+
+    // Line that ends with colon and is short → sub-heading
+    if (first.length < 60 && first.endsWith(':') && lines.length > 1) {
+      const rest = lines.slice(1).map(l => `<p>${escHtml(l)}</p>`).join('');
+      return `<h3>${escHtml(first.replace(/:$/,''))}</h3>${rest}`;
+    }
+
+    // Bullet / numbered list block
+    if (lines.every(l => /^[\-•·\*]/.test(l.trim()) || /^\d+[\.\)]/.test(l.trim()))) {
+      const items = lines.map(l => `<li>${escHtml(l.replace(/^[\-•·\*\d\.\)]+\s*/,''))}</li>`).join('');
+      return `<ul>${items}</ul>`;
+    }
+
+    // Regular paragraph(s)
+    return lines.map(l => `<p>${escHtml(l)}</p>`).join('');
+  }).join('');
+
+  return html || `<p>${escHtml(stripped)}</p>`;
 }
 
 // ── Utils ─────────────────────────────────────────────────────────────────────
