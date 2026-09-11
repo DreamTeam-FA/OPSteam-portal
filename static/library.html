@@ -114,7 +114,7 @@ html[data-theme="dark"] body::before{
 }
 .top-bar-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;letter-spacing:.04em}
 .top-bar-sub{font-size:12px;color:var(--ink3);flex:1}
-.theme-btn{background:var(--glass-hi);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px;color:var(--ink2)}
+.theme-btn{background:var(--glass-hi);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px;color:var(--ink2);margin-left:auto}
 
 /* ── Library Layout ──────────────────────────────────────────────────────── */
 .library-body{display:flex;flex:1;overflow:hidden;min-height:0}
@@ -144,6 +144,30 @@ html[data-theme="dark"] body::before{
 .filter-cat.active{background:var(--purple-dim);color:var(--purple);font-weight:600}
 .filter-cat-count{margin-left:auto;font-size:11px;color:var(--ink3);background:var(--glass-hi);border-radius:20px;padding:1px 7px}
 .filter-divider{height:1px;background:var(--border);margin:8px 10px}
+.filter-sub{display:flex;align-items:center;gap:8px;padding:6px 10px 6px 28px;border-radius:9px;cursor:pointer;font-size:12px;color:var(--ink3);transition:background .14s,color .14s}
+.filter-sub:hover{background:var(--glass-hi);color:var(--ink2)}
+.filter-sub.active{background:var(--teal-dim);color:var(--teal);font-weight:600}
+.filter-sub-count{margin-left:auto;font-size:10px;color:var(--ink3);background:var(--glass-hi);border-radius:20px;padding:1px 6px}
+.grid-section-hdr{grid-column:1/-1;padding:14px 2px 6px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);border-bottom:1px solid var(--border);margin-bottom:4px}
+/* PDF viewer */
+.pdf-embed-wrap{width:100%;height:calc(100vh - 140px);border-radius:10px;overflow:hidden;border:1px solid var(--border);background:#000}
+.pdf-embed-wrap iframe{width:100%;height:100%;border:none;display:block}
+.pdf-open-link{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 16px;border-radius:9px;border:1px solid var(--border);background:var(--glass-hi);color:var(--purple);font-size:13px;text-decoration:none;transition:background .14s,border-color .14s}
+.pdf-open-link:hover{background:var(--purple-dim);border-color:var(--purple)}
+/* doc-body improvements */
+.doc-body{font-size:14px;line-height:1.8;color:var(--ink2);max-width:100%;padding:4px 0}
+.doc-body h2{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:var(--ink);margin:28px 0 10px;letter-spacing:.06em;text-transform:uppercase;padding:8px 12px;border-left:4px solid var(--purple);background:var(--purple-dim);border-radius:0 8px 8px 0}
+.doc-body h2:first-child{margin-top:0}
+.doc-body h3{font-size:13px;font-weight:700;color:var(--teal);margin:18px 0 6px;display:flex;align-items:center;gap:6px}
+.doc-body h3::after{content:'';flex:1;height:1px;background:var(--border)}
+.doc-body p{margin-bottom:10px;color:var(--ink2);max-width:680px}
+.doc-body ul,.doc-body ol{margin:6px 0 14px;padding:0;list-style:none}
+.doc-body li{padding:4px 0 4px 20px;position:relative;margin-bottom:2px}
+.doc-body li::before{content:'▸';position:absolute;left:4px;color:var(--teal);font-size:11px;top:6px}
+.doc-body hr{border:none;border-top:1px solid var(--border);margin:20px 0}
+.doc-field-row{display:grid;grid-template-columns:140px 1fr;gap:8px 14px;margin-bottom:6px;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--border)}
+.doc-field-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+.doc-field-val{font-size:13px;color:var(--ink);font-weight:500}
 
 /* Tab Bar */
 .tab-bar{display:flex;gap:4px;padding:14px 20px 0;border-bottom:1px solid var(--border);background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);flex-shrink:0}
@@ -218,31 +242,7 @@ html[data-theme="dark"] body::before{
 .detail-title{font-weight:700;font-size:15px;flex:1;line-height:1.3}
 .detail-subtitle{font-size:12px;color:var(--ink3);margin-top:2px}
 .detail-content{flex:1;overflow-y:auto;padding:20px}
-/* ── Document viewer ─────────────────────────────────────────────────────── */
-.doc-body{font-size:13.5px;line-height:1.85;color:var(--ink2);max-width:640px;padding:4px 0}
-.doc-body h2{
-  font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;
-  color:var(--ink);margin:28px 0 10px;letter-spacing:.06em;text-transform:uppercase;
-  padding:8px 12px;border-left:4px solid var(--purple);
-  background:var(--purple-dim);border-radius:0 8px 8px 0;
-}
-.doc-body h2:first-child{margin-top:0}
-.doc-body h3{
-  font-size:12px;font-weight:700;color:var(--teal);
-  margin:20px 0 6px;text-transform:uppercase;letter-spacing:.09em;
-  display:flex;align-items:center;gap:6px;
-}
-.doc-body h3::after{content:'';flex:1;height:1px;background:var(--border)}
-.doc-body p{margin-bottom:9px;color:var(--ink2)}
-.doc-body ul,.doc-body ol{margin:6px 0 14px;padding:0;list-style:none}
-.doc-body li{
-  padding:4px 0 4px 20px;position:relative;margin-bottom:2px;
-  border-bottom:1px solid transparent;
-}
-.doc-body li::before{content:'▸';position:absolute;left:4px;color:var(--teal);font-size:11px;top:6px}
-.doc-field-row{display:grid;grid-template-columns:130px 1fr;gap:8px 14px;margin-bottom:6px;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--border)}
-.doc-field-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
-.doc-field-val{font-size:13px;color:var(--ink);font-weight:500}
+/* ── Document viewer — styles moved above into filter-divider block ───────── */
 .video-embed{width:100%;aspect-ratio:16/9;border-radius:10px;border:none;background:#000}
 .video-info{margin-top:14px;padding:14px;background:var(--glass);border-radius:10px;border:1px solid var(--border)}
 .video-info-label{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px}
@@ -455,7 +455,7 @@ html[data-theme="dark"] body::before{
 
 <script>
 // ── State ────────────────────────────────────────────────────────────────────
-let allDocs = [], allVideos = [], activeCat = '', activeTab = 'docs', searchQ = '';
+let allDocs = [], allVideos = [], activeCat = '', activeSubCat = '', activeTab = 'docs', searchQ = '';
 let categories = [];
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -483,6 +483,12 @@ async function loadCategories() {
   } catch(e) {}
 }
 
+// DCA subcategory order — matches Drive folder order (inverted from screenshot = bottom→top)
+// Drive bottom→top: Start From Scratch → Ready To Launch → Bonus → Resources & Tech → Q&A Vault
+const DCA_SUBCAT_ORDER = [
+  'Start from Scratch', 'Ready to Launch', 'Bonus', 'Resources', 'Q&A & Replays', 'General'
+];
+
 function renderCategoryFilters() {
   const container = document.getElementById('filterCats');
   const catIcons = {
@@ -494,7 +500,7 @@ function renderCategoryFilters() {
   container.innerHTML = `
     <div class="filter-cat active" data-cat="" onclick="selectCat(this,'')">
       <span>🗂️</span> All
-      <span class="filter-cat-count" id="count-all">${allDocs.length + allVideos.length}</span>
+      <span class="filter-cat-count">${allDocs.length + allVideos.length}</span>
     </div>
   `;
   categories.forEach(cat => {
@@ -508,6 +514,32 @@ function renderCategoryFilters() {
     div.onclick = function(){ selectCat(this, cat); };
     div.innerHTML = `<span>${icon}</span> ${cat} <span class="filter-cat-count">${total}</span>`;
     container.appendChild(div);
+
+    // DCA: inject subcategory sub-items
+    if (cat === 'Digital Course Academy') {
+      // Collect unique subcategories from both docs and videos
+      const subSet = new Set();
+      allDocs.filter(d => d.category === cat && d.subcategory).forEach(d => subSet.add(d.subcategory));
+      allVideos.filter(v => v.category === cat && v.subcategory).forEach(v => subSet.add(v.subcategory));
+      // Sort by DCA_SUBCAT_ORDER
+      const subs = [...subSet].sort((a,b) => {
+        const ai = DCA_SUBCAT_ORDER.indexOf(a), bi = DCA_SUBCAT_ORDER.indexOf(b);
+        if (ai === -1 && bi === -1) return a.localeCompare(b);
+        if (ai === -1) return 1; if (bi === -1) return -1;
+        return ai - bi;
+      });
+      subs.forEach(sub => {
+        const dCount = allDocs.filter(d => d.category === cat && d.subcategory === sub).length;
+        const vCount = allVideos.filter(v => v.category === cat && v.subcategory === sub).length;
+        const sDiv = document.createElement('div');
+        sDiv.className = 'filter-sub';
+        sDiv.dataset.cat = cat;
+        sDiv.dataset.sub = sub;
+        sDiv.onclick = function(){ selectSubCat(this, cat, sub); };
+        sDiv.innerHTML = `<span>📁</span>${sub}<span class="filter-sub-count">${dCount + vCount}</span>`;
+        container.appendChild(sDiv);
+      });
+    }
   });
 }
 
@@ -540,9 +572,13 @@ function renderGrid() {
   const empty = document.getElementById('emptyState');
 
   let items = activeTab === 'docs'
-    ? allDocs.filter(d => (!activeCat || d.category === activeCat) &&
+    ? allDocs.filter(d =>
+        (!activeCat || d.category === activeCat) &&
+        (!activeSubCat || d.subcategory === activeSubCat) &&
         (!searchQ || d.file_name.toLowerCase().includes(searchQ) || d.category.toLowerCase().includes(searchQ)))
-    : allVideos.filter(v => (!activeCat || v.category === activeCat) &&
+    : allVideos.filter(v =>
+        (!activeCat || v.category === activeCat) &&
+        (!activeSubCat || v.subcategory === activeSubCat) &&
         (!searchQ || v.file_name.toLowerCase().includes(searchQ) || v.category.toLowerCase().includes(searchQ)));
 
   if (items.length === 0) {
@@ -560,7 +596,29 @@ function renderGrid() {
   grid.style.display = 'grid';
 
   if (activeTab === 'docs') {
-    grid.innerHTML = smartSort(items, 'file_name').map(doc => renderDocCard(doc)).join('');
+    const isDCAFull = activeCat === 'Digital Course Academy' && !activeSubCat;
+    if (isDCAFull) {
+      // Group by subcategory
+      const grouped = {};
+      items.forEach(doc => {
+        const key = doc.subcategory || 'Uncategorized';
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(doc);
+      });
+      let html = '';
+      Object.entries(grouped).sort(([a],[b]) => {
+        const ai = DCA_SUBCAT_ORDER.indexOf(a), bi = DCA_SUBCAT_ORDER.indexOf(b);
+        if (ai === -1 && bi === -1) return a.localeCompare(b);
+        if (ai === -1) return 1; if (bi === -1) return -1;
+        return ai - bi;
+      }).forEach(([group, docs]) => {
+        html += `<div class="grid-section-hdr">${escHtml(group)}</div>`;
+        smartSort(docs, 'file_name').forEach(doc => { html += renderDocCard(doc); });
+      });
+      grid.innerHTML = html;
+    } else {
+      grid.innerHTML = smartSort(items, 'file_name').map(doc => renderDocCard(doc)).join('');
+    }
   } else {
     // Group by category then subcategory
     const grouped = {};
@@ -673,10 +731,10 @@ function dcaSortKey(name) {
 }
 
 // DCA video-group sort order (subcategory → sort key)
+// Matches Drive folder order: Start From Scratch → Ready To Launch → Bonus → Resources → Q&A Vault
 const DCA_GROUP_ORDER = {
-  'Getting Started': 2000, 'Start from Scratch': 1000, 'Grow Your Audience': 1100,
-  'Ready to Launch': 2000, 'Build Your Course': 2300, 'Webinars & Live': 2600,
-  'Q&A & Replays': 8000, 'Bonus': 8100, 'Resources': 8200, 'General': 8500,
+  'Start from Scratch': 100, 'Ready to Launch': 200,
+  'Bonus': 300, 'Resources': 400, 'Q&A & Replays': 500, 'General': 600,
 };
 function dcaGroupSortKey(groupLabel) {
   // groupLabel is "Digital Course Academy — Subcategory" or just category
@@ -741,7 +799,7 @@ function renderDocCard(doc) {
   const name = cleanName(doc.file_name);
   const typeColor = type === 'PDF' ? 'pill-type' : type === 'Slides' ? 'pill-slides' : type === 'Transcript' ? 'pill-transcript' : 'pill-type';
   return `
-    <div class="card" onclick="openDoc('${doc.file_id}','${escHtml(doc.file_name)}','${escHtml(doc.category)}')">
+    <div class="card" onclick="openDoc('${doc.file_id}','${escHtml(doc.file_name)}','${escHtml(doc.category)}','${escHtml(doc.source_type||'')}')">
       <div class="card-icon">${icon}</div>
       <div class="card-title">${escHtml(name)}</div>
       <div class="card-meta">
@@ -809,9 +867,18 @@ function switchTab(tab) {
 }
 
 function selectCat(el, cat) {
-  document.querySelectorAll('.filter-cat').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.filter-cat,.filter-sub').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   activeCat = cat;
+  activeSubCat = '';
+  renderGrid();
+}
+
+function selectSubCat(el, cat, sub) {
+  document.querySelectorAll('.filter-cat,.filter-sub').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  activeCat = cat;
+  activeSubCat = sub;
   renderGrid();
 }
 
@@ -821,11 +888,24 @@ function handleSearch() {
 }
 
 // ── Detail Panel ──────────────────────────────────────────────────────────────
-async function openDoc(fileId, name, category) {
-  document.getElementById('detailTitle').textContent = name.replace(/_/g,' ');
+async function openDoc(fileId, name, category, sourceType) {
+  const cleanTitle = name.replace(/_/g,' ');
+  document.getElementById('detailTitle').textContent = cleanTitle;
   document.getElementById('detailSubtitle').textContent = category;
   document.getElementById('detailContent').innerHTML = '<div class="spinner"></div>';
   openDetailPanel();
+
+  // PDFs: show embedded Drive viewer
+  if (sourceType === 'pdf') {
+    const embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+    const openUrl  = `https://drive.google.com/file/d/${fileId}/view`;
+    document.getElementById('detailContent').innerHTML = `
+      <div class="pdf-embed-wrap">
+        <iframe src="${embedUrl}" allowfullscreen allow="autoplay"></iframe>
+      </div>
+      <a class="pdf-open-link" href="${openUrl}" target="_blank" rel="noopener">↗ Open full PDF in Drive</a>`;
+    return;
+  }
 
   try {
     const r = await fetch('/library/doc/' + fileId);
@@ -1005,84 +1085,129 @@ function toggleNav() {
 }
 
 // ── Document formatter ────────────────────────────────────────────────────────
-function isEmoji(str) {
-  return /^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}\u{1F100}-\u{1F1FF}\u{1F200}-\u{1F2FF}⚙📋🎯🔧✅❌💡📌🔑🏆⭐🎙🗒📎🧩🛠🚀🔍📊📈🎬📅📄📖🤖]/u.test(str);
+function isEmojiChar(str) {
+  return /^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}⚙📋🎯🔧✅❌💡📌🔑🏆⭐🎙🗒📎🧩🛠🚀🔍📊📈🎬📅📄📖🤖]/u.test(str);
 }
 
 function formatDocText(raw) {
   if (!raw) return '<p style="color:var(--ink3)">No content.</p>';
 
-  // Strip ingest header
+  // Strip ingest header "Document: ...\nCategory: ...\n\n"
   let text = raw.replace(/^Document:.*\r?\nCategory:.*\r?\n\r?\n?/im, '').trim();
 
-  const lines = text.split(/\r?\n/);
+  // ── Pass 1: group lines into paragraphic blocks (blank lines = block separator) ──
+  const rawLines = text.split(/\r?\n/);
+  const blocks = [];
+  let cur = [];
+  for (const rl of rawLines) {
+    const t = rl.trim();
+    if (!t) {
+      if (cur.length) { blocks.push(cur); cur = []; }
+    } else {
+      // Skip standalone page/slide numbers
+      if (/^\d{1,3}$/.test(t)) continue;
+      cur.push(t);
+    }
+  }
+  if (cur.length) blocks.push(cur);
+
+  // ── Pass 2: classify each block and emit HTML ──
+  const isAllCaps = (s) =>
+    s.length <= 120 && !s.includes('http') &&
+    s === s.toUpperCase() && (s.match(/[A-Z]/g)||[]).length >= 4;
+
+  const isBullet = (s) => /^[•\-\*·]/.test(s) || /^\d+[\.\)]\s/.test(s);
+  const isHR     = (s) => /^[-=_]{3,}$/.test(s);
+  // Field label ONLY if line explicitly ends with ":"
+  const isFieldLabel = (s) => s.endsWith(':') && s.length <= 60 && !/^[•\-\*·\d]/.test(s);
+
   let html = '';
-  let inList = false;
 
-  const closeList = () => { if (inList) { html += '</ul>'; inList = false; } };
+  const renderLines = (lines) => {
+    // Render a set of lines: merge non-bullet runs into paragraphs, bullets into <ul>
+    let out = '';
+    let paraAccum = [];
+    let inUl = false;
 
-  for (let i = 0; i < lines.length; i++) {
-    const raw_line = lines[i];
-    const line = raw_line.trim();
+    const flushPara = () => {
+      if (paraAccum.length) {
+        out += `<p>${escHtml(paraAccum.join(' '))}</p>`;
+        paraAccum = [];
+      }
+    };
+    const flushUl = () => { if (inUl) { out += '</ul>'; inUl = false; } };
 
-    // Blank line
-    if (!line) { closeList(); continue; }
+    for (const line of lines) {
+      if (isHR(line)) {
+        flushPara(); flushUl();
+        out += '<hr>';
+      } else if (isBullet(line)) {
+        flushPara();
+        if (!inUl) { out += '<ul>'; inUl = true; }
+        const content = line.replace(/^[•\-\*·]\s*/, '').replace(/^\d+[\.\)]\s*/, '');
+        out += `<li>${escHtml(content)}</li>`;
+      } else {
+        flushUl();
+        paraAccum.push(line);
+      }
+    }
+    flushPara(); flushUl();
+    return out;
+  };
 
-    // Suppress standalone slide/page numbers (a bare small integer alone on a line)
-    if (/^\d{1,3}$/.test(line)) continue;
+  for (const block of blocks) {
+    if (!block.length) continue;
+    const first = block[0];
+    const rest  = block.slice(1);
 
-    // ALL-CAPS heading (≥4 uppercase letters, short line, not a URL)
-    const isAllCaps = line.length < 120 && !line.includes('http') &&
-        line === line.toUpperCase() && (line.match(/[A-Z]/g)||[]).length >= 4;
-    if (isAllCaps) {
-      closeList();
-      // Peek: if next non-blank line is ALSO all-caps short, merge them into one heading
-      let heading = line;
-      while (i + 1 < lines.length) {
-        const peek = lines[i+1].trim();
-        if (!peek) { i++; continue; }
-        const peekAllCaps = peek.length < 60 && peek === peek.toUpperCase() &&
-            (peek.match(/[A-Z]/g)||[]).length >= 4 && !peek.includes('http');
-        if (peekAllCaps) { heading += ' ' + peek; i++; }
-        else break;
+    // Horizontal rule
+    if (block.length === 1 && isHR(first)) {
+      html += '<hr>'; continue;
+    }
+
+    // All-caps heading — could span multiple merged consecutive all-caps lines
+    if (isAllCaps(first)) {
+      // Merge any immediately following all-caps lines in this block
+      let heading = first;
+      let bodyStart = 1;
+      while (bodyStart < block.length && isAllCaps(block[bodyStart])) {
+        heading += ' ' + block[bodyStart];
+        bodyStart++;
       }
       html += `<h2>${escHtml(heading)}</h2>`;
+      if (bodyStart < block.length) html += renderLines(block.slice(bodyStart));
       continue;
     }
 
-    // Emoji-prefixed short line → sub-heading
-    if (isEmoji(line) && line.length < 70) {
-      closeList();
-      html += `<h3>${escHtml(line)}</h3>`;
+    // Emoji-led short line → h3 sub-heading
+    if (isEmojiChar(first) && first.length < 80) {
+      html += `<h3>${escHtml(first)}</h3>`;
+      if (rest.length) html += renderLines(rest);
       continue;
     }
 
-    // Short label line (≤30 chars, no period at end, next line has content) → field row
-    // Exclude: lines starting with digits/bullets, lines that look like numbered steps
-    const next = lines[i+1] ? lines[i+1].trim() : '';
-    const looksLikeStep = /^(step\s*\d|phase\s*\d|\d+[\.\)]\s)/i.test(line);
-    if (line.length <= 30 && !line.endsWith('.') && !line.endsWith(':') &&
-        !/^[•\-\*·\d]/.test(line) && !looksLikeStep &&
-        next && next.length > 0 && !isEmoji(next) && next !== next.toUpperCase()) {
-      closeList();
-      html += `<div class="doc-field-row"><div class="doc-field-label">${escHtml(line)}</div><div class="doc-field-val">${escHtml(next)}</div></div>`;
-      i++; continue;
-    }
-
-    // Bullet / list item
-    if (/^[•\-\*·]/.test(line) || /^\d+[\.\)]\s/.test(line)) {
-      if (!inList) { html += '<ul>'; inList = true; }
-      const content = line.replace(/^[•\-\*·]\s*/, '').replace(/^\d+[\.\)]\s*/, '');
-      html += `<li>${escHtml(content)}</li>`;
+    // Field label (ends with ":") followed by exactly one value line
+    if (isFieldLabel(first) && rest.length === 1 && !isAllCaps(rest[0]) && !isBullet(rest[0])) {
+      const label = first.slice(0, -1); // remove trailing ":"
+      html += `<div class="doc-field-row"><div class="doc-field-label">${escHtml(label)}</div><div class="doc-field-val">${escHtml(rest[0])}</div></div>`;
       continue;
     }
 
-    // Regular paragraph
-    closeList();
-    html += `<p>${escHtml(line)}</p>`;
+    // All bullets → list
+    if (block.every(l => isBullet(l))) {
+      html += '<ul>';
+      block.forEach(l => {
+        const c = l.replace(/^[•\-\*·]\s*/, '').replace(/^\d+[\.\)]\s*/, '');
+        html += `<li>${escHtml(c)}</li>`;
+      });
+      html += '</ul>';
+      continue;
+    }
+
+    // Default: render all lines as merged paragraph(s), preserving bullet sub-lists
+    html += renderLines(block);
   }
 
-  closeList();
   return html || `<p>${escHtml(text)}</p>`;
 }
 

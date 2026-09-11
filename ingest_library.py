@@ -309,7 +309,7 @@ def walk_folder(folder_id: str, folder_path: list, dry_run: bool,
                     continue
                 header = f"Document: {name}\nCategory: {category}\n\n"
                 n = store_library_chunks(name, fid, header + text[:30000],
-                                         mime.split("/")[-1], category)
+                                         mime.split("/")[-1], category, subcategory)
                 docs_done.append(name)
                 print(f"      ✅ {n} chunk(s)")
                 time.sleep(0.5)

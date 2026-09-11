@@ -39,6 +39,7 @@ class LibraryChunk(Base):
     file_name    = Column(Text, nullable=False)
     file_id      = Column(Text, nullable=False, index=True)
     category     = Column(Text, nullable=False, default="General")
+    subcategory  = Column(Text, nullable=True)
     chunk_index  = Column(Integer, default=0)
     total_chunks = Column(Integer, default=1)
     content      = Column(Text, nullable=False)
@@ -63,6 +64,15 @@ class LibraryVideo(Base):
 def init_db():
     """Create tables if they don't exist."""
     Base.metadata.create_all(bind=engine)
+    # Auto-migrate: add subcategory column to library_chunks if absent
+    with SessionLocal() as db:
+        try:
+            db.execute(text(
+                "ALTER TABLE library_chunks ADD COLUMN IF NOT EXISTS subcategory TEXT"
+            ))
+            db.commit()
+        except Exception:
+            db.rollback()
 
 
 def already_processed(file_id: str) -> bool:
@@ -148,7 +158,7 @@ def library_video_exists(file_id: str) -> bool:
 
 
 def store_library_chunks(file_name: str, file_id: str, content: str,
-                         source_type: str, category: str):
+                         source_type: str, category: str, subcategory: str = None):
     size, overlap = 3000, 300
     chunks, start = [], 0
     while start < len(content):
@@ -161,6 +171,7 @@ def store_library_chunks(file_name: str, file_id: str, content: str,
                 file_name=file_name,
                 file_id=file_id,
                 category=category,
+                subcategory=subcategory,
                 chunk_index=i,
                 total_chunks=len(chunks),
                 content=chunk,
@@ -247,7 +258,8 @@ def get_library_docs(category: str = None):
                 """)
             ).fetchall()
     return [{"file_id": r.file_id, "file_name": r.file_name,
-             "category": r.category, "source_type": r.source_type} for r in rows]
+             "category": r.category, "subcategory": r.subcategory,
+             "source_type": r.source_type} for r in rows]
 
 
 def get_document_content(file_id: str) -> str:
