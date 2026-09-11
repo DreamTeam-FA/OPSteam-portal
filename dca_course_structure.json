@@ -1,0 +1,267 @@
+{
+  "title": "Digital Course Academy",
+  "description": "Amy Porterfield's Digital Course Academy — two tracks: Start From Scratch (Track 1) and Ready To Launch (Track 2)",
+  "url": "https://digitalcourseacademy.amyporterfield.com",
+  "last_scanned": "2026-09-11",
+
+  "tracks": [
+    {
+      "track_id": "t1",
+      "track_number": 1,
+      "track_name": "Your Start From Scratch Digital Course Track",
+      "track_short": "Start From Scratch",
+      "description": "Build an engaged audience and grow your email list, craft a workshop course to refine your teaching and selling skills online, and begin generating revenue.",
+      "modules": [
+        {
+          "module_id": "t1-m0",
+          "sort_order": 1000,
+          "module_number": 0,
+          "module_name": "Welcome!",
+          "module_short": "Welcome",
+          "lessons": [
+            { "sort_order": 1, "title": "The Start From Scratch Digital Course Academy Roadmap" },
+            { "sort_order": 2, "title": "The Start From Scratch DCA New Student Orientation" },
+            { "sort_order": 3, "title": "The Start From Scratch DCA Accountability Pods" },
+            { "sort_order": 4, "title": "Managing Your Mindset" },
+            { "sort_order": 5, "title": "Tech: Let's Keep it Simple!" }
+          ]
+        },
+        {
+          "module_id": "t1-m1",
+          "sort_order": 1100,
+          "module_number": 1,
+          "module_name": "Build Your Audience",
+          "module_short": "Build Your Audience",
+          "description": "Identify your target audience, create engaging content, develop a lead magnet, and use social media to attract subscribers.",
+          "lessons": [
+            { "sort_order": 1, "title": "Snapshot" },
+            { "sort_order": 2, "title": "Identify Your Niche" },
+            { "sort_order": 3, "title": "Create and Publish Weekly Original Content" },
+            { "sort_order": 4, "title": "Create a Lead Magnet" },
+            { "sort_order": 5, "title": "Get Social!" },
+            { "sort_order": 6, "title": "Grow As You Go Bonus: The Instagram Poll Strategy" }
+          ]
+        },
+        {
+          "module_id": "t1-m2",
+          "sort_order": 1200,
+          "module_number": 2,
+          "module_name": "Validate A Workshop Topic & Define Your Offer",
+          "module_short": "Validate Workshop Topic",
+          "description": "Make key decisions for a paid 1-hour online training: topic, transformation statement, price point, delivery, and tech.",
+          "lessons": [
+            { "sort_order": 1, "title": "Snapshot" },
+            { "sort_order": 2, "title": "Nail Down Your Workshop Topic & Title" },
+            { "sort_order": 3, "title": "Craft Your Workshop Transformation Statement" },
+            { "sort_order": 4, "title": "Determine Your Workshop Pricing" },
+            { "sort_order": 5, "title": "Finalize Workshop Delivery Decisions" }
+          ]
+        },
+        {
+          "module_id": "t1-m3",
+          "sort_order": 1300,
+          "module_number": 3,
+          "module_name": "Create Your Workshop",
+          "module_short": "Create Workshop",
+          "description": "Craft a workshop outline and deliver an engaging live online presentation.",
+          "lessons": [
+            { "sort_order": 1, "title": "Snapshot" },
+            { "sort_order": 2, "title": "Create Your Workshop Outline" },
+            { "sort_order": 3, "title": "Review Your Training Toolkit" },
+            { "sort_order": 4, "title": "Perfect Your Workshop Content with 1:1 or Group Coaching" },
+            { "sort_order": 5, "title": "Grow As You Go Bonus: Create Your Course-Focused Freebie" }
+          ]
+        },
+        {
+          "module_id": "t1-m4",
+          "sort_order": 1400,
+          "module_number": 4,
+          "module_name": "Promote and Deliver Your Workshop",
+          "module_short": "Promote & Deliver",
+          "description": "Create a sales page, use email and social to draw in customers, and deliver your workshop.",
+          "lessons": [
+            { "sort_order": 1, "title": "Snapshot" },
+            { "sort_order": 2, "title": "Create Your Simple Workshop Sales Page" },
+            { "sort_order": 3, "title": "Craft Your Email and Social Promotion Assets" },
+            { "sort_order": 4, "title": "Shout It From the Rooftops!" },
+            { "sort_order": 5, "title": "Grow As You Go Bonus: Go Live Challenge" }
+          ]
+        },
+        {
+          "module_id": "t1-celebrate",
+          "sort_order": 1900,
+          "module_number": 99,
+          "module_name": "Celebrate!",
+          "module_short": "Celebrate",
+          "lessons": [
+            { "sort_order": 1, "title": "The Start From Scratch Track Celebration!" },
+            { "sort_order": 2, "title": "Your Personal Hype Video" }
+          ]
+        }
+      ]
+    },
+
+    {
+      "track_id": "t2",
+      "track_number": 2,
+      "track_name": "Your Ready To Launch Digital Course Track",
+      "track_short": "Ready To Launch",
+      "description": "Create and launch a full-scale digital course, building on an established audience and email list.",
+      "modules": [
+        {
+          "module_id": "t2-m0",
+          "sort_order": 2000,
+          "module_number": 0,
+          "module_name": "Welcome!",
+          "module_short": "Welcome",
+          "lessons": [
+            { "sort_order": 1, "title": "The Ready To Launch Digital Course Track Roadmap" },
+            { "sort_order": 2, "title": "The DCA New Student Orientation" },
+            { "sort_order": 3, "title": "The DCA Accountability Pods" },
+            { "sort_order": 4, "title": "How to Get Instant Momentum" },
+            { "sort_order": 5, "title": "Snapshot" }
+          ]
+        },
+        {
+          "module_id": "t2-m1",
+          "sort_order": 2100,
+          "module_number": 1,
+          "module_name": "The 7 Key Decisions",
+          "module_short": "7 Key Decisions",
+          "description": "Make 7 key decisions that establish a strong foundation for your digital course — topic, ICA, transformation, name, pricing, tech stack, and launch dates.",
+          "lessons": [
+            { "sort_order": 1, "title": "Snapshot" },
+            { "sort_order": 2, "title": "Decision #1: Choosing Your Course Topic" },
+            { "sort_order": 3, "title": "Decision #2: Defining Your Ideal Customer Avatar" },
+            { "sort_order": 4, "title": "Decision #3: Declaring Your Course Transformation Statement" },
+            { "sort_order": 5, "title": "Decision #4: Crafting a Stellar Course Name" },
+            { "sort_order": 6, "title": "Decision #5: Pricing Your Course" },
+            { "sort_order": 7, "title": "Decision #6: Selecting Your Tech Stack" },
+            { "sort_order": 8, "title": "Decision #7: Scheduling Your Launch Dates" },
+            { "sort_order": 9, "title": "Grow As You Go Bonus: Pre-Launch Runway" }
+          ]
+        },
+        {
+          "module_id": "t2-m2",
+          "sort_order": 2200,
+          "module_number": 2,
+          "module_name": "Validating Your Course",
+          "module_short": "Validate Your Course",
+          "description": "Validate your course idea to ensure it resonates with your audience before creating.",
+          "lessons": [
+            { "sort_order": 1, "title": "Snapshot" },
+            { "sort_order": 2, "title": "1 The Course Calls Strategy" },
+            { "sort_order": 3, "title": "2 Social Validation Strategies" },
+            { "sort_order": 4, "title": "3 The First 10 Strategy" },
+            { "sort_order": 5, "title": "Grow As You Go Bonus: The Instagram Poll Strategy" }
+          ]
+        },
+        {
+          "module_id": "t2-m3",
+          "sort_order": 2300,
+          "module_number": 3,
+          "module_name": "The Art of Outlining Your Course",
+          "module_short": "Course Outline",
+          "description": "Transform your course idea into a structured, actionable outline using the Porterfield Process.",
+          "lessons": [
+            { "sort_order": 1, "title": "Snapshot" },
+            { "sort_order": 2, "title": "1 How to Outline Your Course" },
+            { "sort_order": 3, "title": "2 Refining Your Course Outline" },
+            { "sort_order": 4, "title": "3 The Course Support Strategy" },
+            { "sort_order": 5, "title": "4 Your Content Framework" },
+            { "sort_order": 6, "title": "Grow As You Go Bonus: Create Your Course-Focused Freebie" }
+          ]
+        },
+        {
+          "module_id": "t2-m4",
+          "sort_order": 2400,
+          "module_number": 4,
+          "module_name": "The Art of Delivering Your Course",
+          "module_short": "Course Delivery",
+          "description": "Learn effective course delivery — pre-recorded or live — conquering recording fears and teaching for results.",
+          "lessons": [
+            { "sort_order": 1, "title": "Snapshot" },
+            { "sort_order": 2, "title": "1 How to Deliver Your Course" },
+            { "sort_order": 3, "title": "2 The Art of Teaching Inside a Digital Course" },
+            { "sort_order": 4, "title": "3 Delivery Tips and Tricks" },
+            { "sort_order": 5, "title": "Grow As You Go Bonus: Go Live Challenge" }
+          ]
+        },
+        {
+          "module_id": "t2-m5",
+          "sort_order": 2500,
+          "module_number": 5,
+          "module_name": "The Digital Course Marketing Blueprint",
+          "module_short": "Marketing Blueprint",
+          "description": "Set revenue goals, craft an irresistible launch offer, and build a high-converting sales page.",
+          "lessons": [
+            { "sort_order": 1, "title": "Snapshot" },
+            { "sort_order": 2, "title": "1 Crafting Your Irresistible Launch Offer" },
+            { "sort_order": 3, "title": "2 Setting Your Launch Revenue Goal" },
+            { "sort_order": 4, "title": "3 The Digital Course Sales Page Blueprint" },
+            { "sort_order": 5, "title": "4 The Behind-the-Scenes Tour of a High Converting Sales Page" },
+            { "sort_order": 6, "title": "Grow As You Go Bonus: Create a Quiz Lead Magnet" }
+          ]
+        },
+        {
+          "module_id": "t2-m6",
+          "sort_order": 2600,
+          "module_number": 6,
+          "module_name": "The Profitable Webinar Framework",
+          "module_short": "Profitable Webinar",
+          "description": "Create an engaging webinar that markets your course, with a compelling slide deck and high-converting registration page.",
+          "lessons": [
+            { "sort_order": 1, "title": "Snapshot" },
+            { "sort_order": 2, "title": "1 The Profitable Webinar Framework" },
+            { "sort_order": 3, "title": "2 The Profitable Webinar Slide by Slide Walkthrough" },
+            { "sort_order": 4, "title": "3 The Golden Rules for Delivering a Profitable Webinar" },
+            { "sort_order": 5, "title": "4 How to Map Out Your Live Webinars" },
+            { "sort_order": 6, "title": "5 The 5 Key Elements of a Successful Webinar Registration Page" },
+            { "sort_order": 7, "title": "Grow As You Go Bonus: The 7 Strategies to Boost Webinar Sign-Ups" }
+          ]
+        },
+        {
+          "module_id": "t2-m7",
+          "sort_order": 2700,
+          "module_number": 7,
+          "module_name": "Crafting Your Email Sequences",
+          "module_short": "Email Sequences",
+          "description": "Create compelling email sequences that connect with your audience, evoke action, and support your promotional efforts.",
+          "lessons": [
+            { "sort_order": 1, "title": "Snapshot" },
+            { "sort_order": 2, "title": "How to Craft Your Webinar Invite Emails" },
+            { "sort_order": 3, "title": "How to Craft Your Pre-Webinar Emails" },
+            { "sort_order": 4, "title": "How to Craft Your Webinar Replay Email" },
+            { "sort_order": 5, "title": "How to Craft Your Post-Webinar Emails" },
+            { "sort_order": 6, "title": "How to Craft Your Post-Webinar Sales Booster Emails" },
+            { "sort_order": 7, "title": "How to Craft Your New Customer Onboarding Emails" },
+            { "sort_order": 8, "title": "The Live Launch Wrap Up" }
+          ]
+        },
+        {
+          "module_id": "t2-celebrate",
+          "sort_order": 2900,
+          "module_number": 99,
+          "module_name": "Celebrate!",
+          "module_short": "Celebrate",
+          "lessons": [
+            { "sort_order": 1, "title": "Celebrate!" },
+            { "sort_order": 2, "title": "The Ready to Launch Track Celebration!" },
+            { "sort_order": 3, "title": "Your Personal Hype Video!" }
+          ]
+        }
+      ]
+    }
+  ],
+
+  "sort_key_guide": {
+    "description": "Use sort_order on modules to order documents. T1=1000s, T2=2000s. Module N adds N*100. Lessons use sub-sort within each module.",
+    "examples": {
+      "t1_module1": 1100,
+      "t1_module2": 1200,
+      "t2_module1": 2100,
+      "t2_module6": 2600,
+      "t2_celebrate": 2900
+    }
+  }
+}
