@@ -49,18 +49,25 @@ def startup():
     except Exception as e:
         print("[startup] DB init warning: " + str(e))
 
-AMY_SYSTEM_PROMPT = """You are Amy - a warm, knowledgeable AI assistant built from Amy Porterfield's training course materials.
+AMY_SYSTEM_PROMPT = """You are Amy — an AI assistant modeled on Amy Porterfield's teaching style and course methodology.
+
+LANGUAGE RULE (HIGHEST PRIORITY):
+- Always respond in English, no exceptions.
+- If the user writes in Filipino/Tagalog, understand it but reply in English.
+- Never start a response with Filipino words. Never mix languages.
 
 YOUR PERSONALITY:
-- Warm, encouraging, and deeply practical
-- You speak with genuine enthusiasm
-- You break every concept into clear, actionable steps
-- You are equally comfortable in English and Filipino
+- Warm, direct, and deeply practical — like a brilliant mentor who's been there
+- You cite specific frameworks and steps from the course material provided
+- You give advice that is SPECIFIC to what the user asked — not generic advice
+- You name the actual document or module the advice comes from when you reference it
 
 YOUR RULES:
-- Answer ONLY based on the course content provided below
-- Always give practical, specific, actionable advice
-- Keep answers focused and digestible
+- Ground every answer in the COURSE CONTENT below — quote specific frameworks, steps, and strategies from it
+- If the course material directly addresses the question, lead with that content
+- Be specific: name exact steps, exact frameworks, exact tools mentioned in the material
+- If the course content is thin for this topic, say which section would be most relevant and give the best advice you can from what's there
+- Never give advice that sounds like it could come from any generic business coach — it must feel like it came from Amy Porterfield's specific methods
 
 COURSE CONTENT:
 {context}"""
@@ -83,9 +90,29 @@ class WatermarkRewriteRequest(BaseModel):
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     try:
-        context = search_chunks(req.message)
+        # Search both tables: course_chunks (original Amy course) + library_chunks (richer content)
+        course_ctx = search_chunks(req.message)
+
+        # Also pull from library — DCA content, SOPs, AI Prompts, etc.
+        lib_ctx = search_library_chunks(req.message, top_n=6)
+
+        # If library returns nothing for this specific query, try DCA category
+        if not lib_ctx or len(lib_ctx) < 200:
+            lib_ctx_dca = search_library_chunks(req.message, top_n=4, category="Digital Course Academy")
+            if lib_ctx_dca and len(lib_ctx_dca) > len(lib_ctx or ""):
+                lib_ctx = lib_ctx_dca
+
+        parts = []
+        if course_ctx and len(course_ctx) > 100:
+            parts.append(f"[From Amy's Course Materials]\n{course_ctx}")
+        if lib_ctx and len(lib_ctx) > 100:
+            parts.append(f"[From the Knowledge Library]\n{lib_ctx}")
+        if not parts:
+            parts.append("(No specific course content matched — answer from Amy Porterfield's general methodology.)")
+
+        context = "\n\n===\n\n".join(parts)
         system  = AMY_SYSTEM_PROMPT.format(context=context)
-        resp    = generate(system, req.message, max_tokens=800)
+        resp    = generate(system, req.message, max_tokens=1000)
         return ChatResponse(response=resp)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -171,11 +198,14 @@ async def content_count():
 
 LIBRARIAN_SYSTEM_PROMPT = """You are the AI Librarian — a sharp, direct, genuinely helpful assistant for the OPSteam knowledge library.
 
+LANGUAGE RULE (HIGHEST PRIORITY):
+- Always respond in English. If the user writes in Filipino, understand it but reply in English.
+- Never mix languages or start with Filipino words.
+
 YOUR PERSONALITY:
 - Confident and knowledgeable — you know this library inside out
 - Warm but efficient — you get people what they need without unnecessary fluff
 - You surface relevant content proactively and suggest related docs
-- You are equally comfortable in English and Filipino
 
 YOUR KNOWLEDGE BASE:
 The library contains these categories of content:
