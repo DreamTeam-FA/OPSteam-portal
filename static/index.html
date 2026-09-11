@@ -750,22 +750,50 @@ input.addEventListener('input', () => {
 
 // ── Markdown ──
 function renderMarkdown(text) {
-  return text
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g,'<em>$1</em>')
-    .replace(/`(.+?)`/g,'<code>$1</code>')
-    .replace(/^#### (.+)$/gm,'<h4>$1</h4>')
-    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
-    .replace(/^- (.+)$/gm,'<li>$1</li>')
-    .replace(/^(\d+)\. (.+)$/gm,'<li>$2</li>')
-    .replace(/(<li>.*<\/li>)/gs,'<ul>$1</ul>')
-    .replace(/\n\n/g,'</p><p>')
-    .replace(/^(?!<[hul])/gm,'')
-    .replace(/(.+)/s,'<p>$1</p>')
-    .replace(/<p><\/p>/g,'')
-    .replace(/<p>(<[hul])/g,'$1')
-    .replace(/(<\/[hul][^>]*>)<\/p>/g,'$1');
+  // Escape HTML first
+  let t = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  // Tables — convert | row | rows | into <table>
+  t = t.replace(/((?:^\|.+\|\n?)+)/gm, block => {
+    const rows = block.trim().split('\n').filter(r => !/^\|[\s\-|]+\|$/.test(r.trim()));
+    if (!rows.length) return block;
+    const [head, ...body] = rows;
+    const th = head.split('|').filter((_,i,a)=>i>0&&i<a.length-1).map(c=>`<th>${c.trim()}</th>`).join('');
+    const trs = body.map(r => {
+      const td = r.split('|').filter((_,i,a)=>i>0&&i<a.length-1).map(c=>`<td>${c.trim()}</td>`).join('');
+      return `<tr>${td}</tr>`;
+    }).join('');
+    return `<table><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>`;
+  });
+
+  // Horizontal rules
+  t = t.replace(/^---+$/gm,'<hr>');
+
+  // Headings (order matters: most specific first)
+  t = t.replace(/^#### (.+)$/gm,'<h4>$1</h4>');
+  t = t.replace(/^### (.+)$/gm,'<h3>$1</h3>');
+  t = t.replace(/^## (.+)$/gm,'<h2>$1</h2>');
+  t = t.replace(/^# (.+)$/gm,'<h2>$1</h2>');
+
+  // Inline formatting
+  t = t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  t = t.replace(/\*(.+?)\*/g,'<em>$1</em>');
+  t = t.replace(/`(.+?)`/g,'<code>$1</code>');
+
+  // Lists
+  t = t.replace(/^- (.+)$/gm,'<li>$1</li>');
+  t = t.replace(/^(\d+)\. (.+)$/gm,'<li>$2</li>');
+  t = t.replace(/(<li>[\s\S]*?<\/li>)(\n<li>[\s\S]*?<\/li>)*/g, m => `<ul>${m}</ul>`);
+
+  // Paragraphs — wrap non-tagged blocks
+  t = t.split(/\n{2,}/).map(block => {
+    block = block.trim();
+    if (!block) return '';
+    if (/^<(h[1-6]|ul|ol|li|table|hr|blockquote)/.test(block)) return block;
+    return `<p>${block.replace(/\n/g,'<br>')}</p>`;
+  }).join('\n');
+
+  return t;
 }
 
 // ── Messages ──

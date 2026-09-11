@@ -510,7 +510,7 @@ let categories = [];
 async function init() {
   await Promise.all([loadStats(), loadCategories(), loadDocs(), loadVideos()]);
   renderCategoryFilters(); // after ALL data loaded so counts are correct
-  autoSync(); // fire-and-forget — don't block page render on sync
+  // No auto-sync on load — use the Refresh button to sync from Drive
 }
 
 async function loadStats() {
@@ -972,26 +972,31 @@ async function openDoc(fileId, name, category, sourceType) {
   document.getElementById('detailContent').innerHTML = '<div class="spinner" style="margin-top:40px"></div>';
   openDetailPanel();
 
-  // PDFs: show embedded Drive viewer
-  if (sourceType === 'pdf') {
+  // PDFs + Google Slides: embed via Drive viewer
+  const embedTypes = ['pdf','vnd.google-apps.presentation','presentation'];
+  const isEmbeddable = embedTypes.some(t => (sourceType||'').toLowerCase().includes(t));
+  if (isEmbeddable) {
     const embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
     const openUrl  = `https://drive.google.com/file/d/${fileId}/view`;
     document.getElementById('detailContent').innerHTML = `
       <div class="pdf-embed-wrap">
         <iframe src="${embedUrl}" allowfullscreen allow="autoplay"></iframe>
       </div>
-      <a class="pdf-open-link" href="${openUrl}" target="_blank" rel="noopener">↗ Open full PDF in Drive</a>`;
+      <a class="pdf-open-link" href="${openUrl}" target="_blank" rel="noopener">↗ Open in Drive</a>`;
     return;
   }
 
   try {
-    const r = await fetch('/library/doc/' + fileId);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 10000);
+    const r = await fetch('/library/doc/' + fileId, { signal: ctrl.signal });
+    clearTimeout(timer);
     const d = await r.json();
     document.getElementById('detailContent').innerHTML =
       `<div class="doc-body">${formatDocText(d.content)}</div>`;
   } catch(e) {
     document.getElementById('detailContent').innerHTML =
-      `<div class="doc-body" style="color:var(--ink3)">Could not load document content.</div>`;
+      `<div class="doc-body" style="color:var(--ink3)">Could not load — server may be busy. Try again in a moment.</div>`;
   }
 }
 
