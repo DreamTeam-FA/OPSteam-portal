@@ -19,7 +19,7 @@ load_dotenv()
 
 # -- Init
 groq_client  = Groq(api_key=os.getenv("GROQ_API_KEY"))
-ACTIVE_MODEL = "qwen/qwen3.8-27b"
+ACTIVE_MODEL = "llama-3.3-70b-versatile"
 
 def strip_thinking(text):
     return re.sub(r"<think>[\s\S]*?</think>", "", text, flags=re.IGNORECASE).strip()
