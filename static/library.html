@@ -234,14 +234,61 @@ html[data-theme="dark"] body::before{
 }
 .detail-panel.open{transform:translateX(0)}
 .detail-header{
-  display:flex;align-items:flex-start;gap:12px;padding:20px 20px 16px;
+  display:flex;align-items:flex-start;gap:12px;padding:20px 24px 18px;
   border-bottom:1px solid var(--border);flex-shrink:0;
+  background:linear-gradient(135deg,var(--glass-hi) 0%,var(--glass) 100%);
 }
-.detail-close{padding:6px;border-radius:8px;cursor:pointer;background:var(--glass-hi);border:1px solid var(--border);color:var(--ink2);font-size:18px;line-height:1;flex-shrink:0}
-.detail-close:hover{background:var(--purple-dim);color:var(--purple)}
-.detail-title{font-weight:700;font-size:15px;flex:1;line-height:1.3}
-.detail-subtitle{font-size:12px;color:var(--ink3);margin-top:2px}
-.detail-content{flex:1;overflow-y:auto;padding:20px}
+.detail-close{
+  padding:7px 9px;border-radius:9px;cursor:pointer;
+  background:var(--glass-hi);border:1px solid var(--border);
+  color:var(--ink2);font-size:16px;line-height:1;flex-shrink:0;
+  transition:background .14s,color .14s;
+}
+.detail-close:hover{background:var(--purple-dim);color:var(--purple);border-color:var(--purple)}
+.detail-icon{font-size:28px;line-height:1;flex-shrink:0;margin-top:2px}
+.detail-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:20px;letter-spacing:.02em;flex:1;line-height:1.2;color:var(--ink)}
+.detail-subtitle{font-size:12px;color:var(--ink3);margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.detail-pill{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.detail-pill-cat{background:var(--purple-dim);color:var(--purple)}
+.detail-pill-type{background:var(--teal-dim);color:var(--teal)}
+.detail-content{flex:1;overflow-y:auto;padding:24px 28px}
+/* Doc body — portal-matched styling */
+.doc-body{font-size:14px;line-height:1.8;color:var(--ink2);max-width:100%}
+.doc-body h2{
+  font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;
+  color:var(--ink);margin:32px 0 12px;letter-spacing:.07em;text-transform:uppercase;
+  padding:9px 14px;border-left:4px solid var(--purple);
+  background:var(--purple-dim);border-radius:0 9px 9px 0;
+}
+.doc-body h2:first-child{margin-top:0}
+.doc-body h3{
+  font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;
+  color:var(--teal);margin:22px 0 8px;letter-spacing:.05em;text-transform:uppercase;
+  display:flex;align-items:center;gap:8px;
+}
+.doc-body h3::after{content:'';flex:1;height:1px;background:var(--border)}
+.doc-body p{margin-bottom:12px;color:var(--ink2);line-height:1.8}
+.doc-body ul,.doc-body ol{margin:8px 0 16px;padding:0;list-style:none}
+.doc-body li{
+  padding:5px 0 5px 22px;position:relative;margin-bottom:3px;color:var(--ink2);
+}
+.doc-body li::before{content:'▸';position:absolute;left:5px;color:var(--teal);font-size:11px;top:7px}
+.doc-body hr{border:none;border-top:1px solid var(--border);margin:24px 0}
+.doc-field-row{
+  display:grid;grid-template-columns:140px 1fr;gap:8px 16px;
+  margin-bottom:2px;align-items:center;padding:8px 12px;
+  border-radius:8px;transition:background .12s;
+}
+.doc-field-row:hover{background:var(--glass-hi)}
+.doc-field-row+.doc-field-row{border-top:1px solid var(--border)}
+.doc-field-label{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3)}
+.doc-field-val{font-size:13.5px;color:var(--ink);font-weight:500}
+/* Inline badge inside doc-body text */
+.doc-note{
+  margin:12px 0;padding:12px 16px;border-radius:10px;
+  background:var(--teal-dim);border-left:3px solid var(--teal);
+  font-size:13px;color:var(--ink2);
+}
 /* ── Document viewer — styles moved above into filter-divider block ───────── */
 .video-embed{width:100%;aspect-ratio:16/9;border-radius:10px;border:none;background:#000}
 .video-info{margin-top:14px;padding:14px;background:var(--glass);border-radius:10px;border:1px solid var(--border)}
@@ -418,7 +465,8 @@ html[data-theme="dark"] body::before{
 <div class="detail-overlay" id="detailOverlay" onclick="closeDetail()"></div>
 <div class="detail-panel" id="detailPanel">
   <div class="detail-header">
-    <div style="flex:1">
+    <div class="detail-icon" id="detailIcon">📄</div>
+    <div style="flex:1;min-width:0">
       <div class="detail-title" id="detailTitle">Document</div>
       <div class="detail-subtitle" id="detailSubtitle"></div>
     </div>
@@ -742,17 +790,42 @@ function dcaGroupSortKey(groupLabel) {
   return DCA_GROUP_ORDER[sub] !== undefined ? DCA_GROUP_ORDER[sub] : 5000;
 }
 
-// Smart sort: DCA course order → numbered → dated → alphabetical
+// ── AI Advantage sort ─────────────────────────────────────────────────────────
+// Returns a numeric sort key: masterclasses (1000s) first, then summit sessions
+// (5000 + year*10 + day), then other materials (9000+)
+function aiaSortKey(name) {
+  const n = name.toLowerCase();
+  // Masterclass N — e.g. "Masterclass 1", "Class 1", "Session 1", "Module 1"
+  const mcMatch = n.match(/(?:masterclass|class|module|session|lesson)\s*[#]?(\d+)/i);
+  if (mcMatch) return 1000 + parseInt(mcMatch[1]) * 10;
+  // Summit Day N [YYYY] — e.g. "Summit Day 1 2024", "2024 Summit Day 2", "Day 1 Recording"
+  const sumYear = n.match(/\b(202\d)\b/);
+  const sumDay  = n.match(/\bday\s*[#]?(\d+)/i);
+  if (n.includes('summit') || (sumYear && sumDay)) {
+    const year = sumYear ? parseInt(sumYear[1]) : 2024;
+    const day  = sumDay  ? parseInt(sumDay[1])  : 0;
+    return 5000 + (year - 2020) * 100 + day;
+  }
+  // Day N standalone (non-summit) — sort after masterclasses, before summit
+  if (sumDay) return 3000 + parseInt(sumDay[1]);
+  return 9000;
+}
+
+// Smart sort: DCA course order → AI Advantage (masterclass/summit) → numbered → dated → alphabetical
 function smartSort(items, nameKey) {
   return [...items].sort((a, b) => {
     const na = a[nameKey] || '', nb = b[nameKey] || '';
     // DCA items: sort by module order
-    const isDCA_a = a.category === 'Digital Course Academy';
-    const isDCA_b = b.category === 'Digital Course Academy';
-    if (isDCA_a && isDCA_b) {
+    if (a.category === 'Digital Course Academy' && b.category === 'Digital Course Academy') {
       const ka = dcaSortKey(na), kb = dcaSortKey(nb);
       if (ka !== kb) return ka - kb;
-      // Same module bucket: fall through to standard sort below
+    }
+    // AI Advantage: masterclass sequence then summit by year/day
+    if (a.category === 'AI Advantage' && b.category === 'AI Advantage') {
+      const ka = aiaSortKey(na), kb = aiaSortKey(nb);
+      if (ka !== kb) return ka - kb;
+      // Same bucket: alphabetical
+      return na.localeCompare(nb);
     }
     // Extract leading number (#N or N )
     const numA = na.match(/[#\s](\d+)/), numB = nb.match(/[#\s](\d+)/);
@@ -889,10 +962,14 @@ function handleSearch() {
 
 // ── Detail Panel ──────────────────────────────────────────────────────────────
 async function openDoc(fileId, name, category, sourceType) {
-  const cleanTitle = name.replace(/_/g,' ');
+  const cleanTitle = cleanName(name);
+  const type = cleanType(sourceType);
   document.getElementById('detailTitle').textContent = cleanTitle;
-  document.getElementById('detailSubtitle').textContent = category;
-  document.getElementById('detailContent').innerHTML = '<div class="spinner"></div>';
+  document.getElementById('detailIcon').textContent = docIcons[category] || '📄';
+  document.getElementById('detailSubtitle').innerHTML =
+    `<span class="detail-pill detail-pill-cat">${escHtml(category)}</span>` +
+    `<span class="detail-pill detail-pill-type">${escHtml(type)}</span>`;
+  document.getElementById('detailContent').innerHTML = '<div class="spinner" style="margin-top:40px"></div>';
   openDetailPanel();
 
   // PDFs: show embedded Drive viewer
@@ -919,18 +996,20 @@ async function openDoc(fileId, name, category, sourceType) {
 }
 
 function openVideo(fileId, name, category, subcategory, driveLink, sizeMb) {
-  const cleanName = name.replace(/_/g,' ').replace(/\.mp4$/i,'').replace(/\.m4a$/i,'');
-  document.getElementById('detailTitle').textContent = cleanName;
-  document.getElementById('detailSubtitle').textContent = subcategory ? `${category} — ${subcategory}` : category;
+  const cn = name.replace(/_/g,' ').replace(/\.mp4$/i,'').replace(/\.m4a$/i,'');
+  document.getElementById('detailTitle').textContent = cn;
+  document.getElementById('detailIcon').textContent = '🎬';
+  document.getElementById('detailSubtitle').innerHTML =
+    `<span class="detail-pill detail-pill-cat">${escHtml(category)}</span>` +
+    (subcategory ? `<span class="detail-pill detail-pill-type">${escHtml(subcategory)}</span>` : '');
   const sizeTxt = sizeMb > 1024 ? `${(sizeMb/1024).toFixed(1)} GB` : `${sizeMb} MB`;
   document.getElementById('detailContent').innerHTML = `
     <iframe class="video-embed" src="${driveLink}" allowfullscreen allow="autoplay"></iframe>
-    <div class="video-info">
-      <div class="video-info-label">Category</div>
-      <div class="video-info-val">${escHtml(category)}${subcategory ? ' › ' + escHtml(subcategory) : ''}</div>
-      <div style="margin-top:10px"><div class="video-info-label">File Size</div><div class="video-info-val">${sizeTxt}</div></div>
-      <div style="margin-top:10px"><div class="video-info-label">Open in Drive</div>
-        <a href="${driveLink.replace('/preview','')}" target="_blank" style="color:var(--purple);font-size:13px">Open full player ↗</a>
+    <div class="video-info" style="margin-top:14px">
+      <div class="video-info-label">File Size</div>
+      <div class="video-info-val">${sizeTxt}</div>
+      <div style="margin-top:10px">
+        <a href="${driveLink.replace('/preview','')}" target="_blank" class="pdf-open-link">↗ Open in Drive</a>
       </div>
     </div>`;
   openDetailPanel();

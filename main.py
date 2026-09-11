@@ -169,31 +169,34 @@ async def content_count():
 
 # ── Library endpoints ──────────────────────────────────────────────────────────
 
-LIBRARIAN_SYSTEM_PROMPT = """You are the AI Librarian — a fun, energetic, friendly but professional and intelligent assistant for the OPSteam knowledge library.
+LIBRARIAN_SYSTEM_PROMPT = """You are the AI Librarian — a sharp, direct, genuinely helpful assistant for the OPSteam knowledge library.
 
 YOUR PERSONALITY:
-- Energetic, warm, and engaging — like a brilliant colleague who loves sharing knowledge
-- Professional and precise — you give accurate, well-organized answers
-- You love helping people find exactly what they need
+- Confident and knowledgeable — you know this library inside out
+- Warm but efficient — you get people what they need without unnecessary fluff
+- You surface relevant content proactively and suggest related docs
 - You are equally comfortable in English and Filipino
 
 YOUR KNOWLEDGE BASE:
-You have access to a library of documents including:
-- Donald Miller frameworks (StoryBrand, Hero on a Mission, etc.)
-- AI Advantage masterclasses and summit recordings
-- SOPs and process documents
-- AI prompts and templates
-- Sales and marketing resources
-- Category of One sessions
-- And much more
+The library contains these categories of content:
+• AI Prompts — ready-to-use AI prompt templates for content creation, marketing, course building, and more
+• AI Advantage — masterclass sessions and summit recordings (use these prompts to unlock AI for business)
+• Digital Course Academy (DCA) — Amy Porterfield's full course-building program: Start From Scratch and Ready To Launch tracks
+• Donald Miller — StoryBrand framework, Hero on a Mission, messaging guides
+• Category of One — positioning and differentiation content
+• SOPs & Processes — standard operating procedures and team workflows
+• Sales & Marketing — sales frameworks, email sequences, webinar scripts, AI chatbot setups
+• Resources — tools, templates, Google Workspace guides, bootcamp materials
+• GHL Webinar — Go High Level webinar transcripts and resources
 
 YOUR RULES:
-- Answer based on the library content provided
-- When you reference a document, mention its name so users can find it in the library
-- Keep answers practical and actionable
-- If content isn't in the library, say so honestly
+- Use the retrieved LIBRARY CONTENT below as your primary source — quote specific document names when referencing them
+- If the retrieved content is thin but you know the category has relevant material, say so and recommend browsing that category
+- Never claim the library is empty or unavailable — it always has content; search results just vary in specificity
+- Always give a genuinely useful answer — be specific, practical, and actionable
+- When listing prompts or steps, format them clearly
 
-LIBRARY CONTENT:
+LIBRARY CONTENT RETRIEVED FOR THIS QUERY:
 {context}"""
 
 class LibrarianChatRequest(BaseModel):
@@ -229,17 +232,57 @@ def do_web_search(query: str, max_results: int = 5):
     except Exception as e:
         return None, []
 
+# Maps query keywords → library category to try as a fallback
+KEYWORD_CATEGORY_MAP = [
+    (['prompt', 'prompts', 'ai prompt', 'template'], 'AI Prompts'),
+    (['donald miller', 'storybrand', 'hero on a mission', 'messaging'], 'Donald Miller'),
+    (['category of one', 'positioning', 'differentiation'], 'Category of One'),
+    (['dca', 'digital course academy', 'start from scratch', 'ready to launch',
+      'course building', 'online course', 'launch'], 'Digital Course Academy'),
+    (['ai advantage', 'masterclass', 'summit', 'aia'], 'AI Advantage'),
+    (['sop', 'process', 'workflow', 'procedure'], 'SOPs & Processes'),
+    (['sales', 'marketing', 'email sequence', 'webinar', 'chatbot', 'funnel'], 'Sales & Marketing'),
+    (['ghl', 'go high level', 'highlevel'], 'GHL Webinar'),
+    (['resource', 'tool', 'template', 'workspace', 'google', 'bootcamp'], 'Resources'),
+]
+
+def infer_category_from_message(msg: str) -> str | None:
+    """Return the most likely library category for this message, or None."""
+    ml = msg.lower()
+    for keywords, cat in KEYWORD_CATEGORY_MAP:
+        if any(kw in ml for kw in keywords):
+            return cat
+    return None
+
 @app.post("/librarian/chat")
 async def librarian_chat(req: LibrarianChatRequest):
     try:
-        # 1. Library search
-        lib_context = search_library_chunks(req.message, top_n=6, category=req.category)
-        lib_has_content = bool(lib_context and len(lib_context) > 150)
+        msg_lower = req.message.lower()
+
+        # 1a. Primary search — within requested category or all
+        lib_context = search_library_chunks(req.message, top_n=8, category=req.category)
+        lib_has_content = bool(lib_context and len(lib_context) > 200)
+
+        # 1b. Fallback: if thin results, try keyword-inferred category
+        if not lib_has_content and not req.category:
+            inferred_cat = infer_category_from_message(req.message)
+            if inferred_cat:
+                lib_context = search_library_chunks(req.message, top_n=8, category=inferred_cat)
+                lib_has_content = bool(lib_context and len(lib_context) > 200)
+                # If FTS still fails, grab the most recent chunks from that category
+                if not lib_has_content:
+                    cat_docs = get_library_docs(category=inferred_cat)[:4]
+                    fallback_parts = []
+                    for doc in cat_docs:
+                        snippet = get_document_content(doc['file_id'])[:1200]
+                        if snippet:
+                            fallback_parts.append(f"[{doc['file_name']}]\n{snippet}")
+                    if fallback_parts:
+                        lib_context = "\n\n---\n\n".join(fallback_parts)
+                        lib_has_content = True
 
         # 2. Decide whether to search the web
-        msg_lower = req.message.lower()
         wants_web = req.search_web or any(t in msg_lower for t in WEB_SEARCH_TRIGGERS)
-
         web_context, sources = None, []
         if wants_web:
             web_context, sources = do_web_search(req.message)
@@ -247,30 +290,21 @@ async def librarian_chat(req: LibrarianChatRequest):
         # 3. Build combined context
         parts = []
         if lib_has_content:
-            parts.append(f"LIBRARY CONTENT:\n{lib_context}")
+            parts.append(lib_context)
         if web_context:
             parts.append(f"WEB SEARCH RESULTS:\n{web_context}")
         if not parts:
-            parts.append("No matching library content found.")
+            parts.append("(No specific documents retrieved — answer from your knowledge of the library categories listed in YOUR KNOWLEDGE BASE above.)")
 
         combined = "\n\n---\n\n".join(parts)
 
-        # 4. Prompt — tell it to offer web search only when library is thin
-        offer_hint = ""
-        if not wants_web and not lib_has_content:
-            offer_hint = (
-                "\n\nIf you cannot fully answer from the library content, "
-                "end your reply with exactly: [[OFFER_SEARCH]] so the UI can show a search button."
-            )
+        # 4. Web note
+        web_note = "\n\nWhen using web results, cite sources by name and URL." if sources else ""
+        system = LIBRARIAN_SYSTEM_PROMPT.format(context=combined) + web_note
 
-        web_note = ""
-        if sources:
-            web_note = "\n\nWhen using web results, cite sources by name and URL."
+        resp = generate(system, req.message, max_tokens=900)
 
-        system = LIBRARIAN_SYSTEM_PROMPT.format(context=combined) + offer_hint + web_note
-        resp = generate(system, req.message, max_tokens=800)
-
-        # 5. Parse offer flag
+        # 5. Parse offer flag (only when web wasn't searched and library was empty)
         offer_search = "[[OFFER_SEARCH]]" in resp
         clean_resp = resp.replace("[[OFFER_SEARCH]]", "").strip()
 
