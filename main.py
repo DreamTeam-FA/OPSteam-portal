@@ -10,7 +10,10 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from groq import Groq
-from database import init_db, search_chunks
+from database import (init_db, search_chunks,
+                       search_library_chunks, get_library_docs,
+                       get_document_content, get_library_videos,
+                       library_already_processed, library_video_exists)
 
 load_dotenv()
 
@@ -163,5 +166,149 @@ async def content_count():
         return {"chunks": count, "ready": count > 0}
     except Exception as e:
         return {"chunks": 0, "ready": False, "error": str(e)}
+
+# ── Library endpoints ──────────────────────────────────────────────────────────
+
+LIBRARIAN_SYSTEM_PROMPT = """You are the AI Librarian — a fun, energetic, friendly but professional and intelligent assistant for the OPSteam knowledge library.
+
+YOUR PERSONALITY:
+- Energetic, warm, and engaging — like a brilliant colleague who loves sharing knowledge
+- Professional and precise — you give accurate, well-organized answers
+- You love helping people find exactly what they need
+- You are equally comfortable in English and Filipino
+
+YOUR KNOWLEDGE BASE:
+You have access to a library of documents including:
+- Donald Miller frameworks (StoryBrand, Hero on a Mission, etc.)
+- AI Advantage masterclasses and summit recordings
+- SOPs and process documents
+- AI prompts and templates
+- Sales and marketing resources
+- Category of One sessions
+- And much more
+
+YOUR RULES:
+- Answer based on the library content provided
+- When you reference a document, mention its name so users can find it in the library
+- Keep answers practical and actionable
+- If content isn't in the library, say so honestly
+
+LIBRARY CONTENT:
+{context}"""
+
+class LibrarianChatRequest(BaseModel):
+    message: str
+    category: str = None  # optional category filter
+
+class LibrarySyncRequest(BaseModel):
+    force: bool = False
+
+@app.post("/librarian/chat")
+async def librarian_chat(req: LibrarianChatRequest):
+    try:
+        context = search_library_chunks(req.message, top_n=6, category=req.category)
+        if not context:
+            context = "No specific documents matched. Answer based on your general knowledge about the library topics."
+        system = LIBRARIAN_SYSTEM_PROMPT.format(context=context)
+        resp = generate(system, req.message, max_tokens=800)
+        return {"response": resp}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/library/docs")
+async def library_docs(category: str = None):
+    try:
+        docs = get_library_docs(category=category)
+        return {"docs": docs, "total": len(docs)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/library/doc/{file_id}")
+async def library_doc_content(file_id: str):
+    try:
+        content = get_document_content(file_id)
+        if not content:
+            raise HTTPException(status_code=404, detail="Document not found")
+        return {"content": content}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/library/videos")
+async def library_videos(category: str = None):
+    try:
+        videos = get_library_videos(category=category)
+        return {"videos": videos, "total": len(videos)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/library/categories")
+async def library_categories():
+    try:
+        from database import SessionLocal
+        from sqlalchemy import text as sql_text
+        with SessionLocal() as db:
+            doc_cats = db.execute(
+                sql_text("SELECT DISTINCT category FROM library_chunks ORDER BY category")
+            ).fetchall()
+            vid_cats = db.execute(
+                sql_text("SELECT DISTINCT category FROM library_videos ORDER BY category")
+            ).fetchall()
+        all_cats = sorted(set(
+            [r.category for r in doc_cats] + [r.category for r in vid_cats]
+        ))
+        return {"categories": all_cats}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/library/sync")
+async def library_sync():
+    """Check Google Drive for new files and ingest them (called on page load + manual refresh)."""
+    try:
+        from google.oauth2 import service_account
+        from googleapiclient.discovery import build as gdrive_build
+        import io
+
+        sa_file = os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE", "hi-amy-service-account.json")
+        if not os.path.exists(sa_file):
+            return {"synced": 0, "message": "Service account not available on this server"}
+
+        creds = service_account.Credentials.from_service_account_file(
+            sa_file, scopes=["https://www.googleapis.com/auth/drive.readonly"]
+        )
+        drive = gdrive_build("drive", "v3", credentials=creds)
+
+        LIBRARY_FOLDER_ID = "1hJI4zz7u3rh8kxKwvC3p8-Rl4vOs5iE3"
+
+        # Import ingest helpers
+        from ingest_library import (walk_folder, list_folder)
+        docs_done, vids_done, skipped = [], [], []
+        walk_folder(LIBRARY_FOLDER_ID, [], True, docs_done, vids_done, skipped)
+
+        return {
+            "synced_docs": len(docs_done),
+            "synced_videos": len(vids_done),
+            "skipped": len(skipped),
+            "message": f"Sync complete: {len(docs_done)} docs, {len(vids_done)} videos added"
+        }
+    except Exception as e:
+        return {"synced": 0, "message": f"Sync unavailable: {str(e)}"}
+
+@app.get("/library/stats")
+async def library_stats():
+    try:
+        from database import SessionLocal
+        from sqlalchemy import text as sql_text
+        with SessionLocal() as db:
+            doc_count = db.execute(
+                sql_text("SELECT COUNT(DISTINCT file_id) FROM library_chunks")
+            ).scalar()
+            vid_count = db.execute(
+                sql_text("SELECT COUNT(*) FROM library_videos")
+            ).scalar()
+        return {"documents": doc_count or 0, "videos": vid_count or 0}
+    except Exception as e:
+        return {"documents": 0, "videos": 0}
 
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
