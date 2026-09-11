@@ -216,6 +216,18 @@ def extract_text(buf: io.BytesIO, mime: str, name: str) -> str:
             return f"[PDF extraction failed: {e}]"
     if mime in ("text/plain", "text/markdown"):
         return buf.read().decode("utf-8", errors="ignore")
+    if "presentationml" in mime or mime.endswith(".presentation"):
+        try:
+            from pptx import Presentation
+            prs = Presentation(buf)
+            lines = []
+            for slide in prs.slides:
+                for shape in slide.shapes:
+                    if hasattr(shape, "text") and shape.text.strip():
+                        lines.append(shape.text.strip())
+            return "\n\n".join(lines)
+        except Exception as e:
+            return f"[PPTX extraction failed: {e}]"
     if "word" in mime or "document" in mime:
         try:
             import docx
@@ -291,7 +303,7 @@ def walk_folder(folder_id: str, folder_path: list, dry_run: bool,
         if not dry_run:
             try:
                 buf  = download_file(fid, mime)
-                text = extract_text(buf, mime, name)
+                text = extract_text(buf, mime, name).replace('\x00', '')
                 if len(text.strip()) < 50:
                     skipped.append(f"[EMPTY] {name}")
                     continue
