@@ -19,8 +19,8 @@ load_dotenv()
 
 # -- Init
 groq_client  = Groq(api_key=os.getenv("GROQ_API_KEY"))
-MODEL_SMART  = "llama-3.3-70b-versatile"   # deep reasoning, strategy, multi-step
-MODEL_FAST   = "llama-3.1-8b-instant"        # quick lookups, simple questions
+MODEL_SMART  = "llama3-70b-8192"   # deep reasoning, strategy, multi-step
+MODEL_FAST   = "llama3-8b-8192"    # quick lookups, simple questions
 
 # Keywords that signal a complex question needing the smarter model
 _COMPLEX_SIGNALS = [
