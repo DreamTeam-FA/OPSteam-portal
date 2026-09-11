@@ -21,8 +21,13 @@ SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE", "hi-amy-service-
 LIBRARY_FOLDER_ID    = "1hJI4zz7u3rh8kxKwvC3p8-Rl4vOs5iE3"
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
-creds     = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-drive_svc = build("drive", "v3", credentials=creds)
+try:
+    creds     = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+    drive_svc = build("drive", "v3", credentials=creds)
+except Exception:
+    # No local service account file — drive_svc will be injected by the caller
+    # (e.g. main.py /library/sync endpoint injects it via ingest_library.drive_svc = drive)
+    drive_svc = None
 
 # ── Skip logic ─────────────────────────────────────────────────────────────────
 # These folder IDs are already ingested as Amy's course content — skip entirely

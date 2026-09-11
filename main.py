@@ -20,7 +20,7 @@ load_dotenv()
 # -- Init
 groq_client  = Groq(api_key=os.getenv("GROQ_API_KEY"))
 MODEL_SMART  = "llama-3.3-70b-versatile"   # deep reasoning, strategy, multi-step
-MODEL_FAST   = "qwen/qwen3.8-27b"           # quick lookups, simple questions
+MODEL_FAST   = "llama-3.1-8b-instant"        # quick lookups, simple questions
 
 # Keywords that signal a complex question needing the smarter model
 _COMPLEX_SIGNALS = [
@@ -506,10 +506,13 @@ async def library_sync():
 
         LIBRARY_FOLDER_ID = "1hJI4zz7u3rh8kxKwvC3p8-Rl4vOs5iE3"
 
-        # Import ingest helpers
-        from ingest_library import (walk_folder, list_folder)
+        # Inject the already-authenticated drive client so ingest_library
+        # doesn't try to open the service-account file at import time.
+        import ingest_library
+        ingest_library.drive_svc = drive
+
         docs_done, vids_done, skipped = [], [], []
-        walk_folder(LIBRARY_FOLDER_ID, [], True, docs_done, vids_done, skipped)
+        ingest_library.walk_folder(LIBRARY_FOLDER_ID, [], False, docs_done, vids_done, skipped)
 
         return {
             "synced_docs": len(docs_done),
