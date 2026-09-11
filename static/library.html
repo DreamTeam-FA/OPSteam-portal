@@ -251,10 +251,11 @@ html[data-theme="dark"] body::before{
 /* ── Librarian Chat ──────────────────────────────────────────────────────── */
 .librarian-toggle{
   position:fixed;bottom:24px;right:24px;z-index:300;
-  width:56px;height:56px;border-radius:50%;
+  width:62px;height:62px;border-radius:50%;
   background:linear-gradient(135deg,var(--purple),var(--teal));
-  border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  font-size:24px;box-shadow:var(--lift-shadow);
+  border:none;cursor:pointer;
+  padding:0;overflow:hidden;
+  box-shadow:var(--lift-shadow);
   transition:transform .15s,box-shadow .15s;
 }
 .librarian-toggle:hover{transform:scale(1.07);box-shadow:0 12px 32px rgba(76,53,168,0.5)}
@@ -274,7 +275,7 @@ html[data-theme="dark"] body::before{
   padding:14px 16px;border-bottom:1px solid var(--border);
   display:flex;align-items:center;gap:10px;flex-shrink:0;
 }
-.lib-avatar{width:36px;height:36px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 0 2px rgba(13,148,136,0.35)}
+.lib-avatar{width:46px;height:46px;border-radius:50%;overflow:hidden;display:block;flex-shrink:0;object-fit:cover;box-shadow:0 0 0 2px rgba(13,148,136,0.35)}
 .lib-name{font-weight:700;font-size:13px}
 .lib-status{font-size:11px;color:var(--teal)}
 .lib-messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;min-height:0}
@@ -427,7 +428,9 @@ html[data-theme="dark"] body::before{
 </div>
 
 <!-- AI Librarian -->
-<button class="librarian-toggle" id="libToggle" onclick="toggleLibrarian()" title="Ask the AI Librarian">📖</button>
+<button class="librarian-toggle" id="libToggle" onclick="toggleLibrarian()" title="Ask the AI Librarian">
+  <img src="/avatar-librarian.png" style="width:100%;height:100%;object-fit:cover;object-position:center 18%;display:block;border-radius:50%;" alt="AI Librarian">
+</button>
 <div class="librarian-panel" id="libPanel">
   <div class="lib-panel-header">
     <div class="lib-avatar" id="libAvatarEl"></div>
@@ -1099,7 +1102,7 @@ function showToast(msg) {
 // ── Start ─────────────────────────────────────────────────────────────────────
 // Inject librarian avatar image
 const _libAv = document.getElementById('libAvatarEl');
-if (_libAv) _libAv.innerHTML = '<img src="/avatar-librarian.png" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%" alt="Librarian">';
+if (_libAv) _libAv.innerHTML = '<img src="/avatar-librarian.png" style="width:100%;height:100%;object-fit:cover;object-position:center 18%;display:block;border-radius:50%" alt="Librarian">';
 init();
 </script>
 </body>
