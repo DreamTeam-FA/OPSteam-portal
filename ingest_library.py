@@ -248,6 +248,7 @@ def extract_text(buf: io.BytesIO, mime: str, name: str) -> str:
 def walk_folder(folder_id: str, folder_path: list, dry_run: bool,
                 docs_done: list, vids_done: list, skipped: list):
     from database import (library_already_processed, library_video_exists,
+                          library_subcategory_is_null, update_library_subcategory,
                           store_library_chunks, store_library_video, init_db)
 
     items = list_folder(folder_id)
@@ -291,7 +292,12 @@ def walk_folder(folder_id: str, folder_path: list, dry_run: bool,
 
         # ── Documents ──
         if library_already_processed(fid):
-            skipped.append(f"[ALREADY] {name}")
+            # Patch subcategory if it was ingested before subcategory support
+            if subcategory and not dry_run and library_subcategory_is_null(fid):
+                update_library_subcategory(fid, subcategory)
+                print(f"  🔖 Patched subcategory [{subcategory}] → {name}")
+            else:
+                skipped.append(f"[ALREADY] {name}")
             continue
 
         # Only process supported text/doc/pdf types

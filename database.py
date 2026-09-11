@@ -148,6 +148,26 @@ def library_already_processed(file_id: str) -> bool:
         return row is not None
 
 
+def library_subcategory_is_null(file_id: str) -> bool:
+    """Return True if the file is in DB but has no subcategory set."""
+    with SessionLocal() as db:
+        row = db.execute(
+            text("SELECT subcategory FROM library_chunks WHERE file_id = :fid LIMIT 1"),
+            {"fid": file_id}
+        ).fetchone()
+        return row is not None and row.subcategory is None
+
+
+def update_library_subcategory(file_id: str, subcategory: str):
+    """Patch subcategory for all chunks of an already-ingested file."""
+    with SessionLocal() as db:
+        db.execute(
+            text("UPDATE library_chunks SET subcategory = :sub WHERE file_id = :fid"),
+            {"sub": subcategory, "fid": file_id}
+        )
+        db.commit()
+
+
 def library_video_exists(file_id: str) -> bool:
     with SessionLocal() as db:
         row = db.execute(
