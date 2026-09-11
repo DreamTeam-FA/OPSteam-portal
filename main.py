@@ -4,6 +4,7 @@
 
 import os
 import re
+import random
 import asyncio
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -19,14 +20,18 @@ load_dotenv()
 
 # -- Init
 groq_client  = Groq(api_key=os.getenv("GROQ_API_KEY"))
-ACTIVE_MODEL = "llama-3.3-70b-versatile"
+ACTIVE_MODELS = [
+    "llama-3.3-70b-versatile",
+    "qwen/qwen3.8-27b",
+]
 
 def strip_thinking(text):
     return re.sub(r"<think>[\s\S]*?</think>", "", text, flags=re.IGNORECASE).strip()
 
 def generate(system_prompt, user_prompt, max_tokens=3000, json_mode=False):
+    model = random.choice(ACTIVE_MODELS)
     kwargs = dict(
-        model=ACTIVE_MODEL,
+        model=model,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user",   "content": user_prompt},
@@ -119,7 +124,7 @@ async def chat(req: ChatRequest):
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "app": "Hi, Amy!", "model": ACTIVE_MODEL}
+    return {"status": "ok", "app": "Hi, Amy!", "models": ACTIVE_MODELS}
 
 @app.get("/content-week/scrape")
 async def content_week_scrape(url: str):
