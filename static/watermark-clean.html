@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>OPSteam Portal</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231A237E'/%3E%3Ctext x='50%25' y='50%25' font-family='system-ui,sans-serif' font-size='12' font-weight='700' fill='white' text-anchor='middle' dominant-baseline='central'%3Emt%3C/text%3E%3C/svg%3E"/>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Inter:wght@400;500;600&display=swap">
 <style>
@@ -1075,36 +1076,27 @@ async function extractPDFText(file) {
   return result;
 }
 
-// DOCX text extraction (docx = zip with XML)
+// DOCX text extraction — uses JSZip to decompress, then parses word/document.xml
 async function extractDocxText(file) {
   const ab = await file.arrayBuffer();
-  // Minimal ZIP parser to find word/document.xml
-  const bytes = new Uint8Array(ab);
-  const text = await findDocxContent(bytes);
-  if (!text) throw new Error('Could not extract text from this Word document.');
-  return text;
-}
-
-async function findDocxContent(bytes) {
-  // We'll use the browser's DecompressionStream to read the ZIP if available
-  // Fallback: scan for XML text patterns in the raw bytes
+  let zip;
   try {
-    // Try to use a Blob URL and fetch to decompress
-    const blob = new Blob([bytes], { type: 'application/zip' });
-    // Read as text and grep for w:t elements
-    const text = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
-    // Find all <w:t> content (Word text runs) in the raw compressed stream
-    // This works because XML text isn't compressed at the character level
-    const matches = [...text.matchAll(/<w:t[^>]*>([^<]+)<\/w:t>/g)];
-    if (matches.length > 0) {
-      return matches.map(m => m[1]).join(' ');
-    }
-    // Fallback: extract any readable ASCII strings
-    const readable = text.replace(/[^\x20-\x7E\n\r\t]/g, ' ').replace(/ {3,}/g, '\n').trim();
-    return readable || null;
-  } catch {
-    return null;
+    zip = await JSZip.loadAsync(ab);
+  } catch (e) {
+    throw new Error('Could not open this file as a Word document (invalid zip).');
   }
+  const xmlFile = zip.file('word/document.xml');
+  if (!xmlFile) throw new Error('Not a valid Word document — missing word/document.xml.');
+  const xmlText = await xmlFile.async('string');
+  // Extract all <w:t> text runs; preserve paragraph breaks from <w:p> tags
+  const parts = [];
+  const paraRegex = /<w:p[ >][\s\S]*?<\/w:p>/g;
+  for (const para of xmlText.matchAll(paraRegex)) {
+    const tMatches = [...para[0].matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)];
+    if (tMatches.length) parts.push(tMatches.map(m => m[1]).join(''));
+  }
+  if (!parts.length) throw new Error('No text found in this Word document.');
+  return parts.join('\n');
 }
 
 // Image EXIF strip via canvas re-encode
