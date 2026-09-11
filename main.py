@@ -198,20 +198,88 @@ LIBRARY CONTENT:
 
 class LibrarianChatRequest(BaseModel):
     message: str
-    category: str = None  # optional category filter
+    category: str = None
+    search_web: bool = False   # True when user explicitly asks to search online
 
 class LibrarySyncRequest(BaseModel):
     force: bool = False
 
+# Keywords that trigger automatic web search
+WEB_SEARCH_TRIGGERS = [
+    "search online", "search the web", "search web", "look it up",
+    "find online", "google it", "browse", "web search", "search for",
+    "find me ", "look up", "check online", "what's the latest",
+    "current news", "recent ", "up to date", "latest on",
+]
+
+def do_web_search(query: str, max_results: int = 5):
+    """Search the web using DuckDuckGo. Returns (text_context, sources_list)."""
+    try:
+        from duckduckgo_search import DDGS
+        with DDGS() as ddgs:
+            results = list(ddgs.text(query, max_results=max_results))
+        if not results:
+            return None, []
+        formatted = []
+        sources = []
+        for r in results:
+            formatted.append(f"Title: {r['title']}\nURL: {r['href']}\nSummary: {r['body']}")
+            sources.append({"title": r["title"], "url": r["href"]})
+        return "\n\n".join(formatted), sources
+    except Exception as e:
+        return None, []
+
 @app.post("/librarian/chat")
 async def librarian_chat(req: LibrarianChatRequest):
     try:
-        context = search_library_chunks(req.message, top_n=6, category=req.category)
-        if not context:
-            context = "No specific documents matched. Answer based on your general knowledge about the library topics."
-        system = LIBRARIAN_SYSTEM_PROMPT.format(context=context)
+        # 1. Library search
+        lib_context = search_library_chunks(req.message, top_n=6, category=req.category)
+        lib_has_content = bool(lib_context and len(lib_context) > 150)
+
+        # 2. Decide whether to search the web
+        msg_lower = req.message.lower()
+        wants_web = req.search_web or any(t in msg_lower for t in WEB_SEARCH_TRIGGERS)
+
+        web_context, sources = None, []
+        if wants_web:
+            web_context, sources = do_web_search(req.message)
+
+        # 3. Build combined context
+        parts = []
+        if lib_has_content:
+            parts.append(f"LIBRARY CONTENT:\n{lib_context}")
+        if web_context:
+            parts.append(f"WEB SEARCH RESULTS:\n{web_context}")
+        if not parts:
+            parts.append("No matching library content found.")
+
+        combined = "\n\n---\n\n".join(parts)
+
+        # 4. Prompt — tell it to offer web search only when library is thin
+        offer_hint = ""
+        if not wants_web and not lib_has_content:
+            offer_hint = (
+                "\n\nIf you cannot fully answer from the library content, "
+                "end your reply with exactly: [[OFFER_SEARCH]] so the UI can show a search button."
+            )
+
+        web_note = ""
+        if sources:
+            web_note = "\n\nWhen using web results, cite sources by name and URL."
+
+        system = LIBRARIAN_SYSTEM_PROMPT.format(context=combined) + offer_hint + web_note
         resp = generate(system, req.message, max_tokens=800)
-        return {"response": resp}
+
+        # 5. Parse offer flag
+        offer_search = "[[OFFER_SEARCH]]" in resp
+        clean_resp = resp.replace("[[OFFER_SEARCH]]", "").strip()
+
+        return {
+            "response": clean_resp,
+            "sources": sources,
+            "searched_web": bool(web_context),
+            "offer_search": offer_search and not wants_web,
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
