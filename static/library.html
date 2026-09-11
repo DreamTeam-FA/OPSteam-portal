@@ -568,7 +568,13 @@ function renderGrid() {
     });
 
     let html = '';
-    Object.entries(grouped).sort(([a],[b]) => a.localeCompare(b)).forEach(([group, vids]) => {
+    Object.entries(grouped).sort(([a],[b]) => {
+      // DCA groups: sort by module order; others: alphabetical
+      const aDCA = a.startsWith('Digital Course Academy');
+      const bDCA = b.startsWith('Digital Course Academy');
+      if (aDCA && bDCA) return dcaGroupSortKey(a) - dcaGroupSortKey(b);
+      return a.localeCompare(b);
+    }).forEach(([group, vids]) => {
       html += `<div style="grid-column:1/-1;padding:14px 2px 6px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);border-bottom:1px solid var(--border);margin-bottom:4px">${group}</div>`;
       smartSort(vids, 'file_name').forEach(v => { html += renderVideoCard(v); });
     });
@@ -598,11 +604,96 @@ function cleanType(raw) {
   return 'Doc';
 }
 
-// Smart sort: numbered → sequential, dated → chronological, else → alphabetical
+// ── DCA course ordering ───────────────────────────────────────────────────────
+// Maps filename keywords → numeric sort key matching dca_course_structure.json
+// T1 (Start From Scratch) = 1000s, T2 (Ready To Launch) = 2000s
+// Within each track: module N → base + N*100, lessons keep their relative order
+const DCA_MODULE_KEYS = [
+  // Track 2 — Ready To Launch
+  [2900, ['ready to launch track celebration', 'your personal hype video!']],
+  [2700, ['email sequence', 'webinar invite email', 'pre-webinar email', 'replay email',
+          'post-webinar email', 'post-webinar sales booster', 'onboarding email',
+          'live launch wrap up', 'kit automation', 'kit email']],
+  [2600, ['profitable webinar framework', 'webinar slide', 'golden rules for delivering',
+          'map out your live webinar', 'webinar registration', 'boost webinar sign',
+          'conduct a live webinar', 'livestream', 'webinar replay page', 'demio',
+          'how to conduct', 'webinar']],
+  [2500, ['marketing blueprint', 'irresistible launch offer', 'launch revenue goal',
+          'sales page blueprint', 'high converting sales page', 'quiz lead magnet',
+          'digital course sales page']],
+  [2400, ['art of delivering', 'art of teaching', 'how to deliver your course',
+          'delivery tips', 'record course material', 'slide presenter notes',
+          'present & export slides', 'canva slide', 'showit']],
+  [2300, ['outline your course', 'refining your course outline', 'course support strategy',
+          'your content framework', 'porterfield process', 'course-focused freebie',
+          'create your course']],
+  [2200, ['validating your course', 'course calls strategy', 'social validation strategies',
+          'first 10 strategy']],
+  [2100, ['key decision', '7 key', 'choosing your course topic', 'ideal customer avatar',
+          'course transformation statement', 'course name', 'pricing your course',
+          'your tech stack', 'scheduling your launch', 'pre-launch runway',
+          'decision #1', 'decision #2', 'decision #3', 'decision #4',
+          'decision #5', 'decision #6', 'decision #7']],
+  [2050, ['how to use kit', 'kit video tutorial', 'kajabi', 'website document',
+          'copyright & trademark', 'course terms of use', 'tech overview',
+          'how to download fonts', 'canva', 'the basics of using']],
+  [2000, ['ready to launch digital course track', 'dca new student orientation',
+          'dca accountability pods', 'how to get instant momentum',
+          'ready to launch track']],
+  // Track 1 — Start From Scratch
+  [1900, ['start from scratch track celebration', 'your personal hype video']],
+  [1400, ['simple workshop sales page', 'email and social promotion',
+          'shout it from the rooftops', 'go live challenge', 'promote and deliver',
+          'craft your email and social', 'create your simple workshop sales']],
+  [1300, ['create your workshop outline', 'review your training toolkit',
+          'perfect your workshop content', 'create your workshop', 'workshop outline',
+          'training toolkit']],
+  [1200, ['workshop topic', 'workshop title', 'workshop transformation',
+          'workshop pricing', 'finalize workshop delivery', 'nail down your workshop',
+          'craft your workshop', 'determine your workshop']],
+  [1100, ['build your audience', 'identify your niche', 'weekly original content',
+          'create a lead magnet', 'get social!', 'instagram poll strategy']],
+  [1000, ['start from scratch digital course academy roadmap', 'start from scratch dca',
+          'managing your mindset', "tech: let's keep it simple",
+          'start from scratch digital course']],
+];
+
+function dcaSortKey(name) {
+  const n = name.toLowerCase();
+  for (const [order, keywords] of DCA_MODULE_KEYS) {
+    if (keywords.some(kw => n.includes(kw))) return order;
+  }
+  // Fallback: detect track from name
+  if (n.includes('start from scratch')) return 1500;
+  if (n.includes('ready to launch'))    return 2500;
+  return 9999; // unknown DCA item → end
+}
+
+// DCA video-group sort order (subcategory → sort key)
+const DCA_GROUP_ORDER = {
+  'Getting Started': 2000, 'Start from Scratch': 1000, 'Grow Your Audience': 1100,
+  'Ready to Launch': 2000, 'Build Your Course': 2300, 'Webinars & Live': 2600,
+  'Q&A & Replays': 8000, 'Bonus': 8100, 'Resources': 8200, 'General': 8500,
+};
+function dcaGroupSortKey(groupLabel) {
+  // groupLabel is "Digital Course Academy — Subcategory" or just category
+  const sub = groupLabel.split(' — ')[1] || '';
+  return DCA_GROUP_ORDER[sub] !== undefined ? DCA_GROUP_ORDER[sub] : 5000;
+}
+
+// Smart sort: DCA course order → numbered → dated → alphabetical
 function smartSort(items, nameKey) {
   return [...items].sort((a, b) => {
     const na = a[nameKey] || '', nb = b[nameKey] || '';
-    // Extract leading number (#N or NN)
+    // DCA items: sort by module order
+    const isDCA_a = a.category === 'Digital Course Academy';
+    const isDCA_b = b.category === 'Digital Course Academy';
+    if (isDCA_a && isDCA_b) {
+      const ka = dcaSortKey(na), kb = dcaSortKey(nb);
+      if (ka !== kb) return ka - kb;
+      // Same module bucket: fall through to standard sort below
+    }
+    // Extract leading number (#N or N )
     const numA = na.match(/[#\s](\d+)/), numB = nb.match(/[#\s](\d+)/);
     if (numA && numB) return parseInt(numA[1]) - parseInt(numB[1]);
     // Extract year-month date (2025, 2026)
