@@ -107,6 +107,36 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
 
+class ChatSummaryRequest(BaseModel):
+    messages: list   # [{role: "user"|"amy", text: "..."}]
+
+SUMMARY_SYSTEM = """You are a professional advisor who synthesizes advice from Amy Porterfield's course methodology into a clean, structured summary document.
+
+Given a conversation between a user and Amy, extract and organize Amy's advice into a rich, actionable summary. Do NOT write a transcript — write a polished advisory document.
+
+OUTPUT FORMAT (use exactly these section headers with emoji):
+
+🎯 Topic
+One sentence describing what this advice covers.
+
+💡 Core Recommendations
+Number each recommendation. Be specific and concrete. Reference any frameworks or course material Amy mentioned.
+
+✅ Action Steps
+A checklist of concrete things the user should do, in priority order. Start each with a verb.
+
+📚 Frameworks & Resources Referenced
+List any specific Amy Porterfield frameworks, course modules, documents, or tools mentioned.
+
+⚡ Quick Win — Start Here
+The single most important first step from all of Amy's advice.
+
+RULES:
+- Write in second person ("you should...", "your next step...")
+- Be specific — use exact names, numbers, steps from the conversation
+- This is a polished document someone would save and refer back to
+- Do NOT include any meta-commentary about the conversation itself"""
+
 class ContentWeekRequest(BaseModel):
     system_prompt: str
     user_prompt: str
@@ -143,6 +173,33 @@ async def chat(req: ChatRequest):
         system  = AMY_SYSTEM_PROMPT.format(context=context)
         resp    = generate(system, req.message, max_tokens=1000, message_for_routing=req.message)
         return ChatResponse(response=resp)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/chat/summary")
+async def chat_summary(req: ChatSummaryRequest):
+    try:
+        if not req.messages:
+            raise HTTPException(status_code=400, detail="No messages provided")
+        # Build conversation text — only include Amy's turns for summarization
+        convo_parts = []
+        for m in req.messages:
+            role = m.get("role", "")
+            text = m.get("text", "").strip()
+            if not text:
+                continue
+            label = "User" if role == "user" else "Amy"
+            convo_parts.append(f"{label}: {text}")
+        convo_text = "\n\n".join(convo_parts)
+        resp = generate(
+            SUMMARY_SYSTEM,
+            f"Here is the conversation to summarize:\n\n{convo_text}",
+            max_tokens=1200,
+            message_for_routing="help me write a full detailed strategy plan with action steps frameworks and recommendations",
+        )
+        return {"summary": resp}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

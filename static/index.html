@@ -258,6 +258,41 @@ html[data-theme="dark"] body::before {
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
+.export-btn {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 9px;
+  background: var(--glass-hi); border: 1px solid var(--border);
+  color: var(--ink2); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: background .14s, border-color .14s, color .14s;
+  font-family: 'Inter', sans-serif;
+}
+.export-btn:hover { background: var(--purple-dim); border-color: var(--purple); color: var(--purple); }
+/* Export summary body styles */
+.export-section { margin-bottom: 22px; }
+.export-section-title {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 800;
+  letter-spacing: .09em; text-transform: uppercase; color: var(--ink3);
+  margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+}
+.export-section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.export-section p { font-size: 14px; line-height: 1.75; color: var(--ink2); margin-bottom: 8px; }
+.export-section ul { list-style: none; padding: 0; margin: 0; }
+.export-section li { padding: 5px 0 5px 20px; position: relative; font-size: 14px; color: var(--ink2); line-height: 1.6; }
+.export-section li::before { content: '▸'; position: absolute; left: 4px; color: var(--teal); font-size: 11px; top: 7px; }
+.export-quickwin {
+  background: linear-gradient(135deg, var(--purple-dim), var(--teal-dim));
+  border: 1px solid var(--border-hi); border-radius: 12px;
+  padding: 16px 20px; margin-top: 4px;
+  font-size: 14px; color: var(--ink); font-weight: 500; line-height: 1.65;
+}
+/* Print styles */
+@media print {
+  body * { visibility: hidden; }
+  #export-modal, #export-modal * { visibility: visible; }
+  #export-modal { position: fixed; inset: 0; width: 100%; max-height: none; border-radius: 0; box-shadow: none; }
+  #export-overlay { display: flex !important; background: white; }
+}
 .amy-avatar {
   width: 48px; height: 48px;
   border-radius: 50%; overflow: hidden;
@@ -604,6 +639,45 @@ html[data-theme="dark"] body::before {
       Course Assistant · Amy Porterfield
     </div>
   </div>
+  <button id="export-btn" class="export-btn" onclick="exportAdvice()" title="Export Amy's advice as a summary" style="display:none">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Export Advice
+  </button>
+</div>
+
+<!-- ── Export Summary Modal ── -->
+<div id="export-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;align-items:center;justify-content:center;">
+  <div id="export-modal" style="
+    background:var(--bg2);border:1px solid var(--border-hi);border-radius:18px;
+    width:min(720px,96vw);max-height:88vh;display:flex;flex-direction:column;
+    box-shadow:0 24px 64px rgba(76,53,168,0.4);overflow:hidden;
+  ">
+    <!-- Modal header -->
+    <div style="display:flex;align-items:center;gap:12px;padding:18px 22px 14px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,var(--glass-hi),var(--glass));flex-shrink:0">
+      <div style="font-size:22px">📋</div>
+      <div style="flex:1">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:19px;letter-spacing:.03em">Amy's Advice Summary</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:2px" id="export-date"></div>
+      </div>
+      <button onclick="printAdvice()" style="
+        display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;
+        background:var(--purple);color:#fff;border:none;cursor:pointer;font-size:12px;font-weight:600;
+        transition:background .14s;
+      " onmouseover="this.style.background='var(--teal)'" onmouseout="this.style.background='var(--purple)'">
+        🖨️ Save as PDF
+      </button>
+      <button onclick="copyAdvice()" id="copy-btn" style="
+        display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;
+        background:var(--glass-hi);color:var(--ink2);border:1px solid var(--border);cursor:pointer;font-size:12px;font-weight:600;
+        transition:background .14s;
+      ">
+        📋 Copy
+      </button>
+      <button onclick="closeExport()" style="padding:7px 10px;border-radius:9px;background:var(--glass-hi);border:1px solid var(--border);color:var(--ink2);cursor:pointer;font-size:15px">✕</button>
+    </div>
+    <!-- Modal body -->
+    <div id="export-body" style="flex:1;overflow-y:auto;padding:24px 28px;"></div>
+  </div>
 </div>
 
 <!-- ── Welcome Screen ── -->
@@ -646,6 +720,7 @@ const USER_SVG = `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" st
 
 // ── State ──
 let activated = false;
+let chatHistory = []; // [{role:'user'|'amy', text:'...'}]
 const welcome  = document.getElementById('welcome');
 const messages = document.getElementById('messages');
 const input    = document.getElementById('user-input');
@@ -696,6 +771,11 @@ function renderMarkdown(text) {
 // ── Messages ──
 function appendMessage(role, content) {
   const isAmy = role === 'amy';
+  // Track history for export
+  chatHistory.push({ role, text: content });
+  // Show export button once there's Amy content
+  if (isAmy) document.getElementById('export-btn').style.display = 'flex';
+
   const div = document.createElement('div');
   div.className = `msg${isAmy ? '' : ' user'}`;
   const av = document.createElement('div');
@@ -710,6 +790,103 @@ function appendMessage(role, content) {
   messages.appendChild(div);
   messages.scrollTop = messages.scrollHeight;
 }
+
+// ── Export / Summary ──────────────────────────────────────────────────────────
+async function exportAdvice() {
+  const overlay = document.getElementById('export-overlay');
+  const body    = document.getElementById('export-body');
+  const dateEl  = document.getElementById('export-date');
+  overlay.style.display = 'flex';
+  body.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink3)">✨ Generating your summary…</div>';
+  dateEl.textContent = new Date().toLocaleDateString('en-US', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+
+  try {
+    const res = await fetch('/chat/summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: chatHistory })
+    });
+    const data = await res.json();
+    body.innerHTML = renderSummary(data.summary || '');
+  } catch(e) {
+    body.innerHTML = '<p style="color:var(--ink3);padding:20px">Could not generate summary. Please try again.</p>';
+  }
+}
+
+function renderSummary(md) {
+  // Parse the structured summary into styled HTML sections
+  const sections = md.split(/\n(?=🎯|💡|✅|📚|⚡)/);
+  let html = '';
+  for (const sec of sections) {
+    if (!sec.trim()) continue;
+    const lines = sec.trim().split('\n');
+    const titleLine = lines[0].trim();
+    const body = lines.slice(1).join('\n').trim();
+    const isQuickWin = titleLine.startsWith('⚡');
+    html += `<div class="export-section">`;
+    html += `<div class="export-section-title">${escHtmlIdx(titleLine)}</div>`;
+    if (isQuickWin) {
+      html += `<div class="export-quickwin">${renderSummaryBody(body)}</div>`;
+    } else {
+      html += renderSummaryBody(body);
+    }
+    html += `</div>`;
+  }
+  return html || `<div style="font-size:14px;color:var(--ink2);line-height:1.8;white-space:pre-wrap">${escHtmlIdx(md)}</div>`;
+}
+
+function renderSummaryBody(text) {
+  if (!text) return '';
+  const lines = text.split('\n');
+  let out = '', inUl = false;
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t) { if (inUl) { out += '</ul>'; inUl = false; } continue; }
+    // Numbered list or bullet
+    if (/^[\d]+\.\s/.test(t) || /^[-•✅]\s/.test(t)) {
+      if (!inUl) { out += '<ul>'; inUl = true; }
+      const content = t.replace(/^[\d]+\.\s|^[-•✅]\s/, '');
+      out += `<li>${renderInline(content)}</li>`;
+    } else {
+      if (inUl) { out += '</ul>'; inUl = false; }
+      out += `<p>${renderInline(t)}</p>`;
+    }
+  }
+  if (inUl) out += '</ul>';
+  return out;
+}
+
+function renderInline(t) {
+  return escHtmlIdx(t)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>');
+}
+
+function escHtmlIdx(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function closeExport() {
+  document.getElementById('export-overlay').style.display = 'none';
+}
+
+function printAdvice() { window.print(); }
+
+async function copyAdvice() {
+  const body = document.getElementById('export-body');
+  const text = body.innerText;
+  try {
+    await navigator.clipboard.writeText(text);
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => { btn.textContent = '📋 Copy'; }, 2000);
+  } catch(e) {}
+}
+
+// Close modal on overlay click
+document.getElementById('export-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeExport();
+});
 
 function showTyping() {
   const div = document.createElement('div');
