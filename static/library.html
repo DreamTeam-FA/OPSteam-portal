@@ -1096,13 +1096,10 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// ── Avatars ───────────────────────────────────────────────────────────────────
-const LIBRARIAN_SVG = `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block"><circle cx="40" cy="40" r="40" fill="#0D9488"/><ellipse cx="40" cy="76" rx="21" ry="17" fill="#0A7468"/><rect x="36" y="53" width="8" height="12" rx="4" fill="#F5D0A0"/><circle cx="40" cy="38" r="14.5" fill="#F5D0A0"/><ellipse cx="40" cy="24" rx="13.5" ry="9" fill="#7B3810"/><circle cx="40" cy="16" r="5.5" fill="#7B3810"/><path d="M27 30 Q24.5 39 26 49 Q29 53 32 49 L29 31Z" fill="#7B3810"/><path d="M53 30 Q55.5 39 54 49 Q51 53 48 49 L51 31Z" fill="#7B3810"/><ellipse cx="35" cy="37.5" rx="2" ry="2.5" fill="#2C1A0E"/><ellipse cx="45" cy="37.5" rx="2" ry="2.5" fill="#2C1A0E"/><circle cx="35.7" cy="36.5" r="0.7" fill="white"/><circle cx="45.7" cy="36.5" r="0.7" fill="white"/><circle cx="35" cy="37.5" r="5.5" stroke="#3A2000" stroke-width="1.5" fill="rgba(210,235,255,0.18)"/><circle cx="45" cy="37.5" r="5.5" stroke="#3A2000" stroke-width="1.5" fill="rgba(210,235,255,0.18)"/><line x1="29.5" y1="37.5" x2="27.5" y2="36" stroke="#3A2000" stroke-width="1.5" stroke-linecap="round"/><line x1="50.5" y1="37.5" x2="52.5" y2="36" stroke="#3A2000" stroke-width="1.5" stroke-linecap="round"/><path d="M31 33 Q35 30.5 38.5 33" stroke="#5A2800" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M41.5 33 Q45 30.5 49 33" stroke="#5A2800" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M36 47 Q40 51.5 44 47" stroke="#906030" stroke-width="1.5" fill="none" stroke-linecap="round"/><circle cx="32.5" cy="44.5" r="3" fill="#D4905A" opacity="0.2"/><circle cx="47.5" cy="44.5" r="3" fill="#D4905A" opacity="0.2"/></svg>`;
-
 // ── Start ─────────────────────────────────────────────────────────────────────
-// Inject librarian avatar
+// Inject librarian avatar image
 const _libAv = document.getElementById('libAvatarEl');
-if (_libAv) _libAv.innerHTML = LIBRARIAN_SVG;
+if (_libAv) _libAv.innerHTML = '<img src="/avatar-librarian.png" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%" alt="Librarian">';
 init();
 </script>
 </body>

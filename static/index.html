@@ -261,8 +261,9 @@ html[data-theme="dark"] body::before {
 .amy-avatar {
   width: 34px; height: 34px;
   border-radius: 50%; overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
+  display: block;
   flex-shrink: 0;
+  object-fit: cover;
   box-shadow: 0 0 0 2px rgba(76,53,168,0.4), 0 0 14px rgba(76,53,168,0.3);
 }
 .header-name {
@@ -316,7 +317,8 @@ html[data-theme="dark"] body::before {
   width: 82px; height: 82px;
   border-radius: 50%;
   overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
+  display: block;
+  object-fit: cover;
   animation: avatarPulse 3.5s ease-in-out infinite;
   box-shadow:
     0 0 0 1px rgba(76,53,168,0.4),
@@ -379,9 +381,10 @@ html[data-theme="dark"] body::before {
 .msg-avatar {
   width: 30px; height: 30px;
   border-radius: 50%; overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
+  display: block;
   flex-shrink: 0;
   margin-top: 2px;
+  object-fit: cover;
   box-shadow: 0 0 0 1px rgba(76,53,168,0.2);
 }
 .msg.user .msg-avatar {
@@ -590,7 +593,7 @@ html[data-theme="dark"] body::before {
 
 <!-- ── Amy Identity Bar ── -->
 <div class="ops-header">
-  <div class="amy-avatar" id="amyHeaderAvatar"></div>
+  <img src="/avatar-amy.png" class="amy-avatar" alt="Amy">
   <div>
     <div class="header-name">Hi, Amy!</div>
     <div class="header-status">
@@ -602,7 +605,7 @@ html[data-theme="dark"] body::before {
 
 <!-- ── Welcome Screen ── -->
 <div id="welcome">
-  <div class="welcome-glow" id="amyHeroAvatar"></div>
+  <img src="/avatar-amy.png" class="welcome-glow" alt="Amy">
   <div class="welcome-title">Hey, I'm Amy.</div>
   <div class="welcome-sub">Your course assistant, trained on Amy Porterfield's materials. Ask me anything about the course — tasks, frameworks, strategies.</div>
   <div class="welcome-hint">
@@ -634,9 +637,8 @@ html[data-theme="dark"] body::before {
 </div><!-- /.app-main -->
 
 <script>
-// ── Amy SVG Avatar ───────────────────────────────────────────────────────────
-const AMY_SVG = `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block"><circle cx="40" cy="40" r="40" fill="#4C35A8"/><ellipse cx="40" cy="76" rx="21" ry="17" fill="#3B2A90"/><rect x="36" y="53" width="8" height="12" rx="4" fill="#F5BF95"/><path d="M35 59 L40 67 L45 59" fill="white" opacity="0.5"/><circle cx="40" cy="38" r="14.5" fill="#F5BF95"/><ellipse cx="40" cy="25.5" rx="14" ry="10" fill="#150800"/><path d="M26 31 Q22 42 25 55 Q28 59 31 53 L27 32Z" fill="#150800"/><path d="M54 31 Q58 42 55 55 Q52 59 49 53 L53 32Z" fill="#150800"/><ellipse cx="35" cy="37" rx="2.5" ry="3" fill="#2C1A0E"/><ellipse cx="45" cy="37" rx="2.5" ry="3" fill="#2C1A0E"/><circle cx="36" cy="35.8" r="0.9" fill="white"/><circle cx="46" cy="35.8" r="0.9" fill="white"/><path d="M32 33 Q35 30.5 38 33" stroke="#150800" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M42 33 Q45 30.5 48 33" stroke="#150800" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M36 46 Q40 51 44 46" stroke="#B07048" stroke-width="1.8" fill="none" stroke-linecap="round"/><circle cx="32" cy="44" r="3.5" fill="#E8956A" opacity="0.22"/><circle cx="48" cy="44" r="3.5" fill="#E8956A" opacity="0.22"/></svg>`;
-
+// ── Amy avatar HTML (used in dynamic message bubbles) ────────────────────────
+const AMY_IMG = `<img src="/avatar-amy.png" class="msg-avatar" alt="Amy">`;
 const USER_SVG = `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block"><circle cx="40" cy="40" r="40" fill="rgba(255,255,255,0.18)"/><circle cx="40" cy="34" r="13" fill="rgba(255,255,255,0.55)"/><ellipse cx="40" cy="72" rx="20" ry="16" fill="rgba(255,255,255,0.35)"/></svg>`;
 
 // ── State ──
@@ -656,9 +658,7 @@ function applyTheme(t) {
 }
 applyTheme(getTheme());
 
-// ── Inject avatars into static HTML ──
-document.getElementById('amyHeaderAvatar').innerHTML = AMY_SVG;
-document.getElementById('amyHeroAvatar').innerHTML = AMY_SVG;
+
 
 themeBtn.addEventListener('click', () => {
   applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
@@ -697,7 +697,7 @@ function appendMessage(role, content) {
   div.className = `msg${isAmy ? '' : ' user'}`;
   const av = document.createElement('div');
   av.className = 'msg-avatar';
-  av.innerHTML = isAmy ? AMY_SVG : USER_SVG;
+  if (isAmy) { av.innerHTML = AMY_IMG; } else { av.innerHTML = USER_SVG; }
   const bubble = document.createElement('div');
   bubble.className = 'bubble';
   if (isAmy) bubble.innerHTML = renderMarkdown(content);
@@ -711,7 +711,7 @@ function appendMessage(role, content) {
 function showTyping() {
   const div = document.createElement('div');
   div.className = 'msg'; div.id = 'typing';
-  div.innerHTML = `<div class="msg-avatar">${AMY_SVG}</div><div class="bubble typing-bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+  div.innerHTML = `<img src="/avatar-amy.png" class="msg-avatar" alt="Amy"><div class="bubble typing-bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
   messages.appendChild(div);
   messages.scrollTop = messages.scrollHeight;
 }
