@@ -55,7 +55,6 @@ def strip_thinking(text):
 def generate(system_prompt, user_prompt, max_tokens=3000, json_mode=False, message_for_routing: str = None):
     model = pick_model(message_for_routing or user_prompt)
     kwargs = dict(
-        model=model,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user",   "content": user_prompt},
@@ -65,9 +64,18 @@ def generate(system_prompt, user_prompt, max_tokens=3000, json_mode=False, messa
     )
     if json_mode:
         kwargs["response_format"] = {"type": "json_object"}
-    resp = groq_client.chat.completions.create(**kwargs)
-    content = resp.choices[0].message.content or ""
-    return strip_thinking(content)
+    # Try chosen model first; fall back to MODEL_SMART if it fails
+    for attempt_model in ([model, MODEL_SMART] if model != MODEL_SMART else [MODEL_SMART]):
+        try:
+            resp = groq_client.chat.completions.create(model=attempt_model, **kwargs)
+            content = resp.choices[0].message.content or ""
+            return strip_thinking(content)
+        except Exception as e:
+            err = str(e)
+            print(f"[generate] model={attempt_model} failed: {err}")
+            if attempt_model == MODEL_SMART:
+                raise   # out of fallbacks
+    raise RuntimeError("All models failed")
 
 app = FastAPI(title="Hi, Amy!")
 
@@ -174,6 +182,7 @@ async def chat(req: ChatRequest):
         resp    = generate(system, req.message, max_tokens=1000, message_for_routing=req.message)
         return ChatResponse(response=resp)
     except Exception as e:
+        print(f"[chat error] {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/chat/summary")
