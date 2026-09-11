@@ -488,13 +488,20 @@ async def library_sync():
         from googleapiclient.discovery import build as gdrive_build
         import io
 
-        sa_file = os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE", "hi-amy-service-account.json")
-        if not os.path.exists(sa_file):
-            return {"synced": 0, "message": "Service account not available on this server"}
+        SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
-        creds = service_account.Credentials.from_service_account_file(
-            sa_file, scopes=["https://www.googleapis.com/auth/drive.readonly"]
-        )
+        # Prefer JSON content from env var (for Render/cloud), fall back to local file
+        sa_json_str = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
+        if sa_json_str:
+            import json
+            sa_info = json.loads(sa_json_str)
+            creds = service_account.Credentials.from_service_account_info(sa_info, scopes=SCOPES)
+        else:
+            sa_file = os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE", "hi-amy-service-account.json")
+            if not os.path.exists(sa_file):
+                return {"synced": 0, "synced_docs": 0, "synced_videos": 0,
+                        "message": "Service account not configured — add GOOGLE_SERVICE_ACCOUNT_JSON to Render environment variables"}
+            creds = service_account.Credentials.from_service_account_file(sa_file, scopes=SCOPES)
         drive = gdrive_build("drive", "v3", credentials=creds)
 
         LIBRARY_FOLDER_ID = "1hJI4zz7u3rh8kxKwvC3p8-Rl4vOs5iE3"
