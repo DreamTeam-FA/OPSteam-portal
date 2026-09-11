@@ -241,7 +241,7 @@ def get_library_docs(category: str = None):
             rows = db.execute(
                 text("""
                     SELECT DISTINCT ON (file_id)
-                        file_id, file_name, category, source_type, processed_at
+                        file_id, file_name, category, subcategory, source_type, processed_at
                     FROM library_chunks
                     WHERE category = :cat
                     ORDER BY file_id, processed_at DESC
@@ -252,7 +252,7 @@ def get_library_docs(category: str = None):
             rows = db.execute(
                 text("""
                     SELECT DISTINCT ON (file_id)
-                        file_id, file_name, category, source_type, processed_at
+                        file_id, file_name, category, subcategory, source_type, processed_at
                     FROM library_chunks
                     ORDER BY file_id, processed_at DESC
                 """)
