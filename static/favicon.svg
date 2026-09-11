@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Rounded square background -->
+  <rect width="32" height="32" rx="7" fill="#1a73e8"/>
+  <!-- MT monogram, bold, white, optically centered -->
+  <text
+    x="16"
+    y="22.5"
+    text-anchor="middle"
+    font-family="'Arial Black', Arial, sans-serif"
+    font-weight="900"
+    font-size="15"
+    fill="white"
+    letter-spacing="-0.5"
+  >MT</text>
+</svg>
