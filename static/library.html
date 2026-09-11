@@ -510,7 +510,7 @@ let categories = [];
 async function init() {
   await Promise.all([loadStats(), loadCategories(), loadDocs(), loadVideos()]);
   renderCategoryFilters(); // after ALL data loaded so counts are correct
-  await autoSync();
+  autoSync(); // fire-and-forget — don't block page render on sync
 }
 
 async function loadStats() {
@@ -1030,9 +1030,12 @@ function closeDetail() {
 
 // ── Sync ──────────────────────────────────────────────────────────────────────
 async function autoSync() {
-  // Silent background sync on page load
+  // Silent background sync on page load — 25s timeout so it never hangs
   try {
-    const r = await fetch('/library/sync', { method:'POST' });
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 25000);
+    const r = await fetch('/library/sync', { method:'POST', signal: ctrl.signal });
+    clearTimeout(timer);
     const d = await r.json();
     if (d.synced_docs > 0 || d.synced_videos > 0) {
       // New items found — reload
