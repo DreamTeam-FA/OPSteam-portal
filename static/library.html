@@ -670,31 +670,7 @@ function renderCategoryFilters() {
     div.innerHTML = `<span>${icon}</span> ${cat} <span class="filter-cat-count">${total}</span>`;
     container.appendChild(div);
 
-    // DCA: inject subcategory sub-items
-    if (cat === 'Digital Course Academy') {
-      // Collect unique subcategories from both docs and videos
-      const subSet = new Set();
-      allDocs.filter(d => d.category === cat && d.subcategory).forEach(d => subSet.add(d.subcategory));
-      allVideos.filter(v => v.category === cat && v.subcategory).forEach(v => subSet.add(v.subcategory));
-      // Sort by DCA_SUBCAT_ORDER
-      const subs = [...subSet].sort((a,b) => {
-        const ai = DCA_SUBCAT_ORDER.indexOf(a), bi = DCA_SUBCAT_ORDER.indexOf(b);
-        if (ai === -1 && bi === -1) return a.localeCompare(b);
-        if (ai === -1) return 1; if (bi === -1) return -1;
-        return ai - bi;
-      });
-      subs.forEach(sub => {
-        const dCount = allDocs.filter(d => d.category === cat && d.subcategory === sub).length;
-        const vCount = allVideos.filter(v => v.category === cat && v.subcategory === sub).length;
-        const sDiv = document.createElement('div');
-        sDiv.className = 'filter-sub';
-        sDiv.dataset.cat = cat;
-        sDiv.dataset.sub = sub;
-        sDiv.onclick = function(){ selectSubCat(this, cat, sub); };
-        sDiv.innerHTML = `<span>📁</span>${sub}<span class="filter-sub-count">${dCount + vCount}</span>`;
-        container.appendChild(sDiv);
-      });
-    }
+    // DCA has its own module nav — no sub-items in the main filter
   });
 }
 
