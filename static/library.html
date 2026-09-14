@@ -672,10 +672,10 @@ function renderCategoryFilters() {
           let modCnt = 0;
           let modFilter = null;
           if (track.type === 'modules') {
-            // Filter by dcaSortKey range
+            // Filter by dcaSortKey range — pass filename string, not the doc object
             modCnt = allDocs.filter(d => {
               if (d.category !== cat || d.subcategory !== track.subcat) return false;
-              const k = dcaSortKey(d); return k >= mod.keyMin && k <= mod.keyMax;
+              const k = dcaSortKey(d.file_name || ''); return k >= mod.keyMin && k <= mod.keyMax;
             }).length;
             modFilter = {type:'keys', subcat:track.subcat, keyMin:mod.keyMin, keyMax:mod.keyMax};
           } else {
@@ -740,7 +740,7 @@ function renderGrid() {
     if (!activeDcaFilter) return true;
     if (activeDcaFilter.type === 'keys') {
       if (item.subcategory !== activeDcaFilter.subcat) return false;
-      const k = dcaSortKey(item); return k >= activeDcaFilter.keyMin && k <= activeDcaFilter.keyMax;
+      const k = dcaSortKey(item.file_name || ''); return k >= activeDcaFilter.keyMin && k <= activeDcaFilter.keyMax;
     }
     if (activeDcaFilter.type === 'subcats') return activeDcaFilter.subcats.includes(item.subcategory);
     return true;
@@ -1187,11 +1187,7 @@ async function pollSyncStatus() {
         _wasRunning = false;
         await Promise.all([loadStats(), loadDocs(), loadVideos(), loadCategories()]);
         renderCategoryFilters();
-        if (activeCat === 'Digital Course Academy') {
-          renderDcaViewer();
-        } else {
-          renderGrid();
-        }
+        renderGrid();
         if (s.docs_added > 0 || s.vids_added > 0) {
           showToast(`✅ ${s.docs_added} new docs, ${s.vids_added} new videos added`);
         } else if (s.message && s.message.startsWith('Sync complete')) {
