@@ -799,6 +799,10 @@ function renderGrid() {
   if (isDCAFiltered) {
     const dcaSort = (a, b) => {
       const na = a.file_name || '', nb = b.file_name || '';
+      // 1st: module order (dcaSortKey puts each item in the right module bucket)
+      const ka = dcaSortKey(na), kb = dcaSortKey(nb);
+      if (ka !== kb) return ka - kb;
+      // 2nd: lesson number within the module (leading digit in filename)
       const ma = na.match(/^(\d+)/), mb = nb.match(/^(\d+)/);
       if (ma && mb) {
         const diff = parseInt(ma[1]) - parseInt(mb[1]);
@@ -932,7 +936,7 @@ const DCA_MODULE_KEYS = [
   [1100, ['build your audience', 'identify your niche', 'weekly original content',
           'create a lead magnet', 'get social!', 'instagram poll strategy']],
   [1000, ['start from scratch digital course academy roadmap', 'start from scratch dca',
-          'managing your mindset', "tech: let's keep it simple",
+          'managing your mindset', "tech: let's keep it simple", 'keep it simple',
           'start from scratch digital course']],
 ];
 
