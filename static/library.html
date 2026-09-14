@@ -1520,6 +1520,7 @@ let dcaActiveDocId  = null;
 function showDcaLayout(trackId) {
   document.getElementById('tabBar').style.display = 'none';
   document.getElementById('gridArea').style.display = 'none';
+  document.querySelector('.filter-panel').style.display = 'none'; // DCA nav replaces it
   document.getElementById('dcaViewer').style.display = 'flex';
   dcaActiveTrack  = trackId;
   dcaActiveModule = null;
@@ -1530,6 +1531,7 @@ function showDcaLayout(trackId) {
 function hideDcaLayout() {
   document.getElementById('tabBar').style.display = 'flex';
   document.getElementById('gridArea').style.display = 'flex';
+  document.querySelector('.filter-panel').style.display = '';
   document.getElementById('dcaViewer').style.display = 'none';
 }
 
