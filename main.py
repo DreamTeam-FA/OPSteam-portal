@@ -5,6 +5,8 @@
 import os
 import re
 import asyncio
+import threading
+from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -14,6 +16,17 @@ from database import (init_db, search_chunks,
                        search_library_chunks, get_library_docs,
                        get_document_content, get_library_videos,
                        library_already_processed, library_video_exists)
+
+# ── Shared sync state (visible to ALL connected users via /library/sync-status) ──
+_sync_state: dict = {
+    "running": False,
+    "message": "Ready",
+    "docs_added": 0,
+    "vids_added": 0,
+    "started_at": None,
+    "finished_at": None,
+}
+_sync_lock = threading.Lock()
 
 load_dotenv()
 
@@ -489,17 +502,14 @@ async def library_categories():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/library/sync")
-async def library_sync():
-    """Check Google Drive for new files and ingest them (called on page load + manual refresh)."""
+def _run_sync_blocking():
+    """Blocking Drive sync — runs in a thread pool so it never blocks the event loop."""
+    global _sync_state
     try:
         from google.oauth2 import service_account
         from googleapiclient.discovery import build as gdrive_build
-        import io
 
         SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
-
-        # Prefer JSON content from env var (for Render/cloud), fall back to local file
         sa_json_str = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
         if sa_json_str:
             import json
@@ -508,29 +518,63 @@ async def library_sync():
         else:
             sa_file = os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE", "hi-amy-service-account.json")
             if not os.path.exists(sa_file):
-                return {"synced": 0, "synced_docs": 0, "synced_videos": 0,
-                        "message": "Service account not configured — add GOOGLE_SERVICE_ACCOUNT_JSON to Render environment variables"}
+                _sync_state.update({
+                    "running": False,
+                    "message": "Service account not configured — add GOOGLE_SERVICE_ACCOUNT_JSON env var",
+                    "finished_at": datetime.utcnow().isoformat(),
+                })
+                return
             creds = service_account.Credentials.from_service_account_file(sa_file, scopes=SCOPES)
-        drive = gdrive_build("drive", "v3", credentials=creds)
 
+        drive = gdrive_build("drive", "v3", credentials=creds)
         LIBRARY_FOLDER_ID = "1hJI4zz7u3rh8kxKwvC3p8-Rl4vOs5iE3"
 
-        # Inject the already-authenticated drive client so ingest_library
-        # doesn't try to open the service-account file at import time.
         import ingest_library
         ingest_library.drive_svc = drive
 
         docs_done, vids_done, skipped = [], [], []
         ingest_library.walk_folder(LIBRARY_FOLDER_ID, [], False, docs_done, vids_done, skipped)
 
-        return {
-            "synced_docs": len(docs_done),
-            "synced_videos": len(vids_done),
-            "skipped": len(skipped),
-            "message": f"Sync complete: {len(docs_done)} docs, {len(vids_done)} videos added"
-        }
+        _sync_state.update({
+            "running": False,
+            "message": f"Sync complete — {len(docs_done)} new docs, {len(vids_done)} new videos",
+            "docs_added": len(docs_done),
+            "vids_added": len(vids_done),
+            "finished_at": datetime.utcnow().isoformat(),
+        })
     except Exception as e:
-        return {"synced": 0, "message": f"Sync unavailable: {str(e)}"}
+        _sync_state.update({
+            "running": False,
+            "message": f"Sync error: {str(e)}",
+            "finished_at": datetime.utcnow().isoformat(),
+        })
+
+
+@app.post("/library/sync")
+async def library_sync():
+    """Kick off a non-blocking Drive sync. Returns immediately; all users can poll /library/sync-status."""
+    global _sync_state
+    with _sync_lock:
+        if _sync_state["running"]:
+            return {"status": "already_running", "message": "Sync already in progress — check back in a moment"}
+        _sync_state.update({
+            "running": True,
+            "message": "Scanning Google Drive…",
+            "docs_added": 0,
+            "vids_added": 0,
+            "started_at": datetime.utcnow().isoformat(),
+            "finished_at": None,
+        })
+    # Run the blocking work in the default thread-pool — event loop stays free
+    loop = asyncio.get_event_loop()
+    loop.run_in_executor(None, _run_sync_blocking)
+    return {"status": "started", "message": "Sync started — scanning Google Drive…"}
+
+
+@app.get("/library/sync-status")
+async def library_sync_status():
+    """Returns the current sync state — same for every user, poll every few seconds."""
+    return _sync_state
 
 @app.get("/library/stats")
 async def library_stats():

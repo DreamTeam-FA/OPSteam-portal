@@ -574,7 +574,7 @@ let categories = [];
 async function init() {
   await Promise.all([loadStats(), loadCategories(), loadDocs(), loadVideos()]);
   renderCategoryFilters(); // after ALL data loaded so counts are correct
-  // No auto-sync on load — use the Refresh button to sync from Drive
+  startSyncPoller();       // shared status polling — all users see the same sync state
 }
 
 async function loadStats() {
@@ -1109,43 +1109,73 @@ function closeDetail() {
 }
 
 // ── Sync ──────────────────────────────────────────────────────────────────────
-async function autoSync() {
-  // Silent background sync on page load — 25s timeout so it never hangs
+// Shared state: all users poll /library/sync-status every 3s.
+// When anyone clicks Refresh → POST /library/sync → server sets running=true
+// → all clients see it → when running flips to false, everyone reloads.
+
+let _syncPolling = false;
+let _wasRunning  = false;
+
+async function pollSyncStatus() {
   try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 25000);
-    const r = await fetch('/library/sync', { method:'POST', signal: ctrl.signal });
-    clearTimeout(timer);
-    const d = await r.json();
-    if (d.synced_docs > 0 || d.synced_videos > 0) {
-      // New items found — reload
-      await Promise.all([loadDocs(), loadVideos(), loadCategories()]);
-      renderCategoryFilters();
-      showToast(`✅ ${d.synced_docs} docs, ${d.synced_videos} videos added`);
+    const r = await fetch('/library/sync-status');
+    if (!r.ok) return;
+    const s = await r.json();
+    const btn = document.querySelector('.refresh-btn');
+    const statusEl = document.getElementById('syncStatus');
+
+    if (s.running) {
+      _wasRunning = true;
+      if (btn) btn.classList.add('spinning');
+      if (statusEl) statusEl.textContent = '⟳ ' + (s.message || 'Syncing…');
+    } else {
+      if (btn) btn.classList.remove('spinning');
+      if (s.message && s.message !== 'Ready') {
+        if (statusEl) statusEl.textContent = s.message;
+      } else {
+        if (statusEl) statusEl.textContent = '';
+      }
+      // If we saw it running before and now it's done → reload library for everyone
+      if (_wasRunning) {
+        _wasRunning = false;
+        await Promise.all([loadStats(), loadDocs(), loadVideos(), loadCategories()]);
+        renderCategoryFilters();
+        if (activeCat === 'Digital Course Academy') {
+          renderDcaViewer();
+        } else {
+          renderGrid();
+        }
+        if (s.docs_added > 0 || s.vids_added > 0) {
+          showToast(`✅ ${s.docs_added} new docs, ${s.vids_added} new videos added`);
+        } else if (s.message && s.message.startsWith('Sync complete')) {
+          showToast('✅ Library up to date');
+        }
+      }
     }
   } catch(e) {}
 }
 
+function startSyncPoller() {
+  if (_syncPolling) return;
+  _syncPolling = true;
+  setInterval(pollSyncStatus, 3000);
+  // Also check immediately
+  pollSyncStatus();
+}
+
 async function syncLibrary() {
-  const btn = document.querySelector('.refresh-btn');
-  btn.classList.add('spinning');
-  document.getElementById('syncStatus').textContent = 'Syncing…';
   try {
-    const r = await fetch('/library/sync', { method:'POST' });
+    const r = await fetch('/library/sync', { method: 'POST' });
     const d = await r.json();
-    document.getElementById('syncStatus').textContent = d.message || 'Done';
-    await Promise.all([loadStats(), loadDocs(), loadVideos(), loadCategories()]);
-    renderCategoryFilters();
-    if (activeCat === 'Digital Course Academy') {
-      renderDcaViewer();
+    if (d.status === 'already_running') {
+      showToast('⟳ Sync already running — everyone will see new files when it finishes');
     } else {
-      renderGrid();
+      showToast('⟳ Sync started — library will update automatically');
     }
-    showToast('✅ ' + (d.message || 'Sync complete'));
+    // pollSyncStatus will handle the UI update for all users
+    pollSyncStatus();
   } catch(e) {
-    showToast('❌ Sync failed: ' + e.message);
-  } finally {
-    btn.classList.remove('spinning');
+    showToast('❌ Could not start sync: ' + e.message);
   }
 }
 
