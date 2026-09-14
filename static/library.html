@@ -363,6 +363,64 @@ html[data-theme="dark"] body::before{
 /* ── Loading spinner ─────────────────────────────────────────────────────── */
 .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite;margin:auto}
 
+/* ── DCA Course Viewer ───────────────────────────────────────────────────── */
+.dca-viewer{display:flex;flex:1;overflow:hidden;min-height:0}
+.dca-module-nav{
+  width:252px;flex-shrink:0;height:100%;overflow-y:auto;
+  padding:10px 0 24px;border-right:1px solid var(--border);
+  background:var(--glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+}
+.dca-module-nav::-webkit-scrollbar{width:3px}
+.dca-module-nav::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:3px}
+.dca-track-lbl{
+  font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ink3);padding:14px 16px 6px;
+}
+.dca-group-btn{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 12px 9px 14px;background:none;border:none;cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif;font-size:13.5px;font-weight:700;
+  letter-spacing:.04em;text-transform:uppercase;color:var(--ink2);
+  text-align:left;transition:background .14s,color .14s;border-radius:9px;
+  margin:1px 6px;width:calc(100% - 12px);
+}
+.dca-group-btn:hover{background:var(--glass-hi);color:var(--ink)}
+.dca-group-btn.open{color:var(--purple)}
+.dca-caret{font-size:13px;transition:transform .2s;opacity:.45;flex-shrink:0}
+.dca-group-btn.open .dca-caret{transform:rotate(90deg)}
+.dca-sub-list{display:none;padding:2px 0 6px}
+.dca-sub-list.open{display:block}
+.dca-sub-lbl{
+  font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--ink3);padding:6px 14px 2px 30px;
+}
+.dca-doc-item{
+  display:flex;align-items:flex-start;gap:8px;
+  padding:6px 12px 6px 30px;font-size:12.5px;color:var(--ink2);
+  cursor:pointer;transition:background .12s,color .12s;
+  border-left:2px solid transparent;line-height:1.4;margin:1px 0;
+}
+.dca-doc-item:hover{background:var(--glass-hi);color:var(--ink)}
+.dca-doc-item.active{background:var(--purple-dim);color:var(--purple);font-weight:600;border-left-color:var(--purple)}
+.dca-content-area{flex:1;overflow-y:auto;padding:28px 32px}
+.dca-content-area::-webkit-scrollbar{width:5px}
+.dca-content-area::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:5px}
+.dca-page-title{
+  font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;
+  letter-spacing:.03em;color:var(--ink);margin-bottom:8px;
+  padding-bottom:14px;border-bottom:2px solid var(--purple);line-height:1.2;
+}
+.dca-section-hdr{
+  font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;
+  letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);
+  padding:12px 0 6px;border-bottom:1px solid var(--border);margin-bottom:12px;
+}
+.dca-see-also{font-size:13px;color:var(--purple);margin:6px 0 14px}
+.dca-see-also a{color:var(--purple);text-decoration:none;font-weight:500}
+.dca-see-also a:hover{text-decoration:underline}
+.dca-doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:28px}
+.dca-overview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:20px}
+
 /* ── Toast ───────────────────────────────────────────────────────────────── */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;border-radius:10px;padding:10px 20px;font-size:13px;z-index:500;transition:transform .3s,opacity .3s;opacity:0;pointer-events:none}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
@@ -428,7 +486,7 @@ html[data-theme="dark"] body::before{
     <div class="content-area">
 
       <!-- Tab Bar -->
-      <div class="tab-bar">
+      <div class="tab-bar" id="tabBar">
         <div class="tab active" id="tabDocs" onclick="switchTab('docs')">
           📄 Documents <span class="tab-count" id="docCount">—</span>
         </div>
@@ -456,6 +514,12 @@ html[data-theme="dark"] body::before{
           <div class="spinner" style="margin-top:12px"></div>
         </div>
         <div class="grid" id="mainGrid" style="display:none"></div>
+      </div>
+
+      <!-- DCA Course Viewer (shown when Digital Course Academy selected) -->
+      <div class="dca-viewer" id="dcaViewer" style="display:none">
+        <div class="dca-module-nav" id="dcaModuleNav"></div>
+        <div class="dca-content-area" id="dcaContentArea"></div>
       </div>
     </div>
   </div>
@@ -944,7 +1008,12 @@ function selectCat(el, cat) {
   el.classList.add('active');
   activeCat = cat;
   activeSubCat = '';
-  renderGrid();
+  if (cat === 'Digital Course Academy') {
+    showDcaLayout(null);
+  } else {
+    hideDcaLayout();
+    renderGrid();
+  }
 }
 
 function selectSubCat(el, cat, sub) {
@@ -952,7 +1021,13 @@ function selectSubCat(el, cat, sub) {
   el.classList.add('active');
   activeCat = cat;
   activeSubCat = sub;
-  renderGrid();
+  if (cat === 'Digital Course Academy') {
+    const track = DCA_TRACKS.find(t => t.subcat === sub || (!t.subcat && sub === 'General'));
+    showDcaLayout(track ? track.id : null);
+  } else {
+    hideDcaLayout();
+    renderGrid();
+  }
 }
 
 function handleSearch() {
@@ -1061,7 +1136,11 @@ async function syncLibrary() {
     document.getElementById('syncStatus').textContent = d.message || 'Done';
     await Promise.all([loadStats(), loadDocs(), loadVideos(), loadCategories()]);
     renderCategoryFilters();
-    renderGrid();
+    if (activeCat === 'Digital Course Academy') {
+      renderDcaViewer();
+    } else {
+      renderGrid();
+    }
     showToast('✅ ' + (d.message || 'Sync complete'));
   } catch(e) {
     showToast('❌ Sync failed: ' + e.message);
@@ -1296,6 +1375,195 @@ function formatDocText(raw) {
   }
 
   return html || `<p>${escHtml(text)}</p>`;
+}
+
+// ── DCA Course Viewer ─────────────────────────────────────────────────────────
+const DCA_TRACKS = [
+  { id:'sfs',       label:'Start From Scratch', icon:'🌱', subcat:'Start from Scratch',
+    crossLinks:['rtl','resources'] },
+  { id:'rtl',       label:'Ready To Launch',    icon:'🚀', subcat:'Ready to Launch',
+    crossLinks:['sfs','resources'] },
+  { id:'resources', label:'Resources & Tech',   icon:'🗃️', subcat:'Resources',
+    crossLinks:['sfs','rtl'] },
+  { id:'qa',        label:'Q&A & Replays',       icon:'❓', subcat:'Q&A & Replays',
+    crossLinks:['sfs','rtl'] },
+  { id:'bonus',     label:'Bonus',               icon:'⭐', subcat:'Bonus',
+    crossLinks:['rtl'] },
+  { id:'general',   label:'General',             icon:'📂', subcat:null,
+    crossLinks:[] },
+];
+
+let dcaActiveTrack = null;
+let dcaActiveDocId = null;
+
+function showDcaLayout(trackId) {
+  document.getElementById('tabBar').style.display = 'none';
+  document.getElementById('gridArea').style.display = 'none';
+  document.getElementById('dcaViewer').style.display = 'flex';
+  dcaActiveTrack = trackId;
+  dcaActiveDocId = null;
+  renderDcaViewer();
+}
+
+function hideDcaLayout() {
+  document.getElementById('tabBar').style.display = 'flex';
+  document.getElementById('gridArea').style.display = 'flex';
+  document.getElementById('dcaViewer').style.display = 'none';
+}
+
+function renderDcaViewer() {
+  const nav = document.getElementById('dcaModuleNav');
+  let html = '<div class="dca-track-lbl">🎓 Digital Course Academy</div>';
+
+  DCA_TRACKS.forEach(track => {
+    const trackDocs = allDocs.filter(d =>
+      d.category === 'Digital Course Academy' &&
+      (track.subcat ? d.subcategory === track.subcat : (!d.subcategory || d.subcategory === 'General' || d.subcategory === null)));
+    const trackVideos = allVideos.filter(v =>
+      v.category === 'Digital Course Academy' &&
+      (track.subcat ? v.subcategory === track.subcat : (!v.subcategory || v.subcategory === 'General')));
+    const total = trackDocs.length + trackVideos.length;
+    if (total === 0) return;
+
+    const isOpen = dcaActiveTrack === track.id;
+    html += `<button class="dca-group-btn ${isOpen?'open':''}" onclick="selectDcaTrack('${track.id}')">
+      <span>${track.icon} ${track.label}</span>
+      <span style="display:flex;align-items:center;gap:5px">
+        <span style="font-size:10px;opacity:.55;text-transform:none;font-family:'Inter',sans-serif;font-weight:400">${total}</span>
+        <span class="dca-caret">›</span>
+      </span>
+    </button>
+    <div class="dca-sub-list ${isOpen?'open':''}" id="dcaList-${track.id}">`;
+
+    if (trackDocs.length) {
+      html += `<div class="dca-sub-lbl">📄 Documents (${trackDocs.length})</div>`;
+      smartSort(trackDocs, 'file_name').forEach(doc => {
+        const name = cleanName(doc.file_name);
+        const type = cleanType(doc.source_type);
+        const tIcon = type==='PDF'?'📄':type==='Slides'?'📊':'📝';
+        const isActive = dcaActiveDocId === doc.file_id;
+        html += `<div class="dca-doc-item ${isActive?'active':''}"
+          onclick="openDcaDoc('${doc.file_id}','${escHtml(doc.file_name)}','${escHtml(doc.category)}','${escHtml(doc.source_type||'')}')">
+          <span style="flex-shrink:0;opacity:.65">${tIcon}</span>
+          <span>${escHtml(name)}</span>
+        </div>`;
+      });
+    }
+
+    if (trackVideos.length) {
+      html += `<div class="dca-sub-lbl">🎬 Videos (${trackVideos.length})</div>`;
+      smartSort(trackVideos, 'file_name').forEach(v => {
+        const name = cleanName(v.file_name);
+        const isActive = dcaActiveDocId === v.file_id;
+        html += `<div class="dca-doc-item ${isActive?'active':''}"
+          onclick="openDcaVideo('${v.file_id}','${escHtml(v.file_name)}','${escHtml(v.category)}','${escHtml(v.subcategory||'')}','${escHtml(v.drive_link)}',${v.size_mb})">
+          <span style="flex-shrink:0;opacity:.65">🎬</span>
+          <span>${escHtml(name)}</span>
+        </div>`;
+      });
+    }
+
+    html += '</div>';
+  });
+
+  nav.innerHTML = html;
+  showDcaTrackContent(dcaActiveTrack);
+}
+
+function selectDcaTrack(trackId) {
+  dcaActiveTrack = dcaActiveTrack === trackId ? null : trackId;
+  dcaActiveDocId = null;
+  renderDcaViewer();
+}
+
+function openDcaDoc(fileId, name, category, sourceType) {
+  dcaActiveDocId = fileId;
+  renderDcaViewer();
+  openDoc(fileId, name, category, sourceType);
+}
+
+function openDcaVideo(fileId, name, category, subcategory, driveLink, sizeMb) {
+  dcaActiveDocId = fileId;
+  renderDcaViewer();
+  openVideo(fileId, name, category, subcategory, driveLink, sizeMb);
+}
+
+function showDcaTrackContent(trackId) {
+  const content = document.getElementById('dcaContentArea');
+
+  if (!trackId) {
+    // Overview grid
+    content.innerHTML = `
+      <div class="dca-page-title">🎓 Digital Course Academy</div>
+      <p style="color:var(--ink2);font-size:14.5px;line-height:1.8;margin-bottom:4px">
+        Browse all DCA course materials by track. Select a track on the left or click a tile below.
+      </p>
+      <div class="dca-overview-grid">
+        ${DCA_TRACKS.map(t => {
+          const docs = allDocs.filter(d => d.category==='Digital Course Academy' &&
+            (t.subcat ? d.subcategory===t.subcat : (!d.subcategory||d.subcategory==='General')));
+          const vids = allVideos.filter(v => v.category==='Digital Course Academy' &&
+            (t.subcat ? v.subcategory===t.subcat : (!v.subcategory||v.subcategory==='General')));
+          const cnt = docs.length + vids.length;
+          if (!cnt) return '';
+          return `<div class="card" onclick="selectDcaTrack('${t.id}')">
+            <div class="card-icon">${t.icon}</div>
+            <div class="card-title" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.03em">${t.label}</div>
+            <div class="card-meta">
+              ${docs.length ? `<span class="pill pill-type">${docs.length} docs</span>` : ''}
+              ${vids.length ? `<span class="pill pill-cat">${vids.length} videos</span>` : ''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    return;
+  }
+
+  const track = DCA_TRACKS.find(t => t.id === trackId);
+  if (!track) return;
+
+  const trackDocs = smartSort(
+    allDocs.filter(d => d.category==='Digital Course Academy' &&
+      (track.subcat ? d.subcategory===track.subcat : (!d.subcategory||d.subcategory==='General'))),
+    'file_name');
+  const trackVideos = smartSort(
+    allVideos.filter(v => v.category==='Digital Course Academy' &&
+      (track.subcat ? v.subcategory===track.subcat : (!v.subcategory||v.subcategory==='General'))),
+    'file_name');
+
+  // Cross-links
+  const crossLinkHtml = track.crossLinks.length
+    ? `<div class="dca-see-also">See also: ${
+        track.crossLinks.map(cid => {
+          const ct = DCA_TRACKS.find(t => t.id===cid);
+          return ct ? `<a href="#" onclick="selectDcaTrack('${cid}');return false">${ct.icon} ${ct.label}</a>` : '';
+        }).filter(Boolean).join(' &nbsp;·&nbsp; ')
+      }</div>`
+    : '';
+
+  let html = `
+    <div class="dca-page-title">${track.icon} ${track.label}</div>
+    ${crossLinkHtml}`;
+
+  if (trackDocs.length) {
+    html += `<div class="dca-section-hdr">📄 Documents &nbsp;<span style="font-weight:400;font-size:11px;opacity:.55">${trackDocs.length} items</span></div>
+      <div class="dca-doc-grid">${trackDocs.map(d => renderDocCard(d)).join('')}</div>`;
+  }
+
+  if (trackVideos.length) {
+    html += `<div class="dca-section-hdr">🎬 Videos &nbsp;<span style="font-weight:400;font-size:11px;opacity:.55">${trackVideos.length} items</span></div>
+      <div class="dca-doc-grid">${trackVideos.map(v => renderVideoCard(v)).join('')}</div>`;
+  }
+
+  if (!trackDocs.length && !trackVideos.length) {
+    html += `<div class="empty-state" style="height:auto;padding:48px 0">
+      <div class="empty-icon">${track.icon}</div>
+      <div class="empty-title">No items in ${track.label} yet</div>
+      <div class="empty-sub">Click Refresh to sync from Google Drive.</div>
+    </div>`;
+  }
+
+  content.innerHTML = html;
 }
 
 // ── Utils ─────────────────────────────────────────────────────────────────────
