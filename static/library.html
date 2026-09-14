@@ -585,6 +585,7 @@ function renderCategoryFilters() {
     </div>
   `;
   categories.forEach(cat => {
+    if (cat === 'Digital Course Academy') return; // DCA has its own page
     const icon = catIcons[cat] || '📁';
     const docCount = allDocs.filter(d => d.category === cat).length;
     const vidCount = allVideos.filter(v => v.category === cat).length;
@@ -595,7 +596,6 @@ function renderCategoryFilters() {
     div.onclick = function(){ selectCat(this, cat); };
     div.innerHTML = `<span>${icon}</span> ${cat} <span class="filter-cat-count">${total}</span>`;
     container.appendChild(div);
-
   });
 }
 
