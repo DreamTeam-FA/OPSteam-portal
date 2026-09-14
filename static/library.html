@@ -795,9 +795,18 @@ function renderGrid() {
   empty.style.display = 'none';
   grid.style.display = 'grid';
 
-  // DCA filtered (track or module): flat card grid, docs first then videos
+  // DCA filtered (track or module): flat card grid sorted by leading number then alpha
   if (isDCAFiltered) {
-    grid.innerHTML = smartSort(items, 'file_name')
+    const dcaSort = (a, b) => {
+      const na = a.file_name || '', nb = b.file_name || '';
+      const ma = na.match(/^(\d+)/), mb = nb.match(/^(\d+)/);
+      if (ma && mb) {
+        const diff = parseInt(ma[1]) - parseInt(mb[1]);
+        if (diff !== 0) return diff;
+      }
+      return na.localeCompare(nb);
+    };
+    grid.innerHTML = [...items].sort(dcaSort)
       .map(item => item._isVideo ? renderVideoCard(item) : renderDocCard(item)).join('');
     return;
   }
