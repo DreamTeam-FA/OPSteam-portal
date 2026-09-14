@@ -680,7 +680,7 @@ function renderCategoryFilters() {
             mDiv.onclick = function(e) {
               e.stopPropagation();
               setDcaActive(tDiv, mDiv);
-              activeDcaFilter = {type:'module-keys', subcat:track.subcat, keyMin:mod.keyMin, keyMax:mod.keyMax};
+              activeDcaFilter = {type:'track', track, trackSubcats};
               renderGrid();
             };
             mList.appendChild(mDiv);
