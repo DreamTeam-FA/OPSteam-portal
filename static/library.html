@@ -670,7 +670,38 @@ function renderCategoryFilters() {
     div.innerHTML = `<span>${icon}</span> ${cat} <span class="filter-cat-count">${total}</span>`;
     container.appendChild(div);
 
-    // DCA has its own module nav — no sub-items in the main filter
+    // DCA: show tracks as sub-items — clicking one opens the DCA viewer at that track
+    if (cat === 'Digital Course Academy') {
+      const trackItems = [
+        { label:'Start From Scratch', id:'sfs' },
+        { label:'Ready To Launch',    id:'rtl' },
+        { label:'Resources & Tech',   id:'resources' },
+        { label:'Q&A Vault',          id:'qa' },
+        { label:'Bonus',              id:'bonus' },
+      ];
+      trackItems.forEach(t => {
+        // Count by known subcats; Resources groups get their subcats summed
+        const subcatMap = { sfs:['Start from Scratch'], rtl:['Ready to Launch'],
+          resources:['Getting Started','Grow Your Audience','Build Your Course','Webinars & Live'],
+          qa:['Q&A & Replays'], bonus:['Bonus'] };
+        const subcats = subcatMap[t.id] || [];
+        const cnt = allDocs.filter(d => d.category===cat && subcats.includes(d.subcategory)).length +
+                    allVideos.filter(v => v.category===cat && subcats.includes(v.subcategory)).length;
+        if (!cnt) return;
+        const sDiv = document.createElement('div');
+        sDiv.className = 'filter-sub';
+        sDiv.dataset.dcaTrack = t.id;
+        sDiv.onclick = function(){
+          document.querySelectorAll('.filter-cat,.filter-sub').forEach(c => c.classList.remove('active'));
+          document.querySelector('[data-cat="Digital Course Academy"]').classList.add('active');
+          sDiv.classList.add('active');
+          activeCat = 'Digital Course Academy';
+          showDcaLayout(t.id);
+        };
+        sDiv.innerHTML = `<span>📁</span>${t.label}<span class="filter-sub-count">${cnt}</span>`;
+        container.appendChild(sDiv);
+      });
+    }
   });
 }
 
