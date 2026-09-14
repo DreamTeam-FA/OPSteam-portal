@@ -144,6 +144,9 @@ body {
 .side-icon { font-size: 15px; flex-shrink: 0; line-height: 1; }
 .side-nav.collapsed .side-link { justify-content: center; padding: 10px; gap: 0; }
 .side-nav.collapsed .side-link-text { display: none; }
+.nav-section { font-size:10px; font-weight:600; letter-spacing:.08em; color:var(--ink3); text-transform:uppercase; padding:0 8px 6px; white-space:nowrap; overflow:hidden; }
+.side-nav.collapsed .nav-section { opacity:0; pointer-events:none; }
+.side-sect-div { height:1px; background:var(--border); margin:10px 4px; }
 .side-bottom { padding-top: 10px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 3px; }
 .theme-btn {
   background: var(--glass); border: 1px solid var(--border);
@@ -626,6 +629,7 @@ textarea::placeholder { color: var(--ink3); }
       <span class="ci">◀</span>
     </button>
   </div>
+  <div class="nav-section">Tools</div>
   <div class="side-links">
     <a href="/" class="side-link">
       <span class="side-icon">💬</span>
@@ -639,11 +643,20 @@ textarea::placeholder { color: var(--ink3); }
       <span class="side-icon">🧹</span>
       <span class="side-link-text">Watermark Cleaner</span>
     </a>
+  </div>
+  <div class="side-sect-div"></div>
+  <div class="nav-section">Library</div>
+  <div class="side-links">
     <a href="/library.html" class="side-link">
       <span class="side-icon">📚</span>
       <span class="side-link-text">AI Library</span>
     </a>
+    <a href="/dca-course.html" class="side-link">
+      <span class="side-icon">🎓</span>
+      <span class="side-link-text">DCA Course</span>
+    </a>
   </div>
+  <div style="flex:1"></div>
   <div class="side-bottom">
     <button class="theme-btn" id="theme-btn" aria-label="Toggle theme">🌙</button>
   </div>

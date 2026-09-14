@@ -359,28 +359,7 @@ html[data-theme="dark"] body::before{
 /* ── Loading spinner ─────────────────────────────────────────────────────── */
 .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite;margin:auto}
 
-/* ── Filter panel third-level: DCA modules ───────────────────────────────── */
-.filter-track{display:flex;align-items:center;gap:8px;padding:6px 10px 6px 28px;border-radius:9px;cursor:pointer;font-size:12px;color:var(--ink3);transition:background .14s,color .14s;user-select:none}
-.filter-track:hover{background:var(--glass-hi);color:var(--ink2)}
-.filter-track.active{background:var(--purple-dim);color:var(--purple);font-weight:600}
-.filter-track-caret{margin-left:auto;font-size:11px;opacity:.45;transition:transform .18s;flex-shrink:0}
-.filter-track.open .filter-track-caret{transform:rotate(90deg)}
-.filter-track-count{font-size:10px;color:var(--ink3);background:var(--glass-hi);border-radius:20px;padding:1px 6px;flex-shrink:0}
-.filter-modules{display:none;padding-bottom:4px}
-.filter-modules.open{display:block}
-.filter-module{display:flex;align-items:center;gap:7px;padding:5px 10px 5px 44px;border-radius:7px;cursor:pointer;font-size:11.5px;color:var(--ink3);transition:background .14s,color .14s;line-height:1.3}
-.filter-module:hover{background:var(--glass-hi);color:var(--ink2)}
-.filter-module.active{background:var(--purple-dim);color:var(--purple);font-weight:600}
-.filter-module-count{margin-left:auto;font-size:10px;color:var(--ink3);background:var(--glass-hi);border-radius:20px;padding:1px 5px;flex-shrink:0}
 
-/* Track badge (like DCA Course HTML .track-badge) */
-.dca-badge{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.08em;
-  text-transform:uppercase;padding:3px 10px;border-radius:20px;margin-bottom:10px}
-.dca-badge-sfs{background:rgba(22,163,74,.1);color:#166534}
-.dca-badge-rtl{background:var(--purple-dim);color:var(--purple)}
-.dca-badge-resources{background:var(--teal-dim);color:var(--teal)}
-.dca-badge-qa{background:rgba(139,92,246,.1);color:#5b21b6}
-.dca-badge-bonus{background:rgba(236,72,153,.1);color:#9d174d}
 
 /* Page title (like DCA Course HTML .page-title) */
 .dca-page-title{font-size:25px;font-weight:700;color:var(--ink);margin-bottom:22px;
@@ -448,6 +427,7 @@ html[data-theme="dark"] body::before{
   <div class="filter-divider" style="margin:10px 4px"></div>
   <div class="nav-section">Library</div>
   <a class="nav-item active" href="/library.html"><span class="nav-icon">📚</span><span class="nav-label">AI Library</span></a>
+  <a class="nav-item" href="/dca-course.html"><span class="nav-icon">🎓</span><span class="nav-label">DCA Course</span></a>
   <div class="nav-spacer"></div>
   <button class="collapse-btn" id="collapseBtn" onclick="toggleNav()"><span id="collapseArrow">◀</span><span class="nav-label" id="collapseLabel">Collapse</span></button>
 </nav>
@@ -563,8 +543,6 @@ html[data-theme="dark"] body::before{
 // ── State ────────────────────────────────────────────────────────────────────
 let allDocs = [], allVideos = [], activeCat = '', activeSubCat = '', activeTab = 'docs', searchQ = '';
 let categories = [];
-// DCA module filter: null = show all DCA; {type:'keys',keyMin,keyMax} or {type:'subcats',subcats:[]}
-let activeDcaFilter = null;
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
@@ -591,11 +569,6 @@ async function loadCategories() {
   } catch(e) {}
 }
 
-// DCA subcategory order — matches Drive folder order (inverted from screenshot = bottom→top)
-// Drive bottom→top: Start From Scratch → Ready To Launch → Bonus → Resources & Tech → Q&A Vault
-const DCA_SUBCAT_ORDER = [
-  'Start from Scratch', 'Ready to Launch', 'Bonus', 'Resources', 'Q&A & Replays', 'General'
-];
 
 function renderCategoryFilters() {
   const container = document.getElementById('filterCats');
@@ -623,95 +596,6 @@ function renderCategoryFilters() {
     div.innerHTML = `<span>${icon}</span> ${cat} <span class="filter-cat-count">${total}</span>`;
     container.appendChild(div);
 
-    // DCA: replicate DCA Course HTML sidebar exactly — tracks as collapsible groups,
-    // modules/sub-groups as nav items under each track (portal branding, same structure)
-    if (cat === 'Digital Course Academy') {
-      const setDcaActive = (tDiv, mDiv) => {
-        document.querySelectorAll('.filter-cat,.filter-track,.filter-module').forEach(c => c.classList.remove('active'));
-        document.querySelector('[data-cat="Digital Course Academy"]').classList.add('active');
-        if (tDiv) tDiv.classList.add('active');
-        if (mDiv) mDiv.classList.add('active');
-        activeCat = 'Digital Course Academy';
-      };
-
-      DCA_NAV.forEach(track => {
-        const trackIcon = {sfs:'🌱',rtl:'🚀',resources:'🛠',qa:'💬',bonus:'⭐'}[track.id] || '▸';
-        const trackSubcats = (track.type === 'groups') ? track.groups.map(g => g.subcat) : [track.subcat];
-        const trackCnt = allDocs.filter(d => d.category===cat && trackSubcats.includes(d.subcategory)).length +
-                         allVideos.filter(v => v.category===cat && trackSubcats.includes(v.subcategory)).length;
-
-        // ── Track group button (like DCA HTML nav-group-btn) ──────────────────
-        const tDiv = document.createElement('div');
-        tDiv.className = 'filter-track';
-        tDiv.dataset.dcaTrack = track.id;
-        tDiv.innerHTML = `<span>${trackIcon}</span><span style="flex:1;min-width:0">${escHtml(track.label)}</span>`
-          + `<span class="filter-track-count">${trackCnt||''}</span>`
-          + `<span class="filter-track-caret">›</span>`;
-
-        tDiv.onclick = function(e) {
-          e.stopPropagation();
-          setDcaActive(tDiv, null);
-          // Filter to this track only
-          activeDcaFilter = {type:'track', track, trackSubcats};
-          // Toggle sub-list (like toggleGroup in DCA HTML)
-          const isOpen = tDiv.classList.toggle('open');
-          const mList = tDiv.nextElementSibling;
-          if (mList && mList.classList.contains('filter-modules')) mList.classList.toggle('open', isOpen);
-          renderGrid();
-        };
-        container.appendChild(tDiv);
-
-        // ── Sub-list (like DCA HTML nav-sub) ─────────────────────────────────
-        const mList = document.createElement('div');
-        mList.className = 'filter-modules';
-
-        if (track.type === 'modules') {
-          // SFS / RTL: nav-links for each module
-          track.modules.forEach(mod => {
-            const modCnt = allDocs.filter(d => {
-              if (d.category !== cat || d.subcategory !== track.subcat) return false;
-              const k = dcaSortKey(d.file_name || '');
-              return k >= mod.keyMin && k <= mod.keyMax;
-            }).length;
-            const mDiv = document.createElement('div');
-            mDiv.className = 'filter-module';
-            mDiv.dataset.dcaMod = mod.id;
-            mDiv.innerHTML = `<span style="opacity:.35;flex-shrink:0">›</span><span style="flex:1;min-width:0">${escHtml(mod.label)}</span><span class="filter-module-count">${modCnt||''}</span>`;
-            mDiv.onclick = function(e) {
-              e.stopPropagation();
-              setDcaActive(tDiv, mDiv);
-              activeDcaFilter = {type:'track', track, trackSubcats};
-              renderGrid();
-            };
-            mList.appendChild(mDiv);
-          });
-
-        } else if (track.type === 'groups') {
-          // Resources: nested sub-group buttons + their items (like nav-sub .nav-group-btn)
-          track.groups.forEach(grp => {
-            const grpCnt = allDocs.filter(d => d.category===cat && d.subcategory===grp.subcat).length +
-                           allVideos.filter(v => v.category===cat && v.subcategory===grp.subcat).length;
-            const gDiv = document.createElement('div');
-            gDiv.className = 'filter-module';
-            gDiv.dataset.dcaMod = grp.id;
-            gDiv.innerHTML = `<span style="opacity:.35;flex-shrink:0">›</span><span style="flex:1;min-width:0">${escHtml(grp.label)}</span><span class="filter-module-count">${grpCnt||''}</span>`;
-            gDiv.onclick = function(e) {
-              e.stopPropagation();
-              setDcaActive(tDiv, gDiv);
-              activeDcaFilter = {type:'track', track:null, trackSubcats:[grp.subcat]};
-              renderGrid();
-            };
-            mList.appendChild(gDiv);
-          });
-
-        } else {
-          // Q&A / Bonus (flat): clicking track is enough, no sub-items needed
-          // but we still show the sub-list as empty so caret still works
-        }
-
-        container.appendChild(mList);
-      });
-    }
   });
 }
 
@@ -743,43 +627,16 @@ function renderGrid() {
   const grid = document.getElementById('mainGrid');
   const empty = document.getElementById('emptyState');
 
-  const dcaModuleFilter = (item) => {
-    if (!activeDcaFilter) return true;
-    if (activeDcaFilter.type === 'track') {
-      return activeDcaFilter.trackSubcats.includes(item.subcategory);
-    }
-    if (activeDcaFilter.type === 'module-keys') {
-      if (item.subcategory !== activeDcaFilter.subcat) return false;
-      const k = dcaSortKey(item.file_name || '');
-      return k >= activeDcaFilter.keyMin && k <= activeDcaFilter.keyMax;
-    }
-    return true;
-  };
-
-  // For DCA track/module filters: combine docs + videos so clicking any track shows all content
-  const isDCAFiltered = activeCat === 'Digital Course Academy' && activeDcaFilter;
   let items;
-  if (isDCAFiltered) {
-    const sq = searchQ;
-    const dcaDocs = allDocs.filter(d =>
-      d.category === activeCat && dcaModuleFilter(d) &&
-      (!sq || d.file_name.toLowerCase().includes(sq)));
-    const dcaVids = allVideos.filter(v =>
-      v.category === activeCat && dcaModuleFilter(v) &&
-      (!sq || v.file_name.toLowerCase().includes(sq)));
-    items = [...dcaDocs.map(d => ({...d, _isVideo:false})),
-             ...dcaVids.map(v => ({...v, _isVideo:true}))];
-  } else {
-    items = activeTab === 'docs'
-      ? allDocs.filter(d =>
-          (!activeCat || d.category === activeCat) &&
-          (!activeSubCat || d.subcategory === activeSubCat) &&
-          (!searchQ || d.file_name.toLowerCase().includes(searchQ) || d.category.toLowerCase().includes(searchQ)))
-      : allVideos.filter(v =>
-          (!activeCat || v.category === activeCat) &&
-          (!activeSubCat || v.subcategory === activeSubCat) &&
-          (!searchQ || v.file_name.toLowerCase().includes(searchQ) || v.category.toLowerCase().includes(searchQ)));
-  }
+  items = activeTab === 'docs'
+    ? allDocs.filter(d =>
+        (!activeCat || d.category === activeCat) &&
+        (!activeSubCat || d.subcategory === activeSubCat) &&
+        (!searchQ || d.file_name.toLowerCase().includes(searchQ) || d.category.toLowerCase().includes(searchQ)))
+    : allVideos.filter(v =>
+        (!activeCat || v.category === activeCat) &&
+        (!activeSubCat || v.subcategory === activeSubCat) &&
+        (!searchQ || v.file_name.toLowerCase().includes(searchQ) || v.category.toLowerCase().includes(searchQ)));
 
   if (items.length === 0) {
     grid.style.display = 'none';
@@ -795,51 +652,8 @@ function renderGrid() {
   empty.style.display = 'none';
   grid.style.display = 'grid';
 
-  // DCA filtered (track or module): flat card grid sorted by leading number then alpha
-  if (isDCAFiltered) {
-    const dcaSort = (a, b) => {
-      const na = a.file_name || '', nb = b.file_name || '';
-      // 1st: module order (dcaSortKey puts each item in the right module bucket)
-      const ka = dcaSortKey(na), kb = dcaSortKey(nb);
-      if (ka !== kb) return ka - kb;
-      // 2nd: lesson number within the module (leading digit in filename)
-      const ma = na.match(/^(\d+)/), mb = nb.match(/^(\d+)/);
-      if (ma && mb) {
-        const diff = parseInt(ma[1]) - parseInt(mb[1]);
-        if (diff !== 0) return diff;
-      }
-      return na.localeCompare(nb);
-    };
-    grid.innerHTML = [...items].sort(dcaSort)
-      .map(item => item._isVideo ? renderVideoCard(item) : renderDocCard(item)).join('');
-    return;
-  }
-
   if (activeTab === 'docs') {
-    const isDCAFull = activeCat === 'Digital Course Academy' && !activeDcaFilter;
-
-    if (isDCAFull) {
-      // All DCA — group by subcategory
-      const grouped = {};
-      items.forEach(doc => {
-        const key = doc.subcategory || 'Uncategorized';
-        if (!grouped[key]) grouped[key] = [];
-        grouped[key].push(doc);
-      });
-      let html = '';
-      Object.entries(grouped).sort(([a],[b]) => {
-        const ai = DCA_SUBCAT_ORDER.indexOf(a), bi = DCA_SUBCAT_ORDER.indexOf(b);
-        if (ai === -1 && bi === -1) return a.localeCompare(b);
-        if (ai === -1) return 1; if (bi === -1) return -1;
-        return ai - bi;
-      }).forEach(([group, docs]) => {
-        html += `<div class="grid-section-hdr">${escHtml(group)}</div>`;
-        smartSort(docs, 'file_name').forEach(doc => { html += renderDocCard(doc); });
-      });
-      grid.innerHTML = html;
-    } else {
-      grid.innerHTML = smartSort(items, 'file_name').map(doc => renderDocCard(doc)).join('');
-    }
+    grid.innerHTML = smartSort(items, 'file_name').map(doc => renderDocCard(doc)).join('');
   } else {
     // Group by category then subcategory
     const grouped = {};
@@ -850,13 +664,7 @@ function renderGrid() {
     });
 
     let html = '';
-    Object.entries(grouped).sort(([a],[b]) => {
-      // DCA groups: sort by module order; others: alphabetical
-      const aDCA = a.startsWith('Digital Course Academy');
-      const bDCA = b.startsWith('Digital Course Academy');
-      if (aDCA && bDCA) return dcaGroupSortKey(a) - dcaGroupSortKey(b);
-      return a.localeCompare(b);
-    }).forEach(([group, vids]) => {
+    Object.entries(grouped).sort(([a],[b]) => a.localeCompare(b)).forEach(([group, vids]) => {
       html += `<div style="grid-column:1/-1;padding:14px 2px 6px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);border-bottom:1px solid var(--border);margin-bottom:4px">${group}</div>`;
       smartSort(vids, 'file_name').forEach(v => { html += renderVideoCard(v); });
     });
@@ -886,82 +694,6 @@ function cleanType(raw) {
   return 'Doc';
 }
 
-// ── DCA course ordering ───────────────────────────────────────────────────────
-// Maps filename keywords → numeric sort key matching dca_course_structure.json
-// T1 (Start From Scratch) = 1000s, T2 (Ready To Launch) = 2000s
-// Within each track: module N → base + N*100, lessons keep their relative order
-const DCA_MODULE_KEYS = [
-  // Track 2 — Ready To Launch
-  [2900, ['ready to launch track celebration', 'your personal hype video!']],
-  [2700, ['email sequence', 'webinar invite email', 'pre-webinar email', 'replay email',
-          'post-webinar email', 'post-webinar sales booster', 'onboarding email',
-          'live launch wrap up', 'kit automation', 'kit email']],
-  [2600, ['profitable webinar framework', 'webinar slide', 'golden rules for delivering',
-          'map out your live webinar', 'webinar registration', 'boost webinar sign',
-          'conduct a live webinar', 'livestream', 'webinar replay page', 'demio',
-          'how to conduct', 'webinar']],
-  [2500, ['marketing blueprint', 'irresistible launch offer', 'launch revenue goal',
-          'sales page blueprint', 'high converting sales page', 'quiz lead magnet',
-          'digital course sales page']],
-  [2400, ['art of delivering', 'art of teaching', 'how to deliver your course',
-          'delivery tips', 'record course material', 'slide presenter notes',
-          'present & export slides', 'canva slide', 'showit']],
-  [2300, ['outline your course', 'refining your course outline', 'course support strategy',
-          'your content framework', 'porterfield process', 'course-focused freebie',
-          'create your course']],
-  [2200, ['validating your course', 'course calls strategy', 'social validation strategies',
-          'first 10 strategy']],
-  [2100, ['key decision', '7 key', 'choosing your course topic', 'ideal customer avatar',
-          'course transformation statement', 'course name', 'pricing your course',
-          'your tech stack', 'scheduling your launch', 'pre-launch runway',
-          'decision #1', 'decision #2', 'decision #3', 'decision #4',
-          'decision #5', 'decision #6', 'decision #7']],
-  [2050, ['how to use kit', 'kit video tutorial', 'kajabi', 'website document',
-          'copyright & trademark', 'course terms of use', 'tech overview',
-          'how to download fonts', 'canva', 'the basics of using']],
-  [2000, ['ready to launch digital course track', 'the dca new student orientation',
-          'the dca accountability pods', 'how to get instant momentum',
-          'ready to launch track']],
-  // Track 1 — Start From Scratch
-  [1900, ['start from scratch track celebration', 'your personal hype video']],
-  [1400, ['simple workshop sales page', 'email and social promotion',
-          'shout it from the rooftops', 'go live challenge', 'promote and deliver',
-          'craft your email and social', 'create your simple workshop sales']],
-  [1300, ['create your workshop outline', 'review your training toolkit',
-          'perfect your workshop content', 'create your workshop', 'workshop outline',
-          'training toolkit']],
-  [1200, ['workshop topic', 'workshop title', 'workshop transformation',
-          'workshop pricing', 'finalize workshop delivery', 'nail down your workshop',
-          'craft your workshop', 'determine your workshop']],
-  [1100, ['build your audience', 'identify your niche', 'weekly original content',
-          'create a lead magnet', 'get social!', 'instagram poll strategy']],
-  [1000, ['start from scratch digital course academy roadmap', 'start from scratch dca',
-          'managing your mindset', "tech: let's keep it simple", 'keep it simple',
-          'start from scratch digital course']],
-];
-
-function dcaSortKey(name) {
-  const n = name.toLowerCase();
-  for (const [order, keywords] of DCA_MODULE_KEYS) {
-    if (keywords.some(kw => n.includes(kw))) return order;
-  }
-  // Fallback: detect track from name
-  if (n.includes('start from scratch')) return 1500;
-  if (n.includes('ready to launch'))    return 2500;
-  return 9999; // unknown DCA item → end
-}
-
-// DCA video-group sort order (subcategory → sort key)
-// Matches Drive folder order: Start From Scratch → Ready To Launch → Bonus → Resources → Q&A Vault
-const DCA_GROUP_ORDER = {
-  'Start from Scratch': 100, 'Ready to Launch': 200,
-  'Bonus': 300, 'Resources': 400, 'Q&A & Replays': 500, 'General': 600,
-};
-function dcaGroupSortKey(groupLabel) {
-  // groupLabel is "Digital Course Academy — Subcategory" or just category
-  const sub = groupLabel.split(' — ')[1] || '';
-  return DCA_GROUP_ORDER[sub] !== undefined ? DCA_GROUP_ORDER[sub] : 5000;
-}
 
 // ── AI Advantage sort ─────────────────────────────────────────────────────────
 // Returns a numeric sort key: masterclasses (1000s) first, then summit sessions
@@ -988,11 +720,6 @@ function aiaSortKey(name) {
 function smartSort(items, nameKey) {
   return [...items].sort((a, b) => {
     const na = a[nameKey] || '', nb = b[nameKey] || '';
-    // DCA items: sort by module order
-    if (a.category === 'Digital Course Academy' && b.category === 'Digital Course Academy') {
-      const ka = dcaSortKey(na), kb = dcaSortKey(nb);
-      if (ka !== kb) return ka - kb;
-    }
     // AI Advantage: masterclass sequence then summit by year/day
     if (a.category === 'AI Advantage' && b.category === 'AI Advantage') {
       const ka = aiaSortKey(na), kb = aiaSortKey(nb);
@@ -1113,11 +840,10 @@ function switchTab(tab) {
 }
 
 function selectCat(el, cat) {
-  document.querySelectorAll('.filter-cat,.filter-track,.filter-module').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.filter-cat').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   activeCat = cat;
   activeSubCat = '';
-  activeDcaFilter = null;
   renderGrid();
 }
 
@@ -1559,61 +1285,6 @@ function formatDocText(raw) {
   return html || `<p>${escHtml(text)}</p>`;
 }
 
-// ── DCA Course Viewer ─────────────────────────────────────────────────────────
-// Navigation mirrors DCA Course.html exactly — same tracks, modules, sub-groups, links.
-// SFS/RTL modules are filtered by dcaSortKey range; Resources uses subcategory names.
-
-const DCA_NAV = [
-  {
-    id: 'sfs', label: 'Start From Scratch Track', type: 'modules',
-    subcat: 'Start from Scratch',
-    crossLinks: [['rtl','Ready To Launch Track'],['resources','Resources & Tech Library']],
-    modules: [
-      { id:'sfs-welcome',   label:'Welcome',                                      keyMin:1000, keyMax:1099 },
-      { id:'sfs-mod1',      label:'Module 1: Build Your Audience',                keyMin:1100, keyMax:1199 },
-      { id:'sfs-mod2',      label:'Module 2: Validate A Workshop Topic',          keyMin:1200, keyMax:1299 },
-      { id:'sfs-mod3',      label:'Module 3: Create Your Workshop',               keyMin:1300, keyMax:1399 },
-      { id:'sfs-mod4',      label:'Module 4: Promote and Deliver Your Workshop',  keyMin:1400, keyMax:1899 },
-      { id:'sfs-celebrate', label:'Celebrate!',                                   keyMin:1900, keyMax:1999 },
-    ]
-  },
-  {
-    id: 'rtl', label: 'Ready To Launch Track', type: 'modules',
-    subcat: 'Ready to Launch',
-    crossLinks: [['sfs','Start From Scratch Track'],['resources','Resources & Tech Library']],
-    modules: [
-      { id:'rtl-welcome',   label:'Welcome',                                              keyMin:2000, keyMax:2099 },
-      { id:'rtl-module-1',  label:'Module 1: The 7 Key Decisions',                        keyMin:2100, keyMax:2199 },
-      { id:'rtl-module-2',  label:'Module 2: Validating Your Course',                     keyMin:2200, keyMax:2299 },
-      { id:'rtl-module-3',  label:'Module 3: The Art of Outlining Your Course',           keyMin:2300, keyMax:2399 },
-      { id:'rtl-module-4',  label:'Module 4: The Art of Delivering Your Course',          keyMin:2400, keyMax:2499 },
-      { id:'rtl-module-5',  label:'Module 5: The Digital Course Marketing Blueprint',     keyMin:2500, keyMax:2599 },
-      { id:'rtl-module-6',  label:'Module 6: The Profitable Webinar Framework',           keyMin:2600, keyMax:2699 },
-      { id:'rtl-module-7',  label:'Module 7: Crafting Your Email Sequences',              keyMin:2700, keyMax:2899 },
-      { id:'rtl-celebrate', label:'Celebrate!',                                           keyMin:2900, keyMax:2999 },
-    ]
-  },
-  {
-    id: 'resources', label: 'Resources & Tech Library', type: 'groups',
-    crossLinks: [['sfs','Start From Scratch Track'],['rtl','Ready To Launch Track']],
-    groups: [
-      { id:'res-getting-started', label:'Getting Started',        subcat:'Getting Started' },
-      { id:'res-grow-audience',   label:'Grow Your Audience',     subcat:'Grow Your Audience' },
-      { id:'res-build-course',    label:'Build Your Course',      subcat:'Build Your Course' },
-      { id:'res-webinars',        label:'Go Live & Host Webinars',subcat:'Webinars & Live' },
-    ]
-  },
-  {
-    id: 'qa', label: 'Q&A Vault', type: 'flat',
-    subcat: 'Q&A & Replays',
-    crossLinks: [['sfs','Start From Scratch Track'],['rtl','Ready To Launch Track']],
-  },
-  {
-    id: 'bonus', label: 'Bonus', type: 'flat',
-    subcat: 'Bonus',
-    crossLinks: [['rtl','Ready To Launch Track']],
-  },
-];
 
 
 
