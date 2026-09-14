@@ -756,17 +756,30 @@ function renderGrid() {
     return true;
   };
 
-  let items = activeTab === 'docs'
-    ? allDocs.filter(d =>
-        (!activeCat || d.category === activeCat) &&
-        (!activeSubCat || d.subcategory === activeSubCat) &&
-        (activeCat !== 'Digital Course Academy' || dcaModuleFilter(d)) &&
-        (!searchQ || d.file_name.toLowerCase().includes(searchQ) || d.category.toLowerCase().includes(searchQ)))
-    : allVideos.filter(v =>
-        (!activeCat || v.category === activeCat) &&
-        (!activeSubCat || v.subcategory === activeSubCat) &&
-        (activeCat !== 'Digital Course Academy' || dcaModuleFilter(v)) &&
-        (!searchQ || v.file_name.toLowerCase().includes(searchQ) || v.category.toLowerCase().includes(searchQ)));
+  // For DCA track/module filters: combine docs + videos so clicking any track shows all content
+  const isDCAFiltered = activeCat === 'Digital Course Academy' && activeDcaFilter;
+  let items;
+  if (isDCAFiltered) {
+    const sq = searchQ;
+    const dcaDocs = allDocs.filter(d =>
+      d.category === activeCat && dcaModuleFilter(d) &&
+      (!sq || d.file_name.toLowerCase().includes(sq)));
+    const dcaVids = allVideos.filter(v =>
+      v.category === activeCat && dcaModuleFilter(v) &&
+      (!sq || v.file_name.toLowerCase().includes(sq)));
+    items = [...dcaDocs.map(d => ({...d, _isVideo:false})),
+             ...dcaVids.map(v => ({...v, _isVideo:true}))];
+  } else {
+    items = activeTab === 'docs'
+      ? allDocs.filter(d =>
+          (!activeCat || d.category === activeCat) &&
+          (!activeSubCat || d.subcategory === activeSubCat) &&
+          (!searchQ || d.file_name.toLowerCase().includes(searchQ) || d.category.toLowerCase().includes(searchQ)))
+      : allVideos.filter(v =>
+          (!activeCat || v.category === activeCat) &&
+          (!activeSubCat || v.subcategory === activeSubCat) &&
+          (!searchQ || v.file_name.toLowerCase().includes(searchQ) || v.category.toLowerCase().includes(searchQ)));
+  }
 
   if (items.length === 0) {
     grid.style.display = 'none';
@@ -782,35 +795,17 @@ function renderGrid() {
   empty.style.display = 'none';
   grid.style.display = 'grid';
 
+  // DCA filtered (track or module): flat card grid, docs first then videos
+  if (isDCAFiltered) {
+    grid.innerHTML = smartSort(items, 'file_name')
+      .map(item => item._isVideo ? renderVideoCard(item) : renderDocCard(item)).join('');
+    return;
+  }
+
   if (activeTab === 'docs') {
     const isDCAFull = activeCat === 'Digital Course Academy' && !activeDcaFilter;
-    // DCA track selected — group by module in the grid pane
-    const isDCATrack = activeCat === 'Digital Course Academy' && activeDcaFilter && activeDcaFilter.type === 'track' && activeDcaFilter.track && activeDcaFilter.track.type === 'modules';
 
-    if (isDCATrack) {
-      const track = activeDcaFilter.track;
-      let html = '';
-      track.modules.forEach(mod => {
-        const modDocs = smartSort(items.filter(d => {
-          const k = dcaSortKey(d.file_name || '');
-          return k >= mod.keyMin && k <= mod.keyMax;
-        }), 'file_name');
-        if (!modDocs.length) return;
-        html += `<div class="grid-section-hdr">${escHtml(mod.label)}</div>`;
-        modDocs.forEach(doc => { html += renderDocCard(doc); });
-      });
-      // Catch docs not matched by any module key
-      const matchedIds = new Set(track.modules.flatMap(mod =>
-        items.filter(d => { const k = dcaSortKey(d.file_name||''); return k>=mod.keyMin&&k<=mod.keyMax; }).map(d=>d.file_id)
-      ));
-      const unmatched = smartSort(items.filter(d => !matchedIds.has(d.file_id)), 'file_name');
-      if (unmatched.length) {
-        html += `<div class="grid-section-hdr">Other</div>`;
-        unmatched.forEach(doc => { html += renderDocCard(doc); });
-      }
-      grid.innerHTML = html || smartSort(items,'file_name').map(doc=>renderDocCard(doc)).join('');
-
-    } else if (isDCAFull) {
+    if (isDCAFull) {
       // All DCA — group by subcategory
       const grouped = {};
       items.forEach(doc => {
