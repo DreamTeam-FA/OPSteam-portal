@@ -623,85 +623,92 @@ function renderCategoryFilters() {
     div.innerHTML = `<span>${icon}</span> ${cat} <span class="filter-cat-count">${total}</span>`;
     container.appendChild(div);
 
-    // DCA: 3-level hierarchy — track (expandable) → modules
+    // DCA: replicate DCA Course HTML sidebar exactly — tracks as collapsible groups,
+    // modules/sub-groups as nav items under each track (portal branding, same structure)
     if (cat === 'Digital Course Academy') {
+      const setDcaActive = (tDiv, mDiv) => {
+        document.querySelectorAll('.filter-cat,.filter-track,.filter-module').forEach(c => c.classList.remove('active'));
+        document.querySelector('[data-cat="Digital Course Academy"]').classList.add('active');
+        if (tDiv) tDiv.classList.add('active');
+        if (mDiv) mDiv.classList.add('active');
+        activeCat = 'Digital Course Academy';
+      };
+
       DCA_NAV.forEach(track => {
         const trackIcon = {sfs:'🌱',rtl:'🚀',resources:'🛠',qa:'💬',bonus:'⭐'}[track.id] || '▸';
-
-        // Count docs+videos for this track
-        let trackSubcats = [];
-        if (track.type === 'modules' || track.type === 'flat') trackSubcats = [track.subcat];
-        if (track.type === 'groups') trackSubcats = track.groups.map(g => g.subcat);
+        const trackSubcats = (track.type === 'groups') ? track.groups.map(g => g.subcat) : [track.subcat];
         const trackCnt = allDocs.filter(d => d.category===cat && trackSubcats.includes(d.subcategory)).length +
                          allVideos.filter(v => v.category===cat && trackSubcats.includes(v.subcategory)).length;
-        if (!trackCnt) return;
 
-        const hasModules = track.type === 'modules' || track.type === 'groups';
-
-        // Track row
+        // ── Track group button (like DCA HTML nav-group-btn) ──────────────────
         const tDiv = document.createElement('div');
         tDiv.className = 'filter-track';
         tDiv.dataset.dcaTrack = track.id;
-        tDiv.innerHTML = `<span>${trackIcon}</span><span style="flex:1;min-width:0">${escHtml(track.label)}</span><span class="filter-track-count">${trackCnt}</span>${hasModules ? '<span class="filter-track-caret">›</span>' : ''}`;
+        tDiv.innerHTML = `<span>${trackIcon}</span><span style="flex:1;min-width:0">${escHtml(track.label)}</span>`
+          + `<span class="filter-track-count">${trackCnt||''}</span>`
+          + `<span class="filter-track-caret">›</span>`;
+
         tDiv.onclick = function(e) {
           e.stopPropagation();
-          // Mark active
-          document.querySelectorAll('.filter-cat,.filter-track,.filter-module').forEach(c => c.classList.remove('active'));
-          document.querySelector('[data-cat="Digital Course Academy"]').classList.add('active');
-          tDiv.classList.add('active');
-          activeCat = 'Digital Course Academy';
-          activeDcaFilter = null; // show whole track — no module-level filter
-          // Toggle expand
-          if (hasModules) {
-            const isOpen = tDiv.classList.toggle('open');
-            const mList = tDiv.nextElementSibling;
-            if (mList) mList.classList.toggle('open', isOpen);
-          }
+          setDcaActive(tDiv, null);
+          // Filter to this track only
+          activeDcaFilter = {type:'track', track, trackSubcats};
+          // Toggle sub-list (like toggleGroup in DCA HTML)
+          const isOpen = tDiv.classList.toggle('open');
+          const mList = tDiv.nextElementSibling;
+          if (mList && mList.classList.contains('filter-modules')) mList.classList.toggle('open', isOpen);
           renderGrid();
         };
         container.appendChild(tDiv);
 
-        if (!hasModules) return;
-
-        // Module list
+        // ── Sub-list (like DCA HTML nav-sub) ─────────────────────────────────
         const mList = document.createElement('div');
         mList.className = 'filter-modules';
 
-        const items = track.type === 'modules' ? track.modules : track.groups;
-        items.forEach(mod => {
-          let modCnt = 0;
-          let modFilter = null;
-          if (track.type === 'modules') {
-            // Filter by dcaSortKey range — pass filename string, not the doc object
-            modCnt = allDocs.filter(d => {
+        if (track.type === 'modules') {
+          // SFS / RTL: nav-links for each module
+          track.modules.forEach(mod => {
+            const modCnt = allDocs.filter(d => {
               if (d.category !== cat || d.subcategory !== track.subcat) return false;
-              const k = dcaSortKey(d.file_name || ''); return k >= mod.keyMin && k <= mod.keyMax;
+              const k = dcaSortKey(d.file_name || '');
+              return k >= mod.keyMin && k <= mod.keyMax;
             }).length;
-            modFilter = {type:'keys', subcat:track.subcat, keyMin:mod.keyMin, keyMax:mod.keyMax};
-          } else {
-            // Groups: filter by subcategory name
-            modCnt = allDocs.filter(d => d.category===cat && d.subcategory===mod.subcat).length +
-                     allVideos.filter(v => v.category===cat && v.subcategory===mod.subcat).length;
-            modFilter = {type:'subcats', subcats:[mod.subcat]};
-          }
-          if (!modCnt) return;
+            const mDiv = document.createElement('div');
+            mDiv.className = 'filter-module';
+            mDiv.dataset.dcaMod = mod.id;
+            mDiv.innerHTML = `<span style="opacity:.35;flex-shrink:0">›</span><span style="flex:1;min-width:0">${escHtml(mod.label)}</span><span class="filter-module-count">${modCnt||''}</span>`;
+            mDiv.onclick = function(e) {
+              e.stopPropagation();
+              setDcaActive(tDiv, mDiv);
+              activeDcaFilter = {type:'module-keys', subcat:track.subcat, keyMin:mod.keyMin, keyMax:mod.keyMax};
+              renderGrid();
+            };
+            mList.appendChild(mDiv);
+          });
 
-          const mDiv = document.createElement('div');
-          mDiv.className = 'filter-module';
-          mDiv.dataset.dcaMod = mod.id;
-          mDiv.innerHTML = `<span style="opacity:.4;font-size:10px">▸</span><span style="flex:1;min-width:0">${escHtml(mod.label)}</span><span class="filter-module-count">${modCnt}</span>`;
-          mDiv.onclick = function(e) {
-            e.stopPropagation();
-            document.querySelectorAll('.filter-cat,.filter-track,.filter-module').forEach(c => c.classList.remove('active'));
-            document.querySelector('[data-cat="Digital Course Academy"]').classList.add('active');
-            tDiv.classList.add('active');
-            mDiv.classList.add('active');
-            activeCat = 'Digital Course Academy';
-            activeDcaFilter = modFilter;
-            renderGrid();
-          };
-          mList.appendChild(mDiv);
-        });
+        } else if (track.type === 'groups') {
+          // Resources: nested sub-group buttons + their items (like nav-sub .nav-group-btn)
+          track.groups.forEach(grp => {
+            const grpCnt = allDocs.filter(d => d.category===cat && d.subcategory===grp.subcat).length +
+                           allVideos.filter(v => v.category===cat && v.subcategory===grp.subcat).length;
+            const gDiv = document.createElement('div');
+            gDiv.className = 'filter-module';
+            gDiv.dataset.dcaMod = grp.id;
+            gDiv.innerHTML = `<span style="opacity:.35;flex-shrink:0">›</span><span style="flex:1;min-width:0">${escHtml(grp.label)}</span><span class="filter-module-count">${grpCnt||''}</span>`;
+            gDiv.onclick = function(e) {
+              e.stopPropagation();
+              setDcaActive(tDiv, gDiv);
+              activeDcaFilter = {type:'track', track:null, trackSubcats:[grp.subcat]};
+              renderGrid();
+            };
+            mList.appendChild(gDiv);
+          });
+
+        } else {
+          // Q&A / Bonus (flat): clicking track is enough, no sub-items needed
+          // but we still show the sub-list as empty so caret still works
+        }
+
         container.appendChild(mList);
       });
     }
@@ -738,11 +745,14 @@ function renderGrid() {
 
   const dcaModuleFilter = (item) => {
     if (!activeDcaFilter) return true;
-    if (activeDcaFilter.type === 'keys') {
-      if (item.subcategory !== activeDcaFilter.subcat) return false;
-      const k = dcaSortKey(item.file_name || ''); return k >= activeDcaFilter.keyMin && k <= activeDcaFilter.keyMax;
+    if (activeDcaFilter.type === 'track') {
+      return activeDcaFilter.trackSubcats.includes(item.subcategory);
     }
-    if (activeDcaFilter.type === 'subcats') return activeDcaFilter.subcats.includes(item.subcategory);
+    if (activeDcaFilter.type === 'module-keys') {
+      if (item.subcategory !== activeDcaFilter.subcat) return false;
+      const k = dcaSortKey(item.file_name || '');
+      return k >= activeDcaFilter.keyMin && k <= activeDcaFilter.keyMax;
+    }
     return true;
   };
 
@@ -773,9 +783,35 @@ function renderGrid() {
   grid.style.display = 'grid';
 
   if (activeTab === 'docs') {
-    const isDCAFull = activeCat === 'Digital Course Academy' && !activeSubCat;
-    if (isDCAFull) {
-      // Group by subcategory
+    const isDCAFull = activeCat === 'Digital Course Academy' && !activeDcaFilter;
+    // DCA track selected — group by module in the grid pane
+    const isDCATrack = activeCat === 'Digital Course Academy' && activeDcaFilter && activeDcaFilter.type === 'track' && activeDcaFilter.track && activeDcaFilter.track.type === 'modules';
+
+    if (isDCATrack) {
+      const track = activeDcaFilter.track;
+      let html = '';
+      track.modules.forEach(mod => {
+        const modDocs = smartSort(items.filter(d => {
+          const k = dcaSortKey(d.file_name || '');
+          return k >= mod.keyMin && k <= mod.keyMax;
+        }), 'file_name');
+        if (!modDocs.length) return;
+        html += `<div class="grid-section-hdr">${escHtml(mod.label)}</div>`;
+        modDocs.forEach(doc => { html += renderDocCard(doc); });
+      });
+      // Catch docs not matched by any module key
+      const matchedIds = new Set(track.modules.flatMap(mod =>
+        items.filter(d => { const k = dcaSortKey(d.file_name||''); return k>=mod.keyMin&&k<=mod.keyMax; }).map(d=>d.file_id)
+      ));
+      const unmatched = smartSort(items.filter(d => !matchedIds.has(d.file_id)), 'file_name');
+      if (unmatched.length) {
+        html += `<div class="grid-section-hdr">Other</div>`;
+        unmatched.forEach(doc => { html += renderDocCard(doc); });
+      }
+      grid.innerHTML = html || smartSort(items,'file_name').map(doc=>renderDocCard(doc)).join('');
+
+    } else if (isDCAFull) {
+      // All DCA — group by subcategory
       const grouped = {};
       items.forEach(doc => {
         const key = doc.subcategory || 'Uncategorized';
