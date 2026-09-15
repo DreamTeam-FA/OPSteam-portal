@@ -96,7 +96,8 @@ html[data-theme="dark"] body::before{
 .nav-item.active{background:var(--purple-dim);color:var(--purple);font-weight:600}
 .nav-item.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;border-radius:0 3px 3px 0;background:var(--purple)}
 .nav-icon{font-size:16px;flex-shrink:0;width:20px;text-align:center}
-.nav-label{white-space:nowrap;overflow:hidden}
+.nav-label{white-space:nowrap;overflow:hidden;line-height:1.3}
+.nav-credit{display:block;font-size:10px;font-weight:400;font-style:italic;opacity:0.65;letter-spacing:0.02em;margin-top:1px}
 .side-nav.collapsed .nav-label,.side-nav.collapsed .brand-text,.side-nav.collapsed .nav-section{opacity:0;pointer-events:none}
 .nav-spacer{flex:1}
 .collapse-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 12px;border-radius:10px;cursor:pointer;color:var(--ink3);font-size:12px;transition:background .15s,color .15s;border:none;background:none;width:100%}
@@ -427,7 +428,7 @@ html[data-theme="dark"] body::before{
   <div class="filter-divider" style="margin:10px 4px"></div>
   <div class="nav-section">Library</div>
   <a class="nav-item active" href="/library.html"><span class="nav-icon">📚</span><span class="nav-label">AI Library</span></a>
-  <a class="nav-item" href="/dca-course.html"><span class="nav-icon">🎓</span><span class="nav-label">DCA Course</span></a>
+  <a class="nav-item" href="/dca-course.html"><span class="nav-icon">🎓</span><span class="nav-label">Digital Course Academy<span class="nav-credit">by Amy Porterfield</span></span></a>
   <div class="nav-spacer"></div>
   <button class="collapse-btn" id="collapseBtn" onclick="toggleNav()"><span id="collapseArrow">◀</span><span class="nav-label" id="collapseLabel">Collapse</span></button>
 </nav>
