@@ -304,6 +304,20 @@ html[data-theme="dark"] body::before{
 }
 .librarian-toggle:hover{transform:scale(1.07);box-shadow:0 12px 32px rgba(76,53,168,0.5)}
 .librarian-toggle.open{transform:rotate(15deg)}
+@keyframes libMove {
+  0%, 30%  { transform: none; }
+  35%  { transform: rotate(-8deg); }
+  40%  { transform: rotate(8deg); }
+  44%  { transform: rotate(-4deg); }
+  47%  { transform: rotate(0deg); }
+  55%  { transform: translateY(0); }
+  58%  { transform: translateY(-5px) scale(1.04); }
+  61%  { transform: translateY(0) scale(1); }
+  63%  { transform: translateY(-2px); }
+  65%  { transform: none; }
+  100% { transform: none; }
+}
+.librarian-toggle img { animation: libMove 8s ease-in-out infinite; }
 .librarian-panel{
   position:fixed;bottom:90px;right:24px;width:360px;z-index:299;
   background:var(--bg2);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);

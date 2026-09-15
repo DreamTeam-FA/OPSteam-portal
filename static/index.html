@@ -355,26 +355,58 @@ html[data-theme="dark"] body::before {
   padding: 40px 24px;
   text-align: center;
 }
-.welcome-glow {
+.welcome-avatar-wrap {
   width: 120px; height: 120px;
   border-radius: 50%;
   overflow: hidden;
   display: block;
-  object-fit: cover;
-  object-position: center 22%;
-  animation: avatarPulse 3.5s ease-in-out infinite;
+  flex-shrink: 0;
+  background: #F59E0B;
+  animation: amyGlow 3.5s ease-in-out infinite, amyMove 16s ease-in-out infinite;
   box-shadow:
     0 0 0 1px rgba(76,53,168,0.4),
     0 0 36px rgba(76,53,168,0.22),
     0 0 80px rgba(76,53,168,0.45);
 }
-@keyframes avatarPulse {
+.welcome-glow {
+  width: 100%; height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center 22%;
+  transform: scale(1.12);
+}
+@keyframes amyGlow {
   0%,100% {
     box-shadow: 0 0 0 1px rgba(76,53,168,0.35), 0 0 36px rgba(76,53,168,0.18), 0 0 80px rgba(76,53,168,0.35);
   }
   50% {
     box-shadow: 0 0 0 1px rgba(76,53,168,0.6), 0 0 52px rgba(76,53,168,0.38), 0 0 110px rgba(76,53,168,0.55);
   }
+}
+@keyframes amyMove {
+  /* resting */
+  0%, 28%  { transform: none; }
+  /* wave */
+  33%  { transform: rotate(-10deg); }
+  38%  { transform: rotate(10deg); }
+  42%  { transform: rotate(-5deg); }
+  46%  { transform: rotate(0deg); }
+  /* resting */
+  46%, 56% { transform: none; }
+  /* bounce / smile */
+  60%  { transform: scale(1.08) translateY(-7px); }
+  63%  { transform: scale(1) translateY(0); }
+  65%  { transform: scale(1.04) translateY(-3px); }
+  67%  { transform: none; }
+  /* resting */
+  67%, 77% { transform: none; }
+  /* wink */
+  80%  { transform: scaleX(1.06) scaleY(0.78); }
+  82%  { transform: none; }
+  84%  { transform: scaleX(1.03) scaleY(0.88); }
+  86%  { transform: none; }
+  /* resting */
+  86%, 100% { transform: none; }
 }
 .welcome-title {
   font-family: 'Barlow Condensed', sans-serif;
@@ -585,7 +617,7 @@ html[data-theme="dark"] body::before {
   .input-hint { max-width: 680px; margin: 8px auto 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .dot, .welcome-glow { animation: none; }
+  .dot, .welcome-avatar-wrap, .welcome-glow { animation: none; }
   .msg { animation: none; }
   #send-btn, .theme-btn { transition: none; }
 }
@@ -698,7 +730,9 @@ html[data-theme="dark"] body::before {
 
 <!-- ── Welcome Screen ── -->
 <div id="welcome">
-  <img src="/avatar-amy.png" class="welcome-glow" alt="Amy">
+  <div class="welcome-avatar-wrap">
+    <img src="/avatar-amy.png" class="welcome-glow" alt="Amy">
+  </div>
   <div class="welcome-title">Hey, I'm Amy.</div>
   <div class="welcome-sub">Your course assistant, trained on Amy Porterfield's materials. Ask me anything about the course — tasks, frameworks, strategies.</div>
   <div class="welcome-hint">
