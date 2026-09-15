@@ -408,6 +408,9 @@ html[data-theme="dark"] body::before{
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
 
+/* ── Mobile-only elements (hidden on desktop) ────────────────────────────── */
+.mob-cat-wrap{display:none}
+
 /* ── Mobile hamburger & drawer ───────────────────────────────────────────── */
 .mob-menu-btn{
   display:none;align-items:center;justify-content:center;
@@ -441,7 +444,7 @@ body.nav-open .nav-backdrop{display:block}
   .app-main{width:100%;min-width:0}
   /* Library body stacks vertically */
   .library-body{flex-direction:column;overflow:auto}
-  /* Filter panel: two stacked rows (search + chips) */
+  /* Filter panel: search row + dropdown row */
   .filter-panel{
     width:100%!important;height:auto;flex-shrink:0;
     border-right:none;border-bottom:1px solid var(--border);
@@ -450,27 +453,32 @@ body.nav-open .nav-backdrop{display:block}
   .filter-header{display:none}
   .filter-search{padding:8px 12px 6px;flex-shrink:0;width:100%}
   .filter-search input{border-radius:20px}
-  /* Chip row with fade-right cue */
-  .filter-cats-wrap{position:relative;flex-shrink:0}
-  .filter-cats-wrap::after{
-    content:'';position:absolute;right:0;top:0;bottom:0;width:40px;
-    background:linear-gradient(to right,transparent,var(--bg));
-    pointer-events:none;z-index:1;
+  /* Hide desktop chips; show mobile dropdown */
+  .filter-cats-wrap{display:none}
+  .mob-cat-wrap{display:block;padding:0 12px 8px;position:relative}
+  .mob-cat-btn{
+    width:100%;display:flex;align-items:center;gap:8px;
+    padding:9px 14px;border-radius:20px;cursor:pointer;font-size:13px;
+    background:var(--glass-hi);border:1px solid var(--border);color:var(--ink);
+    text-align:left;font-weight:500;
   }
-  .filter-cats{
-    display:flex;flex-direction:row;overflow-x:auto;
-    padding:4px 12px 8px;gap:6px;align-items:center;
-    -webkit-overflow-scrolling:touch;
+  .mob-cat-btn .caret{margin-left:auto;font-size:11px;opacity:0.5;transition:transform .2s}
+  .mob-cat-btn.open .caret{transform:rotate(180deg)}
+  .mob-cat-dropdown{
+    display:none;position:absolute;left:12px;right:12px;top:calc(100% - 4px);
+    background:var(--card);border:1px solid var(--border);border-radius:14px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:400;overflow:hidden;
   }
-  .filter-cats::-webkit-scrollbar{height:0}
-  .filter-cat{
-    white-space:nowrap;flex-shrink:0;border-radius:20px;
-    padding:5px 14px;font-size:12px;border:1px solid var(--border);
+  .mob-cat-dropdown.open{display:block}
+  .mob-cat-opt{
+    display:flex;align-items:center;gap:10px;padding:12px 16px;
+    font-size:13px;cursor:pointer;color:var(--ink2);border-bottom:1px solid var(--border);
   }
-  .filter-cat.active{background:var(--purple-dim);color:var(--purple);border-color:var(--purple)}
-  .filter-cat-count{display:none}
-  /* Content area scrolls — 53px topbar + 40px search row + 36px chips row */
-  .content-area{overflow-y:auto;height:calc(100dvh - 53px - 40px - 36px)}
+  .mob-cat-opt:last-child{border-bottom:none}
+  .mob-cat-opt:hover,.mob-cat-opt.active{background:var(--purple-dim);color:var(--purple)}
+  .mob-cat-opt .opt-count{margin-left:auto;font-size:11px;opacity:0.55}
+  /* Content area — 53px topbar + 46px search + 50px dropdown row */
+  .content-area{overflow-y:auto;height:calc(100dvh - 53px - 46px - 50px)}
   /* Top bar tweaks */
   .top-bar{padding:10px 12px;gap:8px}
   .top-bar-sub{display:none}
@@ -537,6 +545,14 @@ body.nav-open .nav-backdrop{display:block}
             <span class="filter-cat-count" id="count-all">—</span>
           </div>
         </div>
+      </div>
+      <!-- Mobile category dropdown -->
+      <div class="mob-cat-wrap">
+        <button class="mob-cat-btn" id="mobCatBtn" onclick="toggleMobCatDropdown()">
+          <span id="mobCatLabel">🗂️ All</span>
+          <span class="caret">▾</span>
+        </button>
+        <div class="mob-cat-dropdown" id="mobCatDropdown"></div>
       </div>
     </div>
 
@@ -676,6 +692,7 @@ function renderCategoryFilters() {
     div.innerHTML = `<span>${icon}</span> ${cat} <span class="filter-cat-count">${total}</span>`;
     container.appendChild(div);
   });
+  updateMobCatLabel();
 }
 
 async function loadDocs() {
@@ -923,8 +940,63 @@ function selectCat(el, cat) {
   el.classList.add('active');
   activeCat = cat;
   activeSubCat = '';
+  updateMobCatLabel();
   renderGrid();
 }
+
+// ── Mobile category dropdown ───────────────────────────────────────────────
+function updateMobCatLabel() {
+  const btn = document.getElementById('mobCatLabel');
+  if (!btn) return;
+  const active = document.querySelector('.filter-cat.active');
+  if (active) {
+    const text = active.childNodes[0].textContent.trim() + ' ' +
+                 (active.childNodes[1] ? active.childNodes[1].textContent.trim() : '');
+    btn.textContent = text.trim();
+  }
+}
+
+function buildMobCatDropdown() {
+  const dropdown = document.getElementById('mobCatDropdown');
+  if (!dropdown) return;
+  const chips = document.querySelectorAll('.filter-cat');
+  dropdown.innerHTML = '';
+  chips.forEach(chip => {
+    const cat = chip.dataset.cat;
+    const label = chip.childNodes[0].textContent.trim() + ' ' +
+                  (chip.childNodes[1] ? chip.childNodes[1].textContent.trim() : '');
+    const count = chip.querySelector('.filter-cat-count');
+    const opt = document.createElement('div');
+    opt.className = 'mob-cat-opt' + (chip.classList.contains('active') ? ' active' : '');
+    opt.innerHTML = `<span>${label.trim()}</span><span class="opt-count">${count ? count.textContent : ''}</span>`;
+    opt.onclick = function() {
+      selectCat(chip, cat);
+      closeMobCatDropdown();
+      buildMobCatDropdown(); // refresh active state
+    };
+    dropdown.appendChild(opt);
+  });
+}
+
+function toggleMobCatDropdown() {
+  const btn = document.getElementById('mobCatBtn');
+  const dropdown = document.getElementById('mobCatDropdown');
+  if (!btn || !dropdown) return;
+  const isOpen = dropdown.classList.contains('open');
+  if (!isOpen) buildMobCatDropdown();
+  btn.classList.toggle('open', !isOpen);
+  dropdown.classList.toggle('open', !isOpen);
+}
+
+function closeMobCatDropdown() {
+  document.getElementById('mobCatBtn')?.classList.remove('open');
+  document.getElementById('mobCatDropdown')?.classList.remove('open');
+}
+
+// Close dropdown when tapping outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.mob-cat-wrap')) closeMobCatDropdown();
+});
 
 function handleSearch() {
   searchQ = document.getElementById('searchInput').value.toLowerCase().trim();
