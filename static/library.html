@@ -287,7 +287,8 @@ html[data-theme="dark"] body::before{
   font-size:13.5px;color:var(--ink2);
 }
 /* ── Document viewer — styles moved above into filter-divider block ───────── */
-.video-embed{width:100%;aspect-ratio:16/9;border-radius:10px;border:none;background:#000}
+.video-embed-wrap{position:relative;padding-top:56.25%;border-radius:10px;overflow:hidden;background:#000}
+.video-embed{position:absolute;top:0;left:0;width:100%;height:100%;border:none;}
 .video-info{margin-top:14px;padding:14px;background:var(--glass);border-radius:10px;border:1px solid var(--border)}
 .video-info-label{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px}
 .video-info-val{font-size:13px;color:var(--ink2)}
@@ -1070,13 +1071,22 @@ function openVideo(fileId, name, category, subcategory, driveLink, sizeMb) {
     `<span class="detail-pill detail-pill-cat">${escHtml(category)}</span>` +
     (subcategory ? `<span class="detail-pill detail-pill-type">${escHtml(subcategory)}</span>` : '');
   const sizeTxt = sizeMb > 1024 ? `${(sizeMb/1024).toFixed(1)} GB` : `${sizeMb} MB`;
+  // Force /preview embed format so Drive shows just the player, not the full UI
+  const embedUrl = driveLink
+    .replace('/view', '/preview')
+    .replace('/edit', '/preview')
+    .replace('?usp=sharing', '')
+    .replace('?usp=drive_link', '');
+  const openUrl = driveLink.replace('/preview', '/view');
   document.getElementById('detailContent').innerHTML = `
-    <iframe class="video-embed" src="${driveLink}" allowfullscreen allow="autoplay"></iframe>
+    <div class="video-embed-wrap">
+      <iframe class="video-embed" src="${embedUrl}" allowfullscreen allow="autoplay"></iframe>
+    </div>
     <div class="video-info" style="margin-top:14px">
       <div class="video-info-label">File Size</div>
       <div class="video-info-val">${sizeTxt}</div>
       <div style="margin-top:10px">
-        <a href="${driveLink.replace('/preview','')}" target="_blank" class="pdf-open-link">↗ Open in Drive</a>
+        <a href="${openUrl}" target="_blank" class="pdf-open-link">↗ Open in Drive</a>
       </div>
     </div>`;
   openDetailPanel();
