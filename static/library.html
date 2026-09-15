@@ -441,29 +441,36 @@ body.nav-open .nav-backdrop{display:block}
   .app-main{width:100%;min-width:0}
   /* Library body stacks vertically */
   .library-body{flex-direction:column;overflow:auto}
-  /* Filter panel becomes horizontal scrollable row */
+  /* Filter panel: two stacked rows (search + chips) */
   .filter-panel{
     width:100%!important;height:auto;flex-shrink:0;
     border-right:none;border-bottom:1px solid var(--border);
-    flex-direction:row;align-items:center;padding:0;
+    flex-direction:column;align-items:stretch;padding:0;
   }
   .filter-header{display:none}
-  .filter-search{padding:8px 10px;flex-shrink:0;width:160px}
+  .filter-search{padding:8px 12px 6px;flex-shrink:0;width:100%}
+  .filter-search input{border-radius:20px}
+  /* Chip row with fade-right cue */
+  .filter-cats-wrap{position:relative;flex-shrink:0}
+  .filter-cats-wrap::after{
+    content:'';position:absolute;right:0;top:0;bottom:0;width:40px;
+    background:linear-gradient(to right,transparent,var(--bg));
+    pointer-events:none;z-index:1;
+  }
   .filter-cats{
-    display:flex;flex-direction:row;flex:1;overflow-x:auto;
-    padding:6px 8px;gap:4px;align-items:center;
-    scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+    display:flex;flex-direction:row;overflow-x:auto;
+    padding:4px 12px 8px;gap:6px;align-items:center;
+    -webkit-overflow-scrolling:touch;
   }
   .filter-cats::-webkit-scrollbar{height:0}
   .filter-cat{
     white-space:nowrap;flex-shrink:0;border-radius:20px;
-    padding:5px 12px;font-size:12px;border:1px solid var(--border);
-    scroll-snap-align:start;
+    padding:5px 14px;font-size:12px;border:1px solid var(--border);
   }
   .filter-cat.active{background:var(--purple-dim);color:var(--purple);border-color:var(--purple)}
   .filter-cat-count{display:none}
-  /* Content area scrolls */
-  .content-area{overflow-y:auto;height:calc(100dvh - 53px - 52px)}
+  /* Content area scrolls — 53px topbar + 40px search row + 36px chips row */
+  .content-area{overflow-y:auto;height:calc(100dvh - 53px - 40px - 36px)}
   /* Top bar tweaks */
   .top-bar{padding:10px 12px;gap:8px}
   .top-bar-sub{display:none}
@@ -523,10 +530,12 @@ body.nav-open .nav-backdrop{display:block}
       <div class="filter-search">
         <input type="text" id="searchInput" placeholder="Search library..." oninput="handleSearch()"/>
       </div>
-      <div class="filter-cats" id="filterCats">
-        <div class="filter-cat active" data-cat="" onclick="selectCat(this,'')">
-          <span>🗂️</span> All
-          <span class="filter-cat-count" id="count-all">—</span>
+      <div class="filter-cats-wrap">
+        <div class="filter-cats" id="filterCats">
+          <div class="filter-cat active" data-cat="" onclick="selectCat(this,'')">
+            <span>🗂️</span> All
+            <span class="filter-cat-count" id="count-all">—</span>
+          </div>
         </div>
       </div>
     </div>
