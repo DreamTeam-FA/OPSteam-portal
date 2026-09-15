@@ -504,6 +504,20 @@ html[data-theme="dark"] body::before {
 .bubble p:last-child { margin-bottom: 0; }
 .bubble ul, .bubble ol { padding-left: 20px; margin: 6px 0; }
 .bubble li { margin-bottom: 4px; }
+.bubble table {
+  width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13px;
+  overflow-x: auto; display: block;
+}
+.bubble thead { background: rgba(76,53,168,0.1); }
+.bubble th {
+  text-align: left; padding: 7px 10px; font-weight: 600;
+  border-bottom: 2px solid rgba(76,53,168,0.2); white-space: nowrap;
+}
+.bubble td {
+  padding: 7px 10px; border-bottom: 1px solid var(--border);
+  vertical-align: top; line-height: 1.55;
+}
+.bubble tr:last-child td { border-bottom: none; }
 .bubble h3, .bubble h4 {
   font-family: 'Barlow Condensed', sans-serif;
   font-weight: 700;
@@ -800,7 +814,11 @@ input.addEventListener('input', () => {
 
 // ── Markdown ──
 function renderMarkdown(text) {
-  // Escape HTML first
+  // Preserve <br> tags through HTML escaping using a placeholder
+  const BR = '\x02BR\x02';
+  text = text.replace(/<br\s*\/?>/gi, BR);
+
+  // Escape HTML
   let t = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
   // Tables — convert | row | rows | into <table>
@@ -842,6 +860,9 @@ function renderMarkdown(text) {
     if (/^<(h[1-6]|ul|ol|li|table|hr|blockquote)/.test(block)) return block;
     return `<p>${block.replace(/\n/g,'<br>')}</p>`;
   }).join('\n');
+
+  // Restore preserved <br> tags
+  t = t.replace(new RegExp(BR, 'g'), '<br>');
 
   return t;
 }
