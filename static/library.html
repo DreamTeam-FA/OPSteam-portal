@@ -949,11 +949,11 @@ function updateMobCatLabel() {
   const btn = document.getElementById('mobCatLabel');
   if (!btn) return;
   const active = document.querySelector('.filter-cat.active');
-  if (active) {
-    const text = active.childNodes[0].textContent.trim() + ' ' +
-                 (active.childNodes[1] ? active.childNodes[1].textContent.trim() : '');
-    btn.textContent = text.trim();
-  }
+  if (!active) return;
+  const countEl = active.querySelector('.filter-cat-count');
+  let text = active.textContent.trim();
+  if (countEl) text = text.replace(countEl.textContent.trim(), '').trim();
+  btn.textContent = text;
 }
 
 function buildMobCatDropdown() {
