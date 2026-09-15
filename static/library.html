@@ -407,10 +407,78 @@ html[data-theme="dark"] body::before{
 /* ── Scrollbar ───────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
+
+/* ── Mobile hamburger & drawer ───────────────────────────────────────────── */
+.mob-menu-btn{
+  display:none;align-items:center;justify-content:center;
+  background:var(--glass-hi);border:1px solid var(--border);border-radius:8px;
+  width:34px;height:34px;cursor:pointer;font-size:18px;color:var(--ink);
+  flex-shrink:0;margin-right:2px;padding:0;
+}
+.mob-menu-btn:hover{background:var(--purple-dim);color:var(--purple)}
+.nav-backdrop{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,0.45);z-index:190;
+  backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
+}
+body.nav-open .nav-backdrop{display:block}
+
+@media(max-width:768px){
+  /* Show hamburger */
+  .mob-menu-btn{display:flex}
+  /* Hide desktop collapse button */
+  .collapse-btn{display:none}
+  /* Side nav becomes a slide-in drawer */
+  .side-nav{
+    position:fixed!important;left:0;top:0;
+    width:240px!important;height:100dvh;
+    transform:translateX(-100%);
+    transition:transform .28s cubic-bezier(.4,0,.2,1);
+    z-index:200;
+  }
+  body.nav-open .side-nav{transform:translateX(0)}
+  /* App-main fills full width */
+  .app-main{width:100%;min-width:0}
+  /* Library body stacks vertically */
+  .library-body{flex-direction:column;overflow:auto}
+  /* Filter panel becomes horizontal scrollable row */
+  .filter-panel{
+    width:100%!important;height:auto;flex-shrink:0;
+    border-right:none;border-bottom:1px solid var(--border);
+    flex-direction:row;align-items:center;padding:0;
+  }
+  .filter-header{display:none}
+  .filter-search{padding:8px 10px;flex-shrink:0;width:160px}
+  .filter-cats{
+    display:flex;flex-direction:row;flex:1;overflow-x:auto;
+    padding:6px 8px;gap:4px;align-items:center;
+    scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+  }
+  .filter-cats::-webkit-scrollbar{height:0}
+  .filter-cat{
+    white-space:nowrap;flex-shrink:0;border-radius:20px;
+    padding:5px 12px;font-size:12px;border:1px solid var(--border);
+    scroll-snap-align:start;
+  }
+  .filter-cat.active{background:var(--purple-dim);color:var(--purple);border-color:var(--purple)}
+  .filter-cat-count{display:none}
+  /* Content area scrolls */
+  .content-area{overflow-y:auto;height:calc(100dvh - 53px - 52px)}
+  /* Top bar tweaks */
+  .top-bar{padding:10px 12px;gap:8px}
+  .top-bar-sub{display:none}
+  /* Cards grid single column */
+  .grid{grid-template-columns:1fr}
+  /* Doc panel full-screen overlay */
+  .doc-panel{width:100%!important;position:fixed;inset:0;z-index:300;border-left:none}
+}
 ::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:10px}
 </style>
 </head>
 <body>
+
+<!-- Mobile nav backdrop -->
+<div class="nav-backdrop" onclick="closeMobileNav()"></div>
 
 <!-- Side Nav -->
 <nav class="side-nav" id="sideNav">
@@ -438,6 +506,7 @@ html[data-theme="dark"] body::before{
 
   <!-- Top Bar -->
   <div class="top-bar">
+    <button class="mob-menu-btn" onclick="toggleMobileNav()" aria-label="Open navigation">☰</button>
     <div>
       <div class="top-bar-title">📚 AI Library</div>
       <div class="top-bar-sub">Docs, videos & resources — all in one place</div>
@@ -1093,6 +1162,14 @@ function toggleNav() {
   if (arrow) arrow.textContent = collapsed ? '▶' : '◀';
   if (label) label.textContent = collapsed ? 'Expand' : 'Collapse';
 }
+// Mobile nav drawer
+function toggleMobileNav() { document.body.classList.toggle('nav-open'); }
+function closeMobileNav() { document.body.classList.remove('nav-open'); }
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.nav-item').forEach(function(a) {
+    a.addEventListener('click', function() { if (window.innerWidth <= 768) closeMobileNav(); });
+  });
+});
 
 // ── Document formatter ────────────────────────────────────────────────────────
 function isEmojiChar(str) {
