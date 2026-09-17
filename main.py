@@ -65,14 +65,19 @@ def pick_model(message: str) -> str:
 def strip_thinking(text):
     return re.sub(r"<think>[\s\S]*?</think>", "", text, flags=re.IGNORECASE).strip()
 
-def generate(system_prompt, user_prompt, max_tokens=3000, json_mode=False, message_for_routing: str = None):
+def generate(system_prompt, user_prompt, max_tokens=3000, json_mode=False, message_for_routing: str = None, history: list = None):
     import time
     model = pick_model(message_for_routing or user_prompt)
+    messages = [{"role": "system", "content": system_prompt}]
+    if history:
+        for h in history:
+            role = "assistant" if h.get("role") == "amy" else "user"
+            content = h.get("text", "").strip()
+            if content:
+                messages.append({"role": role, "content": content})
+    messages.append({"role": "user", "content": user_prompt})
     kwargs = dict(
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user",   "content": user_prompt},
-        ],
+        messages=messages,
         max_tokens=max_tokens,
         temperature=0.4 if json_mode else 0.85,
     )
@@ -131,6 +136,7 @@ COURSE CONTENT:
 
 class ChatRequest(BaseModel):
     message: str
+    history: list = []
 
 class ChatResponse(BaseModel):
     response: str
@@ -204,7 +210,7 @@ async def chat(req: ChatRequest):
         if len(context) > MAX_CONTEXT_CHARS:
             context = context[:MAX_CONTEXT_CHARS] + "\n[context truncated]"
         system  = AMY_SYSTEM_PROMPT.format(context=context)
-        resp    = generate(system, req.message, max_tokens=1800, message_for_routing=req.message)
+        resp    = generate(system, req.message, max_tokens=1800, message_for_routing=req.message, history=req.history or [])
         return ChatResponse(response=resp)
     except Exception as e:
         print(f"[chat error] {e}")

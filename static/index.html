@@ -1030,7 +1030,13 @@ async function sendMessage() {
     const res = await fetch('/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: text })
+      body: JSON.stringify({
+        message: text,
+        history: chatHistory.slice(0, -1).slice(-6).map(m => ({
+          role: m.role,
+          text: m.role === 'amy' ? m.text.slice(0, 600) : m.text
+        }))
+      })
     });
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
     const data = await res.json();
