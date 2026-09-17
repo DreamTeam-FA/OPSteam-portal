@@ -167,32 +167,37 @@ class ContentWeekRequest(BaseModel):
 class WatermarkRewriteRequest(BaseModel):
     text: str
 
+MAX_CONTEXT_CHARS = 4000  # ~1000 tokens; keeps total request under Groq's 8k TPM limit
+
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     try:
         # Search both tables: course_chunks (original Amy course) + library_chunks (richer content)
         course_ctx = search_chunks(req.message)
 
-        # Also pull from library — DCA content, SOPs, AI Prompts, etc.
-        lib_ctx = search_library_chunks(req.message, top_n=6)
+        # Also pull from library — fewer chunks to stay within token limits
+        lib_ctx = search_library_chunks(req.message, top_n=3)
 
         # If library returns nothing for this specific query, try DCA category
         if not lib_ctx or len(lib_ctx) < 200:
-            lib_ctx_dca = search_library_chunks(req.message, top_n=4, category="Digital Course Academy")
+            lib_ctx_dca = search_library_chunks(req.message, top_n=2, category="Digital Course Academy")
             if lib_ctx_dca and len(lib_ctx_dca) > len(lib_ctx or ""):
                 lib_ctx = lib_ctx_dca
 
         parts = []
         if course_ctx and len(course_ctx) > 100:
-            parts.append(f"[From Amy's Course Materials]\n{course_ctx}")
+            parts.append(f"[From Amy's Course Materials]\n{course_ctx[:2000]}")
         if lib_ctx and len(lib_ctx) > 100:
-            parts.append(f"[From the Knowledge Library]\n{lib_ctx}")
+            parts.append(f"[From the Knowledge Library]\n{lib_ctx[:2000]}")
         if not parts:
             parts.append("(No specific course content matched — answer from Amy Porterfield's general methodology.)")
 
         context = "\n\n===\n\n".join(parts)
+        # Hard cap to keep total prompt under Groq's TPM limit
+        if len(context) > MAX_CONTEXT_CHARS:
+            context = context[:MAX_CONTEXT_CHARS] + "\n[context truncated]"
         system  = AMY_SYSTEM_PROMPT.format(context=context)
-        resp    = generate(system, req.message, max_tokens=1000, message_for_routing=req.message)
+        resp    = generate(system, req.message, max_tokens=700, message_for_routing=req.message)
         return ChatResponse(response=resp)
     except Exception as e:
         print(f"[chat error] {e}")
