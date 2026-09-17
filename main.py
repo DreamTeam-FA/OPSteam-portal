@@ -204,7 +204,7 @@ async def chat(req: ChatRequest):
         if len(context) > MAX_CONTEXT_CHARS:
             context = context[:MAX_CONTEXT_CHARS] + "\n[context truncated]"
         system  = AMY_SYSTEM_PROMPT.format(context=context)
-        resp    = generate(system, req.message, max_tokens=700, message_for_routing=req.message)
+        resp    = generate(system, req.message, max_tokens=1200, message_for_routing=req.message)
         return ChatResponse(response=resp)
     except Exception as e:
         print(f"[chat error] {e}")
