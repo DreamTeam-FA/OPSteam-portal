@@ -66,6 +66,7 @@ def strip_thinking(text):
     return re.sub(r"<think>[\s\S]*?</think>", "", text, flags=re.IGNORECASE).strip()
 
 def generate(system_prompt, user_prompt, max_tokens=3000, json_mode=False, message_for_routing: str = None):
+    import time
     model = pick_model(message_for_routing or user_prompt)
     kwargs = dict(
         messages=[
@@ -77,18 +78,24 @@ def generate(system_prompt, user_prompt, max_tokens=3000, json_mode=False, messa
     )
     if json_mode:
         kwargs["response_format"] = {"type": "json_object"}
-    # Try chosen model first; fall back to MODEL_SMART if it fails
-    for attempt_model in ([model, MODEL_SMART] if model != MODEL_SMART else [MODEL_SMART]):
-        try:
-            resp = groq_client.chat.completions.create(model=attempt_model, **kwargs)
-            content = resp.choices[0].message.content or ""
-            return strip_thinking(content)
-        except Exception as e:
-            err = str(e)
-            print(f"[generate] model={attempt_model} failed: {err}")
-            if attempt_model == MODEL_SMART:
-                raise   # out of fallbacks
-    raise RuntimeError("All models failed")
+    models_to_try = [model, MODEL_SMART] if model != MODEL_SMART else [MODEL_SMART]
+    for attempt_model in models_to_try:
+        for retry in range(3):
+            try:
+                resp = groq_client.chat.completions.create(model=attempt_model, **kwargs)
+                content = resp.choices[0].message.content or ""
+                return strip_thinking(content)
+            except Exception as e:
+                err = str(e)
+                print(f"[generate] model={attempt_model} retry={retry} failed: {err}")
+                is_rate = any(x in err for x in ["413", "429", "rate_limit", "too large", "TPM", "tokens per minute"])
+                if is_rate and retry < 2:
+                    wait = 5 * (retry + 1)   # 5s then 10s
+                    print(f"[generate] rate limit — waiting {wait}s before retry")
+                    time.sleep(wait)
+                    continue
+                break  # non-rate error or out of retries for this model
+    raise RuntimeError("All models failed after retries")
 
 app = FastAPI(title="Hi, Amy!")
 
