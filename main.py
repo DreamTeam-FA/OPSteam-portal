@@ -174,7 +174,7 @@ class ContentWeekRequest(BaseModel):
 class WatermarkRewriteRequest(BaseModel):
     text: str
 
-MAX_CONTEXT_CHARS = 4000  # ~1000 tokens; keeps total request under Groq's 8k TPM limit
+MAX_CONTEXT_CHARS = 3000  # ~750 tokens; leaves room for longer responses
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
@@ -204,7 +204,7 @@ async def chat(req: ChatRequest):
         if len(context) > MAX_CONTEXT_CHARS:
             context = context[:MAX_CONTEXT_CHARS] + "\n[context truncated]"
         system  = AMY_SYSTEM_PROMPT.format(context=context)
-        resp    = generate(system, req.message, max_tokens=1200, message_for_routing=req.message)
+        resp    = generate(system, req.message, max_tokens=1800, message_for_routing=req.message)
         return ChatResponse(response=resp)
     except Exception as e:
         print(f"[chat error] {e}")
