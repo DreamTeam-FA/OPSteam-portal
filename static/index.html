@@ -635,6 +635,90 @@ html[data-theme="dark"] body::before {
   .msg { animation: none; }
   #send-btn, .theme-btn { transition: none; }
 }
+
+/* ── Reference Panel ────────────────────────────────────────────────────────── */
+.ref-panel-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.38);
+  z-index: 490; opacity: 0; pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.ref-panel-overlay.open { opacity: 1; pointer-events: all; }
+.ref-panel {
+  position: fixed; top: 0; right: -450px;
+  width: 420px; max-width: 94vw; height: 100vh;
+  background: var(--bg2);
+  border-left: 1px solid var(--border-hi);
+  box-shadow: -6px 0 48px rgba(76,53,168,0.28);
+  z-index: 491; display: flex; flex-direction: column;
+  transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
+  overflow: hidden;
+}
+.ref-panel.open { right: 0; }
+.ref-panel-header {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 16px 18px; border-bottom: 1px solid var(--border);
+  background: var(--glass-hi); flex-shrink: 0;
+}
+.ref-panel-title {
+  flex: 1; font-size: 14px; font-weight: 600; line-height: 1.4;
+  color: var(--ink);
+}
+.ref-panel-badge {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.07em;
+  text-transform: uppercase; padding: 2px 8px; border-radius: 20px;
+  background: var(--purple-dim); color: var(--purple); flex-shrink: 0; margin-top: 2px;
+}
+.ref-panel-close {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  border: 1px solid var(--border); background: var(--glass);
+  color: var(--ink2); font-size: 13px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s; margin-top: 0;
+}
+.ref-panel-close:hover { background: var(--purple-dim); color: var(--purple); }
+.ref-panel-body {
+  flex: 1; overflow-y: auto; padding: 20px 20px 32px;
+  font-size: 14px; line-height: 1.76; color: var(--ink2);
+}
+.ref-panel-body h2, .ref-panel-body h3, .ref-panel-body h4 {
+  color: var(--ink); margin: 18px 0 8px; font-size: 15px; font-weight: 600;
+}
+.ref-panel-body p { margin-bottom: 10px; }
+.ref-panel-body ul { padding-left: 18px; margin-bottom: 10px; }
+.ref-panel-body li { margin-bottom: 5px; }
+.ref-panel-body strong { color: var(--ink); }
+.ref-panel-body code {
+  font-family: monospace; font-size: 12px;
+  background: var(--glass); padding: 1px 5px; border-radius: 4px;
+  color: var(--purple);
+}
+.ref-panel-loading {
+  text-align: center; padding: 60px 20px;
+  color: var(--ink3); font-size: 14px;
+}
+
+/* Source reference chips under Amy's bubble */
+.source-chips {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 0 0 2px 44px;
+}
+.source-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 11px; border-radius: 20px;
+  border: 1px solid var(--border-hi);
+  background: var(--glass); color: var(--ink3);
+  font-size: 11.5px; font-weight: 500; cursor: pointer; text-align: left;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.source-chip:hover {
+  background: var(--purple-dim); border-color: var(--purple); color: var(--purple);
+}
+@media (max-width: 600px) {
+  .ref-panel { width: 100vw; }
+  .source-chips { padding-left: 12px; }
+}
 </style>
 </head>
 <body>
@@ -868,11 +952,9 @@ function renderMarkdown(text) {
 }
 
 // ── Messages ──
-function appendMessage(role, content) {
+function appendMessage(role, content, sources = []) {
   const isAmy = role === 'amy';
-  // Track history for export
   chatHistory.push({ role, text: content });
-  // Show export button once there's Amy content
   if (isAmy) document.getElementById('export-btn').style.display = 'flex';
 
   const div = document.createElement('div');
@@ -887,6 +969,23 @@ function appendMessage(role, content) {
   div.appendChild(av);
   div.appendChild(bubble);
   messages.appendChild(div);
+
+  // Source reference chips
+  if (isAmy && sources && sources.length > 0) {
+    const chips = document.createElement('div');
+    chips.className = 'source-chips';
+    sources.forEach(s => {
+      const btn = document.createElement('button');
+      btn.className = 'source-chip';
+      const name = s.file_name.replace(/\.[^/.]+$/, '');
+      btn.title = name;
+      btn.innerHTML = `📄 ${name}`;
+      btn.addEventListener('click', () => openDoc(s.file_id, s.type, s.file_name));
+      chips.appendChild(btn);
+    });
+    messages.appendChild(chips);
+  }
+
   messages.scrollTop = messages.scrollHeight;
 }
 
@@ -1041,7 +1140,7 @@ async function sendMessage() {
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
     const data = await res.json();
     hideTyping();
-    appendMessage('amy', data.response);
+    appendMessage('amy', data.response, data.sources || []);
   } catch(err) {
     hideTyping();
     appendMessage('amy', "Oops! Something went wrong on my end. Please try again in a moment. 💛");
@@ -1057,6 +1156,39 @@ input.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 });
 input.focus();
+
+// ── Reference Panel ──────────────────────────────────────────────────────────
+async function openDoc(fileId, docType, fileName) {
+  const panel   = document.getElementById('refPanel');
+  const overlay = document.getElementById('refPanelOverlay');
+  const body    = document.getElementById('refPanelBody');
+  const title   = document.getElementById('refPanelTitle');
+  const badge   = document.getElementById('refPanelBadge');
+
+  title.textContent = fileName.replace(/\.[^/.]+$/, ''); // strip extension
+  badge.textContent = docType === 'library' ? 'Library' : 'Course';
+  body.innerHTML = '<div class="ref-panel-loading">📄 Loading…</div>';
+
+  panel.classList.add('open');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  try {
+    const res = await fetch(`/document/${encodeURIComponent(fileId)}?type=${docType}`);
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    body.innerHTML = renderMarkdown(data.content);
+  } catch(err) {
+    body.innerHTML = '<div class="ref-panel-loading">Could not load document. Please try again.</div>';
+    console.error('[refPanel]', err);
+  }
+}
+
+function closeRefPanel() {
+  document.getElementById('refPanel').classList.remove('open');
+  document.getElementById('refPanelOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
 
 // ── Side nav collapse ──
 (function() {
@@ -1081,5 +1213,18 @@ input.focus();
   nav.querySelectorAll('.side-link').forEach(l => l.addEventListener('click', () => { if (window.innerWidth <= 660) closeNav(); }));
 })();
 </script>
+
+<!-- ── Reference Panel ── -->
+<div class="ref-panel-overlay" id="refPanelOverlay" onclick="closeRefPanel()"></div>
+<div class="ref-panel" id="refPanel" role="dialog" aria-modal="true" aria-label="Source document">
+  <div class="ref-panel-header">
+    <span class="ref-panel-title" id="refPanelTitle"></span>
+    <span class="ref-panel-badge" id="refPanelBadge">Source</span>
+    <button class="ref-panel-close" onclick="closeRefPanel()" aria-label="Close panel">✕</button>
+  </div>
+  <div class="ref-panel-body" id="refPanelBody">
+    <div class="ref-panel-loading">Loading…</div>
+  </div>
+</div>
 </body>
 </html>

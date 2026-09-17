@@ -296,6 +296,83 @@ def get_document_content(file_id: str) -> str:
     return "\n".join(r.content for r in rows)
 
 
+def get_course_document_content(file_id: str) -> str:
+    """Return full content of a course document by file_id."""
+    with SessionLocal() as db:
+        rows = db.execute(
+            text("SELECT content FROM course_chunks WHERE file_id = :fid ORDER BY chunk_index"),
+            {"fid": file_id}
+        ).fetchall()
+    return "\n".join(r.content for r in rows)
+
+
+def search_chunks_with_sources(query: str, top_n: int = 6):
+    """Returns (context_text, sources_list) with sources deduped by file_id.
+    Only returns sources when FTS actually matched (not from the fallback)."""
+    with SessionLocal() as db:
+        rows = db.execute(
+            text("""
+                SELECT DISTINCT ON (file_id)
+                       file_name, file_id, source_type, content,
+                       ts_rank(to_tsvector('english', content),
+                               plainto_tsquery('english', :q)) AS rank
+                FROM course_chunks
+                WHERE to_tsvector('english', content) @@ plainto_tsquery('english', :q)
+                ORDER BY file_id, rank DESC
+                LIMIT :n
+            """),
+            {"q": query, "n": top_n}
+        ).fetchall()
+
+    if not rows:
+        return "No specific course content matched.", []
+
+    parts = [f"[Source: {r.file_name}]\n{r.content}" for r in rows]
+    sources = [{"file_name": r.file_name, "file_id": r.file_id, "type": "course"} for r in rows]
+    return "\n\n---\n\n".join(parts), sources
+
+
+def search_library_chunks_with_sources(query: str, top_n: int = 6, category: str = None):
+    """Returns (context_text, sources_list) with sources deduped by file_id."""
+    with SessionLocal() as db:
+        if category:
+            rows = db.execute(
+                text("""
+                    SELECT DISTINCT ON (file_id)
+                           file_name, file_id, category, source_type, content,
+                           ts_rank(to_tsvector('english', content),
+                                   plainto_tsquery('english', :q)) AS rank
+                    FROM library_chunks
+                    WHERE to_tsvector('english', content) @@ plainto_tsquery('english', :q)
+                      AND category = :cat
+                    ORDER BY file_id, rank DESC
+                    LIMIT :n
+                """),
+                {"q": query, "n": top_n, "cat": category}
+            ).fetchall()
+        else:
+            rows = db.execute(
+                text("""
+                    SELECT DISTINCT ON (file_id)
+                           file_name, file_id, category, source_type, content,
+                           ts_rank(to_tsvector('english', content),
+                                   plainto_tsquery('english', :q)) AS rank
+                    FROM library_chunks
+                    WHERE to_tsvector('english', content) @@ plainto_tsquery('english', :q)
+                    ORDER BY file_id, rank DESC
+                    LIMIT :n
+                """),
+                {"q": query, "n": top_n}
+            ).fetchall()
+
+    if not rows:
+        return "", []
+
+    parts = [f"[{r.category} — {r.file_name}]\n{r.content}" for r in rows]
+    sources = [{"file_name": r.file_name, "file_id": r.file_id, "type": "library"} for r in rows]
+    return "\n\n---\n\n".join(parts), sources
+
+
 def get_library_videos(category: str = None):
     with SessionLocal() as db:
         if category:

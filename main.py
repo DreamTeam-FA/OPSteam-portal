@@ -14,7 +14,9 @@ from dotenv import load_dotenv
 from groq import Groq
 from database import (init_db, search_chunks,
                        search_library_chunks, get_library_docs,
-                       get_document_content, get_library_videos,
+                       get_document_content, get_course_document_content,
+                       search_chunks_with_sources, search_library_chunks_with_sources,
+                       get_library_videos,
                        library_already_processed, library_video_exists)
 
 # ── Shared sync state (visible to ALL connected users via /library/sync-status) ──
@@ -140,6 +142,7 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     response: str
+    sources: list = []
 
 class ChatSummaryRequest(BaseModel):
     messages: list   # [{role: "user"|"amy", text: "..."}]
@@ -185,36 +188,60 @@ MAX_CONTEXT_CHARS = 3000  # ~750 tokens; leaves room for longer responses
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     try:
-        # Search both tables: course_chunks (original Amy course) + library_chunks (richer content)
-        course_ctx = search_chunks(req.message)
+        course_ctx, course_sources = search_chunks_with_sources(req.message)
+        lib_ctx, lib_sources = search_library_chunks_with_sources(req.message, top_n=3)
 
-        # Also pull from library — fewer chunks to stay within token limits
-        lib_ctx = search_library_chunks(req.message, top_n=3)
-
-        # If library returns nothing for this specific query, try DCA category
+        # If library returns nothing, try DCA category specifically
         if not lib_ctx or len(lib_ctx) < 200:
-            lib_ctx_dca = search_library_chunks(req.message, top_n=2, category="Digital Course Academy")
+            lib_ctx_dca, lib_sources_dca = search_library_chunks_with_sources(req.message, top_n=2, category="Digital Course Academy")
             if lib_ctx_dca and len(lib_ctx_dca) > len(lib_ctx or ""):
-                lib_ctx = lib_ctx_dca
+                lib_ctx, lib_sources = lib_ctx_dca, lib_sources_dca
 
         parts = []
+        all_sources = []
         if course_ctx and len(course_ctx) > 100:
             parts.append(f"[From Amy's Course Materials]\n{course_ctx[:2000]}")
+            all_sources.extend(course_sources)
         if lib_ctx and len(lib_ctx) > 100:
             parts.append(f"[From the Knowledge Library]\n{lib_ctx[:2000]}")
+            all_sources.extend(lib_sources)
         if not parts:
             parts.append("(No specific course content matched — answer from Amy Porterfield's general methodology.)")
 
+        # Deduplicate sources by file_id, preserve order
+        seen = set()
+        unique_sources = []
+        for s in all_sources:
+            if s["file_id"] not in seen:
+                seen.add(s["file_id"])
+                unique_sources.append(s)
+
         context = "\n\n===\n\n".join(parts)
-        # Hard cap to keep total prompt under Groq's TPM limit
         if len(context) > MAX_CONTEXT_CHARS:
             context = context[:MAX_CONTEXT_CHARS] + "\n[context truncated]"
-        system  = AMY_SYSTEM_PROMPT.format(context=context)
-        resp    = generate(system, req.message, max_tokens=1800, message_for_routing=req.message, history=req.history or [])
-        return ChatResponse(response=resp)
+        system = AMY_SYSTEM_PROMPT.format(context=context)
+        resp   = generate(system, req.message, max_tokens=1800, message_for_routing=req.message, history=req.history or [])
+        return ChatResponse(response=resp, sources=unique_sources)
     except Exception as e:
         print(f"[chat error] {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/document/{file_id}")
+async def get_document(file_id: str, type: str = "library"):
+    try:
+        if type == "course":
+            content = get_course_document_content(file_id)
+        else:
+            content = get_document_content(file_id)
+        if not content:
+            raise HTTPException(status_code=404, detail="Document not found")
+        return {"file_id": file_id, "content": content}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[document error] {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/chat/summary")
 async def chat_summary(req: ChatSummaryRequest):
