@@ -1407,7 +1407,7 @@ function formatDocText(raw) {
     s === s.toUpperCase() && (s.match(/[A-Z]/g)||[]).length >= 4;
 
   // includes ASCII hyphens AND em/en-dashes
-  const isBullet    = (s) => /^[•\-\*·▸▪◦◆]/.test(s) || /^\d+[\.\)]\s/.test(s);
+  const isBullet    = (s) => /^[•·▸▪◦◆✓✗✘☑]/.test(s) || /^[\-\*]\s/.test(s) || /^\d+[\.\)]\s/.test(s);
   const isHR        = (s) => /^[─━\-=_—–]{3,}$/.test(s);
   const isFieldLabel= (s) => s.endsWith(':') && s.length <= 60 && !/^[•\-\*·\d]/.test(s);
   const isQLine     = (s) => /^Q\s*:/i.test(s);
@@ -1428,7 +1428,8 @@ function formatDocText(raw) {
   let isFirstBlock = true;
 
   const isNumbered = (s) => /^\d+[\.\)]\s/.test(s);
-  const isUnordered = (s) => /^[•\-\*·▸▪◦◆✓✗✘☑]\s/.test(s);
+  // •·▸ etc never need a space; - and * do (avoid matching dash-words or *emphasis*)
+  const isUnordered = (s) => /^[•·▸▪◦◆✓✗✘☑]/.test(s) || /^[\-\*]\s/.test(s);
 
   const renderLines = (lines) => {
     let out = '';
@@ -1450,29 +1451,40 @@ function formatDocText(raw) {
     const isShortLabel = (s) => s.length <= 25 && s.split(/\s+/).length <= 3
       && !/[.!?,;]$/.test(s) && !/^\d/.test(s) && !isHR(s) && !isNumbered(s) && !isUnordered(s);
 
+    // Holds a pending tab-label waiting for its value (Google Docs table rows alternate label/value)
+    let tabPendingLabel = null;
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const next = lines[i + 1];
 
       if (line.startsWith('\t')) {
-        // Tab-indented value (Google Docs table export) — pair with preceding line as label
-        const val = line.slice(1);
-        const tNext = lines[i + 1];
-        if (tNext && tNext.startsWith('\t')) {
-          // Two consecutive tab lines → label : value pair
-          flushPara(); flushList();
-          out += `<div class="doc-field-row"><div class="doc-field-label">${inlineMarkdown(val)}</div><div class="doc-field-val">${inlineMarkdown(tNext.slice(1))}</div></div>`;
-          i++;
-        } else if (paraAccum.length > 0) {
-          // Non-tab label on stack → emit as field row
+        // Tab-indented line (Google Docs table export).
+        // Pattern after first non-tab label: \t value, \t label, \t value, \t label ...
+        const val = line.slice(1).trim();
+        if (paraAccum.length > 0) {
+          // Non-tab line is waiting as label → pair with this tab line as value
           const label = paraAccum.pop();
           if (paraAccum.length > 0) flushPara();
           flushList();
           out += `<div class="doc-field-row"><div class="doc-field-label">${inlineMarkdown(label)}</div><div class="doc-field-val">${inlineMarkdown(val)}</div></div>`;
+          tabPendingLabel = null;
+        } else if (tabPendingLabel !== null) {
+          // Previous tab line was stored as label → this is its value
+          flushList();
+          out += `<div class="doc-field-row"><div class="doc-field-label">${inlineMarkdown(tabPendingLabel)}</div><div class="doc-field-val">${inlineMarkdown(val)}</div></div>`;
+          tabPendingLabel = null;
         } else {
-          paraAccum.push(val);
+          // First tab line with no pending context → treat as label; wait for value
+          tabPendingLabel = val;
         }
-      } else if (isHR(line)) {
+        continue;
+      }
+
+      // Non-tab line: flush any orphaned pending tab-label as plain text
+      if (tabPendingLabel !== null) { paraAccum.push(tabPendingLabel); tabPendingLabel = null; }
+
+      if (isHR(line)) {
         flushPara(); flushList();
         out += '<hr>';
       } else if (/^#{1,3}\s/.test(line)) {
@@ -1512,6 +1524,7 @@ function formatDocText(raw) {
         paraAccum.push(line);
       }
     }
+    if (tabPendingLabel !== null) { paraAccum.push(tabPendingLabel); tabPendingLabel = null; }
     flushPara(); flushList();
     return out;
   };
