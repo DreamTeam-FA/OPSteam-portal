@@ -150,8 +150,14 @@ html[data-theme="dark"] body::before{
 .filter-sub.active{background:var(--teal-dim);color:var(--teal);font-weight:600}
 .filter-sub-count{margin-left:auto;font-size:10px;color:var(--ink3);background:var(--glass-hi);border-radius:20px;padding:1px 6px}
 .grid-section-hdr{grid-column:1/-1;padding:14px 2px 6px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);border-bottom:1px solid var(--border);margin-bottom:4px}
-/* PDF viewer */
-.pdf-embed-wrap{width:100%;height:calc(100vh - 140px);border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--glass-hi,#fff)}
+/* PDF / Drive viewer */
+.drive-embed-container{display:flex;flex-direction:column;height:calc(100vh - 130px);gap:0}
+.drive-toolbar{display:flex;align-items:center;gap:10px;padding:8px 14px;background:linear-gradient(90deg,var(--purple-dim) 0%,var(--glass) 100%);border:1px solid var(--border);border-bottom:none;border-radius:10px 10px 0 0;flex-shrink:0}
+.drive-toolbar-logo{width:18px;height:18px;border-radius:4px;background:var(--purple);display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:800;flex-shrink:0}
+.drive-toolbar-name{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.03em;color:var(--ink2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drive-toolbar-link{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:7px;border:1px solid var(--purple);background:var(--purple-dim);color:var(--purple);font-size:12px;font-weight:600;text-decoration:none;flex-shrink:0;transition:background .14s}
+.drive-toolbar-link:hover{background:var(--purple);color:#fff}
+.pdf-embed-wrap{flex:1;border-radius:0 0 10px 10px;overflow:hidden;border:1px solid var(--border);background:var(--glass-hi,#fff)}
 .pdf-embed-wrap iframe{width:100%;height:100%;border:none;display:block}
 .pdf-open-link{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 16px;border-radius:9px;border:1px solid var(--border);background:var(--glass-hi);color:var(--purple);font-size:13px;text-decoration:none;transition:background .14s,border-color .14s}
 .pdf-open-link:hover{background:var(--purple-dim);border-color:var(--purple)}
@@ -1068,11 +1074,18 @@ async function openDoc(fileId, name, category, sourceType) {
       embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
       openUrl  = `https://drive.google.com/file/d/${fileId}/view`;
     }
+    const safeName = name.replace(/</g,'&lt;').replace(/>/g,'&gt;');
     document.getElementById('detailContent').innerHTML = `
-      <div class="pdf-embed-wrap">
-        <iframe src="${embedUrl}" allowfullscreen allow="autoplay"></iframe>
-      </div>
-      <a class="pdf-open-link" href="${openUrl}" target="_blank" rel="noopener">↗ Open in Drive</a>`;
+      <div class="drive-embed-container">
+        <div class="drive-toolbar">
+          <div class="drive-toolbar-logo">O</div>
+          <span class="drive-toolbar-name">${safeName}</span>
+          <a class="drive-toolbar-link" href="${openUrl}" target="_blank" rel="noopener">↗ Open in Drive</a>
+        </div>
+        <div class="pdf-embed-wrap">
+          <iframe src="${embedUrl}" allowfullscreen allow="autoplay"></iframe>
+        </div>
+      </div>`;
     return;
   }
 
