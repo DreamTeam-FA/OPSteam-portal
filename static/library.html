@@ -1381,7 +1381,7 @@ function formatDocText(raw) {
 
   // includes ASCII hyphens AND em/en-dashes
   const isBullet    = (s) => /^[•\-\*·▸▪◦◆]/.test(s) || /^\d+[\.\)]\s/.test(s);
-  const isHR        = (s) => /^[\-=_—–]{3,}$/.test(s);
+  const isHR        = (s) => /^[─━\-=_—–]{3,}$/.test(s);
   const isFieldLabel= (s) => s.endsWith(':') && s.length <= 60 && !/^[•\-\*·\d]/.test(s);
   const isQLine     = (s) => /^Q\s*:/i.test(s);
   const isALine     = (s) => /^A\s*:/i.test(s);
@@ -1426,8 +1426,10 @@ function formatDocText(raw) {
       } else if (isNumbered(line)) {
         flushPara();
         openList('ol');
-        const content = line.replace(/^\d+[\.\)]\s*/, '');
-        out += `<li>${inlineMarkdown(content)}</li>`;
+        const m = line.match(/^(\d+)[\.\)]\s*(.*)/);
+        const num = m ? m[1] : '';
+        const content = m ? m[2] : line;
+        out += `<li${num ? ` value="${num}"` : ''}>${inlineMarkdown(content)}</li>`;
       } else if (isUnordered(line)) {
         flushPara();
         openList('ul');
@@ -1531,7 +1533,12 @@ function formatDocText(raw) {
     // Uniform list block (all same type)
     if (block.length > 0 && block.every(l => isNumbered(l))) {
       html += '<ol>';
-      block.forEach(l => { html += `<li>${inlineMarkdown(l.replace(/^\d+[\.\)]\s*/, ''))}</li>`; });
+      block.forEach(l => {
+        const m = l.match(/^(\d+)[\.\)]\s*(.*)/);
+        const num = m ? m[1] : '';
+        const content = m ? m[2] : l;
+        html += `<li${num ? ` value="${num}"` : ''}>${inlineMarkdown(content)}</li>`;
+      });
       html += '</ol>';
       continue;
     }
