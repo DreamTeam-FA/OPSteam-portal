@@ -1419,10 +1419,29 @@ function formatDocText(raw) {
       if (listTag !== tag) { flushList(); out += `<${tag}>`; listTag = tag; }
     };
 
-    for (const line of lines) {
+    // Short "label-like" line: ≤25 chars, ≤3 words, no sentence-ending punctuation
+    const isShortLabel = (s) => s.length <= 25 && s.split(/\s+/).length <= 3
+      && !/[.!?,;]$/.test(s) && !/^\d/.test(s) && !isHR(s) && !isNumbered(s) && !isUnordered(s);
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const next = lines[i + 1];
+
       if (isHR(line)) {
         flushPara(); flushList();
         out += '<hr>';
+      } else if (/^#{1,3}\s/.test(line)) {
+        flushPara(); flushList();
+        const m2 = line.match(/^(#{1,3})\s+(.*)/);
+        const tag2 = m2[1].length <= 2 ? 'h2' : 'h3';
+        out += `<${tag2}>${inlineMarkdown(m2[2])}</${tag2}>`;
+      } else if (/^[A-Z]{2,}[A-Z]:\s/.test(line)) {
+        // ALL-CAPS KEY: value metadata (e.g. TITLE: ..., CREATOR: ...)
+        flushPara(); flushList();
+        const colon = line.indexOf(':');
+        const label = line.slice(0, colon);
+        const val = line.slice(colon + 1).trim();
+        out += `<div class="doc-field-row"><div class="doc-field-label">${inlineMarkdown(label)}</div><div class="doc-field-val">${inlineMarkdown(val)}</div></div>`;
       } else if (isNumbered(line)) {
         flushPara();
         openList('ol');
@@ -1433,10 +1452,18 @@ function formatDocText(raw) {
       } else if (isUnordered(line)) {
         flushPara();
         openList('ul');
-        const content = line.replace(/^[•\-\*·▸▪◦◆]\s*/, '');
+        const content = line.replace(/^[•\-\*·▸▪◦◆\*]\s*/, '');
         out += `<li>${inlineMarkdown(content)}</li>`;
+      } else if (isShortLabel(line) && next && isShortLabel(next)
+                 && !isNumbered(next) && !isUnordered(next) && !/^#{1,3}\s/.test(next)) {
+        // Pair of short lines → render as a field row (label: value)
+        flushPara(); flushList();
+        out += `<div class="doc-field-row"><div class="doc-field-label">${inlineMarkdown(line)}</div><div class="doc-field-val">${inlineMarkdown(next)}</div></div>`;
+        i++; // consume next line
       } else {
         flushList();
+        // Short label at boundary of longer content → break into own paragraph
+        if (isShortLabel(line) && paraAccum.length > 0) flushPara();
         paraAccum.push(line);
       }
     }
@@ -1452,8 +1479,10 @@ function formatDocText(raw) {
     // ── Very first block: short single-line → page title ──
     if (isFirstBlock) {
       isFirstBlock = false;
-      if (block.length === 1 && !isBullet(first) && !isHR(first) && first.length <= 80) {
-        html += `<div class="dca-page-title">${inlineMarkdown(first)}</div>`;
+      // Strip markdown # markers for page titles generated as markdown docs
+      const titleText = first.replace(/^#{1,3}\s+/, '');
+      if (block.length === 1 && !isBullet(titleText) && !isHR(titleText) && titleText.length <= 100) {
+        html += `<div class="dca-page-title">${inlineMarkdown(titleText)}</div>`;
         continue;
       }
     }
@@ -1461,6 +1490,15 @@ function formatDocText(raw) {
     // Horizontal rule (ASCII or em/en-dash)
     if (block.length === 1 && isHR(first)) {
       html += '<hr>'; continue;
+    }
+
+    // Markdown heading (# ## ###) — strip markers, render as h2/h3
+    if (/^#{1,3}\s/.test(first)) {
+      const m = first.match(/^(#{1,3})\s+(.*)/);
+      const tag = m[1].length <= 2 ? 'h2' : 'h3';
+      html += `<${tag}>${inlineMarkdown(m[2])}</${tag}>`;
+      if (rest.length) html += renderLines(rest);
+      continue;
     }
 
     // Q&A card — block starts with "Q:" (with or without answer in same block)
