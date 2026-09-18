@@ -1358,6 +1358,32 @@ function formatDocText(raw) {
   // Strip ingest header "Document: ...\nCategory: ...\n\n"
   let text = raw.replace(/^Document:.*\r?\nCategory:.*\r?\n\r?\n?/im, '').trim();
 
+  // ── WebVTT transcript: strip timestamps, merge captions into readable paragraphs ──
+  if (/^WEBVTT/i.test(text.slice(0, 20))) {
+    const vttRaw = text.split(/\r?\n/);
+    const pieces = [];
+    for (const line of vttRaw) {
+      const t = line.trim().replace(/<[^>]+>/g, ''); // strip VTT inline tags
+      if (!t || t.toUpperCase() === 'WEBVTT' || /^\d+$/.test(t)) continue;
+      if (/^\d{2}:\d{2}:\d{2}[\.,]\d{3}\s*-->\s*/.test(t)) continue;
+      pieces.push(t);
+    }
+    if (pieces.length > 0) {
+      // Merge caption fragments into complete sentences, then group 5 per paragraph
+      const sentences = [];
+      let buf = '';
+      for (const piece of pieces) {
+        buf = buf ? buf + ' ' + piece : piece;
+        if (/[.!?]["']?\s*$/.test(piece)) { sentences.push(buf.trim()); buf = ''; }
+      }
+      if (buf.trim()) sentences.push(buf.trim());
+      const paras = [];
+      for (let i = 0; i < sentences.length; i += 5)
+        paras.push(sentences.slice(i, i + 5).join(' '));
+      text = paras.join('\n\n');
+    }
+  }
+
   // ── Pass 1: group lines into paragraphic blocks (blank lines = block separator) ──
   const rawLines = text.split(/\r?\n/);
   const blocks = [];
@@ -1369,7 +1395,8 @@ function formatDocText(raw) {
     } else {
       // Skip standalone page/slide numbers
       if (/^\d{1,3}$/.test(t)) continue;
-      cur.push(t);
+      // Preserve single leading tab (Google Docs table cell indent marker)
+      cur.push(rl.startsWith('\t') ? '\t' + t : t);
     }
   }
   if (cur.length) blocks.push(cur);
@@ -1401,7 +1428,7 @@ function formatDocText(raw) {
   let isFirstBlock = true;
 
   const isNumbered = (s) => /^\d+[\.\)]\s/.test(s);
-  const isUnordered = (s) => /^[•\-\*·▸▪◦◆]\s/.test(s);
+  const isUnordered = (s) => /^[•\-\*·▸▪◦◆✓✗✘☑]\s/.test(s);
 
   const renderLines = (lines) => {
     let out = '';
@@ -1427,7 +1454,25 @@ function formatDocText(raw) {
       const line = lines[i];
       const next = lines[i + 1];
 
-      if (isHR(line)) {
+      if (line.startsWith('\t')) {
+        // Tab-indented value (Google Docs table export) — pair with preceding line as label
+        const val = line.slice(1);
+        const tNext = lines[i + 1];
+        if (tNext && tNext.startsWith('\t')) {
+          // Two consecutive tab lines → label : value pair
+          flushPara(); flushList();
+          out += `<div class="doc-field-row"><div class="doc-field-label">${inlineMarkdown(val)}</div><div class="doc-field-val">${inlineMarkdown(tNext.slice(1))}</div></div>`;
+          i++;
+        } else if (paraAccum.length > 0) {
+          // Non-tab label on stack → emit as field row
+          const label = paraAccum.pop();
+          if (paraAccum.length > 0) flushPara();
+          flushList();
+          out += `<div class="doc-field-row"><div class="doc-field-label">${inlineMarkdown(label)}</div><div class="doc-field-val">${inlineMarkdown(val)}</div></div>`;
+        } else {
+          paraAccum.push(val);
+        }
+      } else if (isHR(line)) {
         flushPara(); flushList();
         out += '<hr>';
       } else if (/^#{1,3}\s/.test(line)) {
@@ -1452,7 +1497,7 @@ function formatDocText(raw) {
       } else if (isUnordered(line)) {
         flushPara();
         openList('ul');
-        const content = line.replace(/^[•\-\*·▸▪◦◆\*]\s*/, '');
+        const content = line.replace(/^[•\-\*·▸▪◦◆\*✓✗✘☑]\s*/, '');
         out += `<li>${inlineMarkdown(content)}</li>`;
       } else if (isShortLabel(line) && next && isShortLabel(next)
                  && !isNumbered(next) && !isUnordered(next) && !/^#{1,3}\s/.test(next)) {
@@ -1582,7 +1627,7 @@ function formatDocText(raw) {
     }
     if (block.length > 0 && block.every(l => isUnordered(l))) {
       html += '<ul>';
-      block.forEach(l => { html += `<li>${inlineMarkdown(l.replace(/^[•\-\*·▸▪◦◆]\s*/, ''))}</li>`; });
+      block.forEach(l => { html += `<li>${inlineMarkdown(l.replace(/^[•\-\*·▸▪◦◆✓✗✘☑]\s*/, ''))}</li>`; });
       html += '</ul>';
       continue;
     }
