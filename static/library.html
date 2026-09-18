@@ -264,7 +264,10 @@ html[data-theme="dark"] body::before{
 }
 .doc-body h3::after{content:'';flex:1;height:1px;background:var(--border)}
 .doc-body p{margin-bottom:12px;color:var(--ink2);font-size:14.5px;line-height:1.72}
-.doc-body ul,.doc-body ol{margin:8px 0 16px;padding:0;list-style:none}
+.doc-body ul{margin:8px 0 16px;padding:0;list-style:none}
+.doc-body ol{margin:8px 0 16px;padding-left:22px;list-style:decimal}
+.doc-body ol li{padding-left:4px;margin-bottom:5px;color:var(--ink2);font-size:14.5px;line-height:1.72}
+.doc-body ol li::before{display:none}
 .doc-body li{
   padding:5px 0 5px 22px;position:relative;margin-bottom:3px;
   color:var(--ink2);font-size:14.5px;line-height:1.72;
@@ -287,7 +290,7 @@ html[data-theme="dark"] body::before{
   font-size:13.5px;color:var(--ink2);
 }
 /* ── Document viewer — styles moved above into filter-divider block ───────── */
-.video-embed-wrap{position:relative;padding-top:calc(56.25% + 44px);border-radius:10px;overflow:hidden;background:#000}
+.video-embed-wrap{position:relative;padding-top:calc(56.25% + 60px);border-radius:10px;overflow:hidden;background:#000}
 .video-embed{position:absolute;top:0;left:0;width:100%;height:100%;border:none;}
 .video-info{margin-top:14px;padding:14px;background:var(--glass);border-radius:10px;border:1px solid var(--border)}
 .video-info-label{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px}
@@ -341,9 +344,16 @@ html[data-theme="dark"] body::before{
 .lib-msg{display:flex;gap:8px;align-items:flex-start}
 .lib-msg.user{flex-direction:row-reverse}
 .lib-bubble{
-  padding:9px 13px;border-radius:14px;font-size:13px;line-height:1.5;max-width:85%;
-  white-space:pre-wrap;
+  padding:9px 13px;border-radius:14px;font-size:13px;line-height:1.6;max-width:85%;
 }
+.lib-msg.ai .lib-bubble p{margin-bottom:7px}
+.lib-msg.ai .lib-bubble p:last-child{margin-bottom:0}
+.lib-msg.ai .lib-bubble ul{margin:5px 0 7px;padding-left:16px;list-style:disc}
+.lib-msg.ai .lib-bubble ol{margin:5px 0 7px;padding-left:18px;list-style:decimal}
+.lib-msg.ai .lib-bubble li{margin-bottom:3px}
+.lib-msg.ai .lib-bubble strong{color:var(--ink);font-weight:600}
+.lib-msg.ai .lib-bubble h3,.lib-msg.ai .lib-bubble h4{color:var(--ink);font-weight:600;margin:10px 0 4px;font-size:13px}
+.lib-msg.user .lib-bubble{white-space:pre-wrap}
 .lib-msg.ai .lib-bubble{background:var(--glass);border:1px solid var(--border);color:var(--ink2)}
 .lib-msg.user .lib-bubble{background:var(--purple);color:#fff}
 .lib-typing{display:flex;align-items:center;gap:5px;padding:6px 10px}
@@ -719,7 +729,14 @@ async function loadDocs() {
   try {
     const r = await fetch('/library/docs');
     const d = await r.json();
-    allDocs = d.docs || [];
+    // Deduplicate by file_name (keep first occurrence per name)
+    const seen = new Set();
+    allDocs = (d.docs || []).filter(doc => {
+      const key = doc.file_name.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
     document.getElementById('docCount').textContent = allDocs.length;
     document.getElementById('statDocs').textContent = allDocs.length;
     renderGrid();
@@ -1211,32 +1228,72 @@ async function sendLibrarian(overrideMsg, searchWeb) {
   }
 }
 
+function renderMarkdownLib(text) {
+  // Simple markdown for librarian chat bubbles
+  const BR = '\x02BR\x02';
+  text = text.replace(/<br\s*\/?>/gi, BR);
+  let t = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // Tables
+  t = t.replace(/((?:^\|.+\|\n?)+)/gm, block => {
+    const rows = block.trim().split('\n').filter(r => !/^\|[\s\-|]+\|$/.test(r.trim()));
+    if (!rows.length) return block;
+    const [head, ...body] = rows;
+    const th = head.split('|').filter((_,i,a)=>i>0&&i<a.length-1).map(c=>`<th style="text-align:left;padding:4px 8px;border-bottom:1px solid rgba(255,255,255,0.2)">${c.trim()}</th>`).join('');
+    const trs = body.map(r => {
+      const td = r.split('|').filter((_,i,a)=>i>0&&i<a.length-1).map(c=>`<td style="padding:3px 8px">${c.trim()}</td>`).join('');
+      return `<tr>${td}</tr>`;
+    }).join('');
+    return `<table style="border-collapse:collapse;font-size:12px;margin:6px 0;width:100%"><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>`;
+  });
+  t = t.replace(/^#### (.+)$/gm,'<h4>$1</h4>');
+  t = t.replace(/^### (.+)$/gm,'<h3>$1</h3>');
+  t = t.replace(/^## (.+)$/gm,'<h3>$1</h3>');
+  t = t.replace(/^# (.+)$/gm,'<h3>$1</h3>');
+  t = t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  t = t.replace(/\*(.+?)\*/g,'<em>$1</em>');
+  t = t.replace(/`(.+?)`/g,'<code style="font-family:monospace;font-size:0.88em;background:rgba(76,53,168,0.12);padding:1px 4px;border-radius:3px">$1</code>');
+  // Ordered lists
+  t = t.replace(/^(\d+)\. (.+)$/gm,'<li data-ol>$2</li>');
+  // Unordered lists
+  t = t.replace(/^[-*•] (.+)$/gm,'<li>$1</li>');
+  // Wrap consecutive <li data-ol> into <ol>
+  t = t.replace(/(<li data-ol>[\s\S]*?<\/li>)(\n<li data-ol>[\s\S]*?<\/li>)*/g, m => `<ol>${m.replace(/ data-ol/g,'')}</ol>`);
+  // Wrap remaining <li> into <ul>
+  t = t.replace(/(<li>[\s\S]*?<\/li>)(\n<li>[\s\S]*?<\/li>)*/g, m => `<ul>${m}</ul>`);
+  // Paragraphs
+  t = t.split(/\n{2,}/).map(block => {
+    block = block.trim();
+    if (!block) return '';
+    if (/^<(h[1-6]|ul|ol|table|hr)/.test(block)) return block;
+    return `<p>${block.replace(/\n/g,'<br>')}</p>`;
+  }).join('\n');
+  t = t.replace(new RegExp(BR,'g'),'<br>');
+  return t;
+}
+
 function addLibMsg(role, text, sources, offerSearch, searchedWeb, originalMsg) {
   const msgs = document.getElementById('libMessages');
   const div = document.createElement('div');
   div.className = 'lib-msg ' + role;
 
-  let extra = '';
+  const isAi = role === 'ai';
+  let bodyHtml = isAi ? renderMarkdownLib(text) : escHtml(text);
 
-  // Web search badge
+  let extra = '';
   if (searchedWeb) {
     extra += `<div class="lib-web-badge">🌐 Web search included</div>`;
   }
-
-  // Sources list
   if (sources && sources.length) {
     const links = sources.map(s =>
       `<a href="${escHtml(s.url)}" target="_blank" rel="noopener" class="lib-source-link">${escHtml(s.title)}</a>`
     ).join('');
     extra += `<div class="lib-sources"><div class="lib-sources-label">Sources</div>${links}</div>`;
   }
-
-  // Offer to search button
   if (offerSearch && originalMsg) {
     extra += `<button class="lib-search-offer" onclick="sendLibrarian(${JSON.stringify(originalMsg)}, true)">🔍 Search the web for more</button>`;
   }
 
-  div.innerHTML = `<div class="lib-bubble">${escHtml(text)}${extra}</div>`;
+  div.innerHTML = `<div class="lib-bubble">${bodyHtml}${extra}</div>`;
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
   return div;
@@ -1284,6 +1341,15 @@ document.addEventListener('DOMContentLoaded', function() {
 // ── Document formatter ────────────────────────────────────────────────────────
 function isEmojiChar(str) {
   return /^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}⚙📋🎯🔧✅❌💡📌🔑🏆⭐🎙🗒📎🧩🛠🚀🔍📊📈🎬📅📄📖🤖]/u.test(str);
+}
+
+function inlineMarkdown(s) {
+  // Escape HTML then apply inline markdown: **bold**, *italic*, `code`
+  let t = s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  t = t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  t = t.replace(/\*(.+?)\*/g,'<em>$1</em>');
+  t = t.replace(/`(.+?)`/g,'<code style="font-family:monospace;font-size:0.88em;background:rgba(76,53,168,0.1);padding:1px 4px;border-radius:3px">$1</code>');
+  return t;
 }
 
 function formatDocText(raw) {
@@ -1334,35 +1400,45 @@ function formatDocText(raw) {
   let html = '';
   let isFirstBlock = true;
 
+  const isNumbered = (s) => /^\d+[\.\)]\s/.test(s);
+  const isUnordered = (s) => /^[•\-\*·▸▪◦◆]\s/.test(s);
+
   const renderLines = (lines) => {
-    // Render a set of lines: merge non-bullet runs into paragraphs, bullets into <ul>
     let out = '';
     let paraAccum = [];
-    let inUl = false;
+    let listTag = null; // 'ul' or 'ol'
 
     const flushPara = () => {
       if (paraAccum.length) {
-        out += `<p>${escHtml(paraAccum.join(' '))}</p>`;
+        out += `<p>${inlineMarkdown(paraAccum.join(' '))}</p>`;
         paraAccum = [];
       }
     };
-    const flushUl = () => { if (inUl) { out += '</ul>'; inUl = false; } };
+    const flushList = () => { if (listTag) { out += `</${listTag}>`; listTag = null; } };
+    const openList = (tag) => {
+      if (listTag !== tag) { flushList(); out += `<${tag}>`; listTag = tag; }
+    };
 
     for (const line of lines) {
       if (isHR(line)) {
-        flushPara(); flushUl();
+        flushPara(); flushList();
         out += '<hr>';
-      } else if (isBullet(line)) {
+      } else if (isNumbered(line)) {
         flushPara();
-        if (!inUl) { out += '<ul>'; inUl = true; }
-        const content = line.replace(/^[•\-\*·]\s*/, '').replace(/^\d+[\.\)]\s*/, '');
-        out += `<li>${escHtml(content)}</li>`;
+        openList('ol');
+        const content = line.replace(/^\d+[\.\)]\s*/, '');
+        out += `<li>${inlineMarkdown(content)}</li>`;
+      } else if (isUnordered(line)) {
+        flushPara();
+        openList('ul');
+        const content = line.replace(/^[•\-\*·▸▪◦◆]\s*/, '');
+        out += `<li>${inlineMarkdown(content)}</li>`;
       } else {
-        flushUl();
+        flushList();
         paraAccum.push(line);
       }
     }
-    flushPara(); flushUl();
+    flushPara(); flushList();
     return out;
   };
 
@@ -1375,7 +1451,7 @@ function formatDocText(raw) {
     if (isFirstBlock) {
       isFirstBlock = false;
       if (block.length === 1 && !isBullet(first) && !isHR(first) && first.length <= 80) {
-        html += `<div class="dca-page-title">${escHtml(first)}</div>`;
+        html += `<div class="dca-page-title">${inlineMarkdown(first)}</div>`;
         continue;
       }
     }
@@ -1388,80 +1464,80 @@ function formatDocText(raw) {
     // Q&A card — block starts with "Q:" (with or without answer in same block)
     if (isQLine(first)) {
       const qText = first.replace(/^Q\s*:\s*/i, '').trim();
-      // Gather answer lines (everything after Q: line, or lines starting with A:)
       const aLines = rest.filter(l => !isQLine(l));
       let aHtml = '';
       if (aLines.length) {
-        // Check if first answer line starts with A:
         const firstA = aLines[0].replace(/^A\s*:\s*/i, '');
         const remaining = [firstA, ...aLines.slice(1)].filter(Boolean);
-        aHtml = remaining.map(l => `<p class="dca-qa-a">${escHtml(l)}</p>`).join('');
+        aHtml = remaining.map(l => `<p class="dca-qa-a">${inlineMarkdown(l)}</p>`).join('');
       }
       html += `<div class="dca-qa-item">
-        <div class="dca-qa-q">Q: ${escHtml(qText)}</div>
+        <div class="dca-qa-q">Q: ${inlineMarkdown(qText)}</div>
         ${aHtml}
       </div>`;
       continue;
     }
 
-    // Standalone A: line (answer to previous Q in a separate block)
+    // Standalone A: line
     if (isALine(first)) {
       const aText = first.replace(/^A\s*:\s*/i, '').trim();
       const aLines = [aText, ...rest].filter(Boolean);
       html += `<div class="dca-qa-item" style="border-left:3px solid var(--teal);background:var(--glass-hi)">
-        ${aLines.map(l => `<p class="dca-qa-a">${escHtml(l)}</p>`).join('')}
+        ${aLines.map(l => `<p class="dca-qa-a">${inlineMarkdown(l)}</p>`).join('')}
       </div>`;
       continue;
     }
 
-    // All-caps heading — could span multiple merged consecutive all-caps lines
+    // All-caps heading
     if (isAllCaps(first)) {
-      // Merge any immediately following all-caps lines in this block
       let heading = first;
       let bodyStart = 1;
       while (bodyStart < block.length && isAllCaps(block[bodyStart])) {
         heading += ' ' + block[bodyStart];
         bodyStart++;
       }
-      html += `<h2>${escHtml(heading)}</h2>`;
+      html += `<h2>${inlineMarkdown(heading)}</h2>`;
       if (bodyStart < block.length) html += renderLines(block.slice(bodyStart));
       continue;
     }
 
     // Emoji-led short line → h3 sub-heading
     if (isEmojiChar(first) && first.length < 80) {
-      html += `<h3>${escHtml(first)}</h3>`;
+      html += `<h3>${inlineMarkdown(first)}</h3>`;
       if (rest.length) html += renderLines(rest);
       continue;
     }
 
-    // Short title-case single line → h3 subheading (section title inside doc)
+    // Short title-case single line → h3
     if (block.length === 1 && isShortHeading(first)) {
-      html += `<h3>${escHtml(first)}</h3>`;
+      html += `<h3>${inlineMarkdown(first)}</h3>`;
       continue;
     }
 
-    // Short title-case line + body → h3 followed by paragraph
+    // Short title-case line + body → h3 + paragraphs
     if (block.length > 1 && isShortHeading(first)) {
-      html += `<h3>${escHtml(first)}</h3>`;
+      html += `<h3>${inlineMarkdown(first)}</h3>`;
       html += renderLines(rest);
       continue;
     }
 
-    // Field label (ends with ":") followed by exactly one value line
+    // Field label (ends with ":") + one value
     if (isFieldLabel(first) && rest.length === 1 && !isAllCaps(rest[0]) && !isBullet(rest[0])) {
-      const label = first.slice(0, -1); // remove trailing ":"
-      html += `<div class="doc-field-row"><div class="doc-field-label">${escHtml(label)}</div><div class="doc-field-val">${escHtml(rest[0])}</div></div>`;
+      const label = first.slice(0, -1);
+      html += `<div class="doc-field-row"><div class="doc-field-label">${inlineMarkdown(label)}</div><div class="doc-field-val">${inlineMarkdown(rest[0])}</div></div>`;
       continue;
     }
 
-    // All bullets → list
-    if (block.every(l => isBullet(l))) {
+    // Uniform list block (all same type)
+    if (block.length > 0 && block.every(l => isNumbered(l))) {
+      html += '<ol>';
+      block.forEach(l => { html += `<li>${inlineMarkdown(l.replace(/^\d+[\.\)]\s*/, ''))}</li>`; });
+      html += '</ol>';
+      continue;
+    }
+    if (block.length > 0 && block.every(l => isUnordered(l))) {
       html += '<ul>';
-      block.forEach(l => {
-        const c = l.replace(/^[•\-\*·]\s*/, '').replace(/^\d+[\.\)]\s*/, '');
-        html += `<li>${escHtml(c)}</li>`;
-      });
+      block.forEach(l => { html += `<li>${inlineMarkdown(l.replace(/^[•\-\*·▸▪◦◆]\s*/, ''))}</li>`; });
       html += '</ul>';
       continue;
     }
@@ -1470,7 +1546,7 @@ function formatDocText(raw) {
     html += renderLines(block);
   }
 
-  return html || `<p>${escHtml(text)}</p>`;
+  return html || `<p>${inlineMarkdown(text)}</p>`;
 }
 
 
@@ -1494,6 +1570,8 @@ function showToast(msg) {
 // Inject librarian avatar image
 const _libAv = document.getElementById('libAvatarEl');
 if (_libAv) _libAv.innerHTML = '<img src="/avatar-librarian.png" style="width:100%;height:100%;object-fit:cover;object-position:center 18%;display:block;border-radius:50%" alt="Librarian">';
+// Keep server warm during active sessions
+setInterval(() => fetch('/healthz').catch(()=>{}), 8 * 60 * 1000);
 init();
 </script>
 </body>

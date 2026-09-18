@@ -1156,6 +1156,8 @@ input.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 });
 input.focus();
+// Keep server warm during active sessions
+setInterval(() => fetch('/healthz').catch(()=>{}), 8 * 60 * 1000);
 
 // ── Reference Panel ──────────────────────────────────────────────────────────
 async function openDoc(fileId, docType, fileName) {

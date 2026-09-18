@@ -106,6 +106,10 @@ def generate(system_prompt, user_prompt, max_tokens=3000, json_mode=False, messa
 
 app = FastAPI(title="Hi, Amy!")
 
+@app.get("/healthz")
+async def healthz():
+    return {"status": "ok"}
+
 @app.on_event("startup")
 def startup():
     try:
