@@ -165,9 +165,10 @@ def store_transcript(file_id: str, file_name: str, category: str,
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dry-run",   action="store_true", help="Preview without transcribing")
-    parser.add_argument("--category",  default=None, help="Only process this category")
-    parser.add_argument("--file-id",   default=None, help="Only process this specific file_id")
+    parser.add_argument("--dry-run",    action="store_true", help="Preview without transcribing")
+    parser.add_argument("--category",   default=None, help="Only process this category")
+    parser.add_argument("--subcategory", default=None, help="Only process this subcategory (requires --category)")
+    parser.add_argument("--file-id",    default=None, help="Only process this specific file_id")
     args = parser.parse_args()
 
     if not check_ffmpeg():
@@ -187,6 +188,10 @@ def main():
 
     drive   = get_drive()
     videos  = get_library_videos(category=args.category)
+
+    # Filter by subcategory if requested
+    if args.subcategory:
+        videos = [v for v in videos if (v.get("subcategory") or "").lower() == args.subcategory.lower()]
 
     # Filter to one file if requested
     if args.file_id:
