@@ -719,6 +719,25 @@ html[data-theme="dark"] body::before {
   .ref-panel { width: 100vw; }
   .source-chips { padding-left: 12px; }
 }
+/* Chat history sidebar */
+.nav-section-row { display:flex; align-items:center; justify-content:space-between; }
+.new-chat-btn {
+  background:none; border:none; cursor:pointer; font-size:17px; line-height:1;
+  color:var(--ink3); padding:2px 5px; border-radius:6px; transition:background .12s,color .12s;
+}
+.new-chat-btn:hover { background:var(--purple-dim); color:var(--purple); }
+.chat-hist-list { display:flex; flex-direction:column; gap:2px; overflow-y:auto; max-height:240px; padding-bottom:6px; }
+.chat-hist-item {
+  display:flex; flex-direction:column; gap:1px; padding:7px 12px 7px 14px;
+  border-radius:9px; cursor:pointer; border-left:2px solid transparent;
+  transition:background .14s; color:var(--ink2); text-align:left;
+  background:none; border-top:none; border-right:none; border-bottom:none;
+  width:100%; font-family:inherit;
+}
+.chat-hist-item:hover { background:var(--glass-hi); }
+.chat-hist-item.active { background:var(--purple-dim); border-left-color:var(--purple); }
+.chi-title { font-size:12px; font-weight:500; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:160px; color:var(--ink); }
+.chi-date  { font-size:10px; color:var(--ink3); margin-top:1px; }
 </style>
 </head>
 <body>
@@ -764,6 +783,14 @@ html[data-theme="dark"] body::before {
       <span class="side-link-text">Digital Course Academy<span class="side-link-credit">by Amy Porterfield</span></span>
     </a>
   </div>
+  <div class="side-sect-div"></div>
+  <div class="nav-section">
+    <div class="nav-section-row">
+      <span>Recent Chats</span>
+      <button class="new-chat-btn" onclick="startNewChat()" title="New chat">✏️</button>
+    </div>
+  </div>
+  <div id="chat-hist-list" class="side-links chat-hist-list"></div>
   <div style="flex:1"></div>
   <div class="side-bottom">
     <button class="theme-btn" id="theme-btn" aria-label="Toggle theme">🌙</button>
@@ -785,6 +812,9 @@ html[data-theme="dark"] body::before {
       Course Assistant · Amy Porterfield
     </div>
   </div>
+  <button id="new-chat-header-btn" onclick="startNewChat()" title="New chat" style="display:none;align-items:center;gap:6px;padding:7px 13px;border-radius:10px;background:var(--glass-hi);border:1px solid var(--border);color:var(--ink2);cursor:pointer;font-size:12px;font-weight:600;transition:background .14s">
+    ✏️ New Chat
+  </button>
   <button id="export-btn" class="export-btn" onclick="exportAdvice()" title="Export Amy's advice as a summary" style="display:none">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
     Export Advice
@@ -805,12 +835,12 @@ html[data-theme="dark"] body::before {
         <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:19px;letter-spacing:.03em">Amy's Advice Summary</div>
         <div style="font-size:11px;color:var(--ink3);margin-top:2px" id="export-date"></div>
       </div>
-      <button onclick="printAdvice()" style="
+      <button onclick="downloadAdvice(this)" style="
         display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;
         background:var(--purple);color:#fff;border:none;cursor:pointer;font-size:12px;font-weight:600;
         transition:background .14s;
       " onmouseover="this.style.background='var(--teal)'" onmouseout="this.style.background='var(--purple)'">
-        🖨️ Export PDF
+        📄 Download Doc
       </button>
       <button onclick="copyAdvice()" id="copy-btn" style="
         display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;
@@ -865,6 +895,107 @@ html[data-theme="dark"] body::before {
 // ── Amy avatar HTML (used in dynamic message bubbles) ────────────────────────
 const AMY_IMG = `<img src="/avatar-amy.png" class="msg-avatar" alt="Amy">`;
 const USER_SVG = `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block"><circle cx="40" cy="40" r="40" fill="rgba(255,255,255,0.18)"/><circle cx="40" cy="34" r="13" fill="rgba(255,255,255,0.55)"/><ellipse cx="40" cy="72" rx="20" ry="16" fill="rgba(255,255,255,0.35)"/></svg>`;
+
+// ── Session / History ────────────────────────────────────────────────────────
+const HIST_KEY     = 'hi-amy-sessions';
+const MAX_SESSIONS = 30;
+let currentSessionId = null;
+
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+function getSessions() {
+  try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); } catch { return []; }
+}
+function saveSessions(list) {
+  try { localStorage.setItem(HIST_KEY, JSON.stringify(list)); } catch {}
+}
+
+function saveCurrentSession() {
+  if (!chatHistory.length || !currentSessionId) return;
+  const sessions = getSessions();
+  const idx = sessions.findIndex(s => s.id === currentSessionId);
+  const firstUser = chatHistory.find(m => m.role === 'user');
+  const title = firstUser ? firstUser.text.slice(0, 50) : 'Chat';
+  const entry = { id: currentSessionId, title, date: new Date().toISOString(), messages: chatHistory };
+  if (idx >= 0) sessions[idx] = entry;
+  else sessions.unshift(entry);
+  // Trim to max
+  saveSessions(sessions.slice(0, MAX_SESSIONS));
+  renderHistoryList();
+}
+
+function renderHistoryList() {
+  const list = document.getElementById('chat-hist-list');
+  if (!list) return;
+  const sessions = getSessions();
+  if (!sessions.length) { list.innerHTML = '<div style="font-size:11px;color:var(--ink3);padding:6px 14px">No past chats yet</div>'; return; }
+  list.innerHTML = sessions.map(s => {
+    const d = new Date(s.date);
+    const dateStr = d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+    const active  = s.id === currentSessionId ? ' active' : '';
+    return `<button class="chat-hist-item${active}" onclick="loadSession('${s.id}')">
+      <span class="chi-title">${escHtmlIdx(s.title)}</span>
+      <span class="chi-date">${dateStr} · ${s.messages.length} msgs</span>
+    </button>`;
+  }).join('');
+}
+
+function loadSession(id) {
+  const sessions = getSessions();
+  const s = sessions.find(x => x.id === id);
+  if (!s) return;
+  // Clear current view
+  messages.innerHTML = '';
+  chatHistory = [];
+  currentSessionId = id;
+  if (!activated) activate();
+  // Re-render all messages
+  s.messages.forEach(m => {
+    chatHistory.push({ role: m.role, text: m.text });
+    appendMessageDOM(m.role, m.text, []);
+  });
+  messages.scrollTop = messages.scrollHeight;
+  // Show buttons
+  document.getElementById('export-btn').style.display = chatHistory.some(m => m.role === 'amy') ? 'flex' : 'none';
+  document.getElementById('new-chat-header-btn').style.display = 'flex';
+  renderHistoryList();
+}
+
+function startNewChat() {
+  if (chatHistory.length > 0) saveCurrentSession();
+  chatHistory = [];
+  currentSessionId = genId();
+  messages.innerHTML = '';
+  if (activated) {
+    // Stay in activated mode, just clear messages
+    messages.scrollTop = 0;
+  }
+  document.getElementById('export-btn').style.display = 'none';
+  document.getElementById('new-chat-header-btn').style.display = 'none';
+  renderHistoryList();
+  input.focus();
+}
+
+function initHistory() {
+  currentSessionId = genId();
+  // Restore last session on load
+  const sessions = getSessions();
+  if (sessions.length > 0) {
+    const last = sessions[0];
+    if (last.messages && last.messages.length > 0) {
+      currentSessionId = last.id;
+      activate();
+      last.messages.forEach(m => {
+        chatHistory.push({ role: m.role, text: m.text });
+        appendMessageDOM(m.role, m.text, []);
+      });
+      messages.scrollTop = messages.scrollHeight;
+      document.getElementById('export-btn').style.display = chatHistory.some(m => m.role === 'amy') ? 'flex' : 'none';
+      document.getElementById('new-chat-header-btn').style.display = 'flex';
+    }
+  }
+  renderHistoryList();
+}
 
 // ── State ──
 let activated = false;
@@ -952,11 +1083,8 @@ function renderMarkdown(text) {
 }
 
 // ── Messages ──
-function appendMessage(role, content, sources = []) {
+function appendMessageDOM(role, content, sources) {
   const isAmy = role === 'amy';
-  chatHistory.push({ role, text: content });
-  if (isAmy) document.getElementById('export-btn').style.display = 'flex';
-
   const div = document.createElement('div');
   div.className = `msg${isAmy ? '' : ' user'}`;
   const av = document.createElement('div');
@@ -987,6 +1115,16 @@ function appendMessage(role, content, sources = []) {
   }
 
   messages.scrollTop = messages.scrollHeight;
+}
+
+function appendMessage(role, content, sources = []) {
+  chatHistory.push({ role, text: content });
+  if (role === 'amy') {
+    document.getElementById('export-btn').style.display = 'flex';
+    document.getElementById('new-chat-header-btn').style.display = 'flex';
+  }
+  appendMessageDOM(role, content, sources);
+  saveCurrentSession();
 }
 
 // ── Export / Summary ──────────────────────────────────────────────────────────
@@ -1068,48 +1206,66 @@ function closeExport() {
   document.getElementById('export-overlay').style.display = 'none';
 }
 
-function printAdvice() {
-  const body    = document.getElementById('export-body').innerHTML;
+function downloadAdvice(btn) {
+  const bodyEl  = document.getElementById('export-body');
   const dateStr = document.getElementById('export-date').textContent;
-  const win = window.open('', '_blank', 'width=820,height=960');
-  if (!win) { alert('Allow popups for this site to save as PDF.'); return; }
-  win.document.write(`<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Amy's Advice Summary</title>
+  const origLabel = btn.innerHTML;
+
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Generating…';
+
+  const html = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Amy's Advice Summary</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; color: #1a1a2e; font-size: 13px; line-height: 1.65; padding: 48px 52px; }
-  h1 { font-size: 24px; font-weight: 800; color: #4C35A8; margin-bottom: 3px; }
-  .date { font-size: 11px; color: #888; margin-bottom: 32px; }
-  .export-section { margin-bottom: 24px; padding-left: 16px; border-left: 3px solid #4C35A8; }
-  .export-section-title { font-weight: 700; font-size: 14px; color: #2d2060; margin-bottom: 10px; }
-  .export-quickwin { background: #f4f2fd; border-radius: 8px; padding: 10px 14px; }
-  ul { padding-left: 20px; margin: 6px 0; }
-  li { margin-bottom: 6px; }
-  p { margin: 5px 0; }
-  strong { font-weight: 600; }
-  em { font-style: italic; }
-  .footer { margin-top: 48px; border-top: 1px solid #e0ddf5; padding-top: 12px; font-size: 10px; color: #aaa; text-align: right; }
-  @media print {
-    body { padding: 28px 36px; }
-    .no-print { display: none; }
-  }
+body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #1a1a2e; margin: 72pt 72pt 72pt 72pt; }
+h1 { font-size: 18pt; font-weight: bold; color: #4C35A8; margin-bottom: 4pt; }
+.date { font-size: 9pt; color: #888; margin-bottom: 18pt; }
+.export-section { margin-bottom: 14pt; padding-left: 10pt; border-left: 3pt solid #4C35A8; }
+.export-section-title { font-weight: bold; font-size: 12pt; color: #2d2060; margin-bottom: 6pt; display: block; }
+.export-quickwin { background: #f4f2fd; padding: 6pt 10pt; }
+ul { margin: 4pt 0 4pt 16pt; }
+li { margin-bottom: 4pt; }
+p { margin: 3pt 0; }
+strong { font-weight: bold; }
+em { font-style: italic; }
+.footer { margin-top: 28pt; border-top: 1pt solid #e0ddf5; padding-top: 8pt; font-size: 8pt; color: #aaa; text-align: right; }
 </style>
-</head>
-<body>
-<div class="no-print" style="text-align:right;margin-bottom:24px">
-  <button onclick="window.print()" style="padding:8px 20px;background:#4C35A8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🖨️ Save as PDF</button>
-  <button onclick="window.close()" style="padding:8px 16px;background:#f0eeff;color:#4C35A8;border:1px solid #c8bef5;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;margin-left:8px">✕ Close</button>
-</div>
+</head><body>
 <h1>Amy's Advice Summary</h1>
 <div class="date">${dateStr} · OPSteam Portal</div>
-${body}
-<div class="footer">Generated by Hi Amy · OPSteam Portal · opsteam-portal-f1n5.onrender.com</div>
-</body>
-</html>`);
-  win.document.close();
+${bodyEl.innerHTML}
+<div class="footer">Generated by Hi Amy · OPSteam Portal</div>
+</body></html>`;
+
+  function doConvert() {
+    try {
+      const docBlob = window.htmlDocx.asBlob(html);
+      const url = URL.createObjectURL(docBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'amys-advice-summary.docx';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch (e) {
+      alert('Could not generate .docx: ' + e.message);
+    }
+    btn.disabled = false;
+    btn.innerHTML = origLabel;
+  }
+
+  if (window.htmlDocx) {
+    doConvert();
+  } else {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.js';
+    s.onload = doConvert;
+    s.onerror = () => {
+      alert('Failed to load document converter. Check your internet connection.');
+      btn.disabled = false;
+      btn.innerHTML = origLabel;
+    };
+    document.head.appendChild(s);
+  }
 }
 
 async function copyAdvice() {
@@ -1173,10 +1329,14 @@ async function sendMessage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: text,
-        history: chatHistory.slice(0, -1).slice(-6).map(m => ({
-          role: m.role,
-          text: m.role === 'amy' ? m.text.slice(0, 600) : m.text
-        }))
+        history: (() => {
+          const hist = chatHistory.slice(0, -1).slice(-10);
+          const lastAmyIdx = [...hist].reverse().findIndex(m => m.role === 'amy');
+          return hist.map((m, i) => {
+            const isLastAmy = m.role === 'amy' && (hist.length - 1 - lastAmyIdx) === i;
+            return { role: m.role, text: isLastAmy ? m.text : (m.role === 'amy' ? m.text.slice(0, 800) : m.text) };
+          });
+        })()
       })
     });
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
@@ -1197,6 +1357,7 @@ sendBtn.addEventListener('click', sendMessage);
 input.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 });
+initHistory();
 input.focus();
 // Keep server warm during active sessions
 setInterval(() => fetch('/healthz').catch(()=>{}), 8 * 60 * 1000);
