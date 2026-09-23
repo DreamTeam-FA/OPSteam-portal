@@ -719,24 +719,38 @@ html[data-theme="dark"] body::before {
   .ref-panel { width: 100vw; }
   .source-chips { padding-left: 12px; }
 }
-/* Chat history sidebar */
-.nav-section-row { display:flex; align-items:center; justify-content:space-between; }
-.new-chat-btn {
-  background:none; border:none; cursor:pointer; font-size:17px; line-height:1;
-  color:var(--ink3); padding:2px 5px; border-radius:6px; transition:background .12s,color .12s;
+/* Recent chats collapsible block */
+.recent-chats-wrap { margin:2px 8px 4px; }
+.recent-chats-toggle {
+  display:flex; align-items:center; justify-content:space-between; width:100%;
+  padding:5px 8px; border-radius:8px; border:none; background:none; cursor:pointer;
+  color:var(--ink3); font-size:10.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+  transition:background .13s, color .13s;
 }
-.new-chat-btn:hover { background:var(--purple-dim); color:var(--purple); }
-.chat-hist-list { display:flex; flex-direction:column; gap:2px; overflow-y:auto; max-height:240px; padding-bottom:6px; }
+.recent-chats-toggle:hover { background:var(--glass-hi); color:var(--ink2); }
+.rct-label { flex:1; text-align:left; }
+.rct-actions { display:flex; align-items:center; gap:4px; }
+.rct-chevron { font-size:13px; transition:transform .2s; display:inline-block; }
+.rct-chevron.collapsed { transform:rotate(-90deg); }
+.rct-new { font-size:13px; padding:1px 3px; border-radius:4px; line-height:1; transition:background .12s; }
+.rct-new:hover { background:var(--purple-dim); }
+.chat-hist-list {
+  display:flex; flex-direction:column; gap:1px;
+  overflow:hidden; max-height:220px; overflow-y:auto;
+  transition:max-height .2s ease, opacity .2s;
+  padding-bottom:4px;
+}
+.chat-hist-list.collapsed { max-height:0; opacity:0; pointer-events:none; }
 .chat-hist-item {
-  display:flex; flex-direction:column; gap:1px; padding:7px 12px 7px 14px;
-  border-radius:9px; cursor:pointer; border-left:2px solid transparent;
+  display:flex; flex-direction:column; gap:1px; padding:6px 10px 6px 12px;
+  border-radius:8px; cursor:pointer; border-left:2px solid transparent;
   transition:background .14s; color:var(--ink2); text-align:left;
   background:none; border-top:none; border-right:none; border-bottom:none;
   width:100%; font-family:inherit;
 }
 .chat-hist-item:hover { background:var(--glass-hi); }
 .chat-hist-item.active { background:var(--purple-dim); border-left-color:var(--purple); }
-.chi-title { font-size:12px; font-weight:500; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:160px; color:var(--ink); }
+.chi-title { font-size:12px; font-weight:500; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:155px; color:var(--ink); }
 .chi-date  { font-size:10px; color:var(--ink3); margin-top:1px; }
 </style>
 </head>
@@ -762,6 +776,19 @@ html[data-theme="dark"] body::before {
       <span class="side-icon">💬</span>
       <span class="side-link-text">Hi, Amy!</span>
     </a>
+  </div>
+  <!-- Recent Chats — collapsible, lives under Hi Amy -->
+  <div class="recent-chats-wrap" id="recent-chats-wrap">
+    <button class="recent-chats-toggle" id="recent-chats-toggle" onclick="toggleRecentChats()">
+      <span class="rct-label">Recent Chats</span>
+      <span class="rct-actions">
+        <span class="rct-chevron" id="rct-chevron">▾</span>
+        <span onclick="event.stopPropagation();startNewChat()" class="rct-new" title="New chat">✏️</span>
+      </span>
+    </button>
+    <div id="chat-hist-list" class="chat-hist-list"></div>
+  </div>
+  <div class="side-links">
     <a href="/content-week.html" class="side-link">
       <span class="side-icon">📅</span>
       <span class="side-link-text">Content Week</span>
@@ -783,14 +810,6 @@ html[data-theme="dark"] body::before {
       <span class="side-link-text">Digital Course Academy<span class="side-link-credit">by Amy Porterfield</span></span>
     </a>
   </div>
-  <div class="side-sect-div"></div>
-  <div class="nav-section">
-    <div class="nav-section-row">
-      <span>Recent Chats</span>
-      <button class="new-chat-btn" onclick="startNewChat()" title="New chat">✏️</button>
-    </div>
-  </div>
-  <div id="chat-hist-list" class="side-links chat-hist-list"></div>
   <div style="flex:1"></div>
   <div class="side-bottom">
     <button class="theme-btn" id="theme-btn" aria-label="Toggle theme">🌙</button>
@@ -924,6 +943,15 @@ function saveCurrentSession() {
   renderHistoryList();
 }
 
+function toggleRecentChats() {
+  const list    = document.getElementById('chat-hist-list');
+  const chevron = document.getElementById('rct-chevron');
+  const open    = !list.classList.contains('collapsed');
+  list.classList.toggle('collapsed', open);
+  chevron.classList.toggle('collapsed', open);
+  try { localStorage.setItem('hi-amy-hist-open', open ? '0' : '1'); } catch {}
+}
+
 function renderHistoryList() {
   const list = document.getElementById('chat-hist-list');
   if (!list) return;
@@ -977,6 +1005,13 @@ function startNewChat() {
 }
 
 function initHistory() {
+  // Restore collapsed state (default: open)
+  try {
+    if (localStorage.getItem('hi-amy-hist-open') === '0') {
+      document.getElementById('chat-hist-list').classList.add('collapsed');
+      document.getElementById('rct-chevron').classList.add('collapsed');
+    }
+  } catch {}
   currentSessionId = genId();
   // Restore last session on load
   const sessions = getSessions();
