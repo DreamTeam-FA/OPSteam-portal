@@ -4,9 +4,13 @@
 
 import os
 import re
+import csv
+import io
 import asyncio
 import threading
 from datetime import datetime
+import requests as http_requests
+from bs4 import BeautifulSoup
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -187,11 +191,84 @@ class ContentWeekRequest(BaseModel):
 class WatermarkRewriteRequest(BaseModel):
     text: str
 
-MAX_CONTEXT_CHARS = 3000  # ~750 tokens; leaves room for longer responses
+MAX_CONTEXT_CHARS = 8000  # raised to fit URL content + course context
+
+# ── URL fetching ───────────────────────────────────────────────────────────────
+_URL_RE = re.compile(r'https?://[^\s]+')
+_SA_FILE = os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE", "hi-amy-service-account.json")
+
+def _fetch_google_sheet(sheet_id: str, gid: str) -> str:
+    # 1. Try public CSV export
+    csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid={gid}"
+    try:
+        r = http_requests.get(csv_url, timeout=12, headers={"User-Agent": "Mozilla/5.0"})
+        if r.status_code == 200 and r.text.strip():
+            rows = list(csv.reader(io.StringIO(r.text)))
+            lines = [" | ".join(c.strip() for c in row) for row in rows[:120] if any(c.strip() for c in row)]
+            return "[Google Sheet — public export]\n" + "\n".join(lines)
+    except Exception:
+        pass
+    # 2. Try service account (Sheets API)
+    if os.path.exists(_SA_FILE):
+        try:
+            from google.oauth2 import service_account as sa_mod
+            from googleapiclient.discovery import build as g_build
+            creds = sa_mod.Credentials.from_service_account_file(
+                _SA_FILE, scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"]
+            )
+            svc = g_build("sheets", "v4", credentials=creds, cache_discovery=False)
+            meta = svc.spreadsheets().get(spreadsheetId=sheet_id).execute()
+            # Find sheet name by gid
+            sheet_name = None
+            for s in meta.get("sheets", []):
+                if str(s["properties"].get("sheetId", "")) == gid:
+                    sheet_name = s["properties"]["title"]
+                    break
+            sheet_name = sheet_name or meta["sheets"][0]["properties"]["title"]
+            result = svc.spreadsheets().values().get(
+                spreadsheetId=sheet_id, range=sheet_name
+            ).execute()
+            rows = result.get("values", [])
+            lines = [" | ".join(str(c) for c in row) for row in rows[:120] if row]
+            return f"[Google Sheet '{sheet_name}' via service account]\n" + "\n".join(lines)
+        except Exception as e:
+            return f"[Google Sheet — access denied. Share the sheet with the service account, or paste the data directly. Error: {e}]"
+    return "[Google Sheet — could not access. Make it public, or paste the data directly.]"
+
+def fetch_url_content(url: str) -> str:
+    url = url.rstrip(".,;)")
+    # Google Sheets
+    m = re.match(r"https://docs\.google\.com/spreadsheets/d/([^/]+)", url)
+    if m:
+        sheet_id = m.group(1)
+        gid_m = re.search(r"gid=(\d+)", url)
+        gid = gid_m.group(1) if gid_m else "0"
+        return _fetch_google_sheet(sheet_id, gid)
+    # Generic URL — scrape text
+    try:
+        r = http_requests.get(url, timeout=12, headers={"User-Agent": "Mozilla/5.0"}, allow_redirects=True)
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, "html.parser")
+            for tag in soup(["script", "style", "nav", "footer", "header"]):
+                tag.decompose()
+            text = soup.get_text(separator="\n", strip=True)
+            text = re.sub(r"\n{3,}", "\n\n", text)[:4000]
+            return f"[Content from {url}]\n{text}"
+    except Exception as e:
+        return f"[Could not fetch {url}: {e}]"
+    return ""
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     try:
+        # Fetch any URLs the user included in their message
+        url_parts = []
+        urls_found = _URL_RE.findall(req.message)
+        for url in urls_found[:3]:  # max 3 URLs per message
+            content = fetch_url_content(url)
+            if content:
+                url_parts.append(content[:4000])
+
         course_ctx, course_sources = search_chunks_with_sources(req.message)
         lib_ctx, lib_sources = search_library_chunks_with_sources(req.message, top_n=3)
 
@@ -203,6 +280,9 @@ async def chat(req: ChatRequest):
 
         parts = []
         all_sources = []
+        # URL content goes first so Amy can reference actual numbers
+        for u in url_parts:
+            parts.append(u)
         if course_ctx and len(course_ctx) > 100:
             parts.append(f"[From Amy's Course Materials]\n{course_ctx[:2000]}")
             all_sources.extend(course_sources)
