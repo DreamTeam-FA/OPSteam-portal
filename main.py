@@ -265,7 +265,7 @@ async def chat_summary(req: ChatSummaryRequest):
         resp = generate(
             SUMMARY_SYSTEM,
             f"Here is the conversation to summarize:\n\n{convo_text}",
-            max_tokens=1200,
+            max_tokens=3500,
             message_for_routing="help me write a full detailed strategy plan with action steps frameworks and recommendations",
         )
         return {"summary": resp}
