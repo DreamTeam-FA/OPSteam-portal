@@ -24,6 +24,30 @@ from database import (init_db, search_chunks,
                        library_already_processed, library_video_exists,
                        search_mark_chunks)
 
+# ── Live Google Doc (Mark's newsletter drafts) ────────────────────────────────
+_MARK_GDOC_URL = (
+    "https://docs.google.com/document/d/"
+    "1br6V5B2p9Y2ASdyttezypMO01wC-NH4-vBPrsSVyMK8/export?format=txt"
+)
+_gdoc_cache: dict = {"content": None, "fetched_at": 0.0}
+_GDOC_TTL = 600  # seconds (10 min)
+
+def fetch_mark_gdoc() -> str:
+    import time
+    now = time.time()
+    if _gdoc_cache["content"] and (now - _gdoc_cache["fetched_at"]) < _GDOC_TTL:
+        return _gdoc_cache["content"]
+    try:
+        r = http_requests.get(_MARK_GDOC_URL, timeout=10)
+        if r.status_code == 200:
+            text = r.text.strip()
+            _gdoc_cache["content"] = text
+            _gdoc_cache["fetched_at"] = now
+            return text
+    except Exception as e:
+        print(f"[gdoc fetch error] {e}")
+    return _gdoc_cache.get("content") or ""
+
 # ── Shared sync state (visible to ALL connected users via /library/sync-status) ──
 _sync_state: dict = {
     "running": False,
@@ -422,11 +446,16 @@ async def mark_chat(req: ChatRequest):
 
         mark_ctx = search_mark_chunks(req.message, top_n=8)
 
+        gdoc_text = fetch_mark_gdoc()
+
         parts = []
         for u in url_parts:
             parts.append(u)
         if mark_ctx and len(mark_ctx) > 100:
             parts.append(f"[From Mark's Knowledge Base]\n{mark_ctx[:5000]}")
+        if gdoc_text:
+            snippet = gdoc_text[-12000:] if len(gdoc_text) > 12000 else gdoc_text
+            parts.append(f"[Live Newsletter Drafts — Mark's Google Doc, auto-updated]\n{snippet}")
         if not parts:
             parts.append("(No specific content matched — respond based on Mark's voice and frameworks.)")
 
