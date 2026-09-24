@@ -575,7 +575,11 @@ html[data-theme="dark"] body::before {
   border-color: var(--purple);
   box-shadow: 0 0 0 3px var(--purple-dim);
 }
-#user-input {
+#mark-input-area .input-wrapper:focus-within {
+  border-color: var(--mark);
+  box-shadow: 0 0 0 3px var(--mark-dim);
+}
+#user-input, #mark-user-input {
   flex: 1;
   background: none;
   border: none;
@@ -588,9 +592,9 @@ html[data-theme="dark"] body::before {
   line-height: 1.5;
   padding: 4px 0;
 }
-#user-input::placeholder { color: var(--ink3); }
+#user-input::placeholder, #mark-user-input::placeholder { color: var(--ink3); }
 
-#send-btn {
+#send-btn, #mark-send-btn {
   width: 36px; height: 36px;
   border-radius: 10px;
   background: linear-gradient(135deg, #4C35A8, #3B7BCC, #0D9488);
@@ -602,13 +606,13 @@ html[data-theme="dark"] body::before {
   box-shadow: 0 2px 14px rgba(76,53,168,0.35);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
-#send-btn:hover:not(:disabled) {
+#send-btn:hover:not(:disabled), #mark-send-btn:hover:not(:disabled) {
   transform: translateY(-2px) scale(1.06);
   box-shadow: var(--lift-shadow);
 }
-#send-btn:active { transform: scale(0.95); box-shadow: none; }
-#send-btn:disabled { opacity: 0.35; cursor: default; transform: none; box-shadow: none; }
-#send-btn svg { width: 15px; height: 15px; }
+#send-btn:active, #mark-send-btn:active { transform: scale(0.95); box-shadow: none; }
+#send-btn:disabled, #mark-send-btn:disabled { opacity: 0.35; cursor: default; transform: none; box-shadow: none; }
+#send-btn svg, #mark-send-btn svg { width: 15px; height: 15px; }
 
 .input-hint {
   font-size: 11px;
@@ -633,7 +637,7 @@ html[data-theme="dark"] body::before {
 @media (prefers-reduced-motion: reduce) {
   .dot, .welcome-avatar-wrap, .welcome-glow { animation: none; }
   .msg { animation: none; }
-  #send-btn, .theme-btn { transition: none; }
+  #send-btn, #mark-send-btn, .theme-btn { transition: none; }
 }
 
 /* ── Mark Panel ─────────────────────────────────────────────────────────────── */
