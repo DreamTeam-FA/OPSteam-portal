@@ -878,7 +878,7 @@ html[data-theme="dark"] { --mark: #4A9FD4; --mark-dim: rgba(74,159,212,0.15); }
     </a>
   </div>
   <!-- Amy's Chats — lives directly under Amy nav link -->
-  <div class="recent-chats-wrap" id="recent-chats-wrap">
+  <div class="recent-chats-wrap" id="recent-chats-wrap" style="display:none">
     <button class="recent-chats-toggle" id="recent-chats-toggle" onclick="toggleRecentChats()">
       <span class="rct-label">Amy's Chats</span>
       <span class="rct-actions">
@@ -895,7 +895,7 @@ html[data-theme="dark"] { --mark: #4A9FD4; --mark-dim: rgba(74,159,212,0.15); }
     </a>
   </div>
   <!-- Mark's Chats — lives directly under Mark nav link -->
-  <div class="recent-chats-wrap" id="mark-recent-chats-wrap">
+  <div class="recent-chats-wrap" id="mark-recent-chats-wrap" style="display:none">
     <button class="recent-chats-toggle" id="mark-recent-chats-toggle" onclick="toggleMarkRecentChats()">
       <span class="rct-label">Mark's Chats</span>
       <span class="rct-actions">
@@ -1837,6 +1837,8 @@ function switchPanel(name) {
     const navEl = document.getElementById('nav-'+p);
     if (navEl) navEl.classList.toggle('active', p === name);
   });
+  document.getElementById('recent-chats-wrap').style.display = name === 'amy' ? '' : 'none';
+  document.getElementById('mark-recent-chats-wrap').style.display = name === 'mark' ? '' : 'none';
   try { localStorage.setItem('ops-panel', name); } catch {}
   if (name === 'mark' && !_markSynced) {
     _markSynced = true;
@@ -1854,8 +1856,8 @@ function switchPanel(name) {
 // Restore last panel on load
 try {
   const savedPanel = localStorage.getItem('ops-panel');
-  if (savedPanel === 'mark') switchPanel('mark');
-} catch {}
+  switchPanel(savedPanel === 'mark' ? 'mark' : 'amy');
+} catch { switchPanel('amy'); }
 
 // ── Mark Chat ─────────────────────────────────────────────────────────────────
 (function() {
