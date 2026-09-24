@@ -153,6 +153,35 @@ body {
 .side-nav.collapsed .nav-section { opacity:0; pointer-events:none; }
 .side-sect-div { height:1px; background:var(--border); margin:10px 4px; }
 .side-bottom { padding-top: 10px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 3px; }
+
+/* ── Past Weeks history widget ───────────────────────────────────────────── */
+.recent-chats-wrap { display: flex; flex-direction: column; }
+.side-nav.collapsed .recent-chats-wrap { display: none; }
+.recent-chats-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 10px; background: none; border: none; cursor: pointer;
+  width: 100%; color: var(--ink3); font-size: 10px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase; font-family: 'Inter', sans-serif;
+}
+.recent-chats-toggle:hover { color: var(--ink2); }
+.rct-label { flex: 1; text-align: left; }
+.rct-actions { display: flex; align-items: center; gap: 4px; }
+.rct-chevron { font-size: 11px; transition: transform .2s; }
+.rct-chevron.collapsed { transform: rotate(-90deg); }
+.rct-new { font-size: 13px; padding: 1px 3px; border-radius: 4px; cursor: pointer; }
+.rct-new:hover { background: var(--purple-dim); }
+.chat-hist-list { display: flex; flex-direction: column; overflow: hidden; max-height: 280px; overflow-y: auto; }
+.chat-hist-list.collapsed { display: none; }
+.chat-hist-item {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 7px 14px; background: none; border: none; cursor: pointer;
+  text-align: left; border-radius: 0; width: 100%;
+  transition: background .12s;
+}
+.chat-hist-item:hover { background: var(--purple-dim); }
+.chat-hist-item.active { background: var(--purple-dim); }
+.chi-title { font-size: 12px; font-weight: 500; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.chi-date { font-size: 10px; color: var(--ink3); }
 .theme-btn {
   background: var(--glass); border: 1px solid var(--border);
   border-radius: 8px; padding: 9px 12px;
@@ -629,6 +658,19 @@ textarea { min-height: 120px; }
       <span class="side-icon">📅</span>
       <span class="side-link-text">Content Week</span>
     </a>
+  </div>
+  <!-- Past Weeks — collapsible, lives under Content Week nav link -->
+  <div class="recent-chats-wrap" id="cw-history-wrap">
+    <button class="recent-chats-toggle" onclick="toggleCWHistory()">
+      <span class="rct-label">Past Weeks</span>
+      <span class="rct-actions">
+        <span class="rct-chevron" id="cw-hist-chevron">▾</span>
+        <span onclick="event.stopPropagation();startNewWeek()" class="rct-new" title="New week">✏️</span>
+      </span>
+    </button>
+    <div id="cw-hist-list" class="chat-hist-list"></div>
+  </div>
+  <div class="side-links">
     <a href="/watermark-clean.html" class="side-link">
       <span class="side-icon">🧹</span>
       <span class="side-link-text">Watermark Cleaner</span>
@@ -1617,6 +1659,8 @@ function saveWeek() {
       savedAt: Date.now()
     }));
   } catch(e) {}
+  if (!cwCurrentHistId) cwCurrentHistId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+  saveToCWHistory();
 }
 
 function loadLastWeek() {
@@ -1659,6 +1703,105 @@ function initPage() {
   }
 }
 
+// ── Past Weeks History ────────────────────────────────────────────────────────
+const CW_HIST_KEY = 'cw-history';
+const CW_MAX_HIST = 15;
+let cwCurrentHistId = null;
+
+function getCWHistory() {
+  try { return JSON.parse(localStorage.getItem(CW_HIST_KEY) || '[]'); } catch { return []; }
+}
+
+function saveToCWHistory() {
+  if (!state.weekData) return;
+  try {
+    const history = getCWHistory();
+    const title = state.url
+      ? state.url.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]
+      : (state.summary || state.bizText || 'Content Week').slice(0, 50);
+    const entry = {
+      id: cwCurrentHistId,
+      title,
+      date: new Date().toISOString(),
+      weekData: state.weekData,
+      summary: state.summary,
+      brandColors: state.brandColors,
+      competitors: state.competitors,
+      lang: state.lang
+    };
+    const idx = history.findIndex(h => h.id === cwCurrentHistId);
+    if (idx >= 0) history[idx] = entry; else history.unshift(entry);
+    localStorage.setItem(CW_HIST_KEY, JSON.stringify(history.slice(0, CW_MAX_HIST)));
+    renderCWHistoryList();
+  } catch(e) {}
+}
+
+function renderCWHistoryList() {
+  const list = document.getElementById('cw-hist-list');
+  if (!list) return;
+  const history = getCWHistory();
+  if (!history.length) {
+    list.innerHTML = '<div style="font-size:11px;color:var(--ink3);padding:6px 14px">No past weeks yet</div>';
+    return;
+  }
+  list.innerHTML = history.map(h => {
+    const d = new Date(h.date);
+    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const active = h.id === cwCurrentHistId ? ' active' : '';
+    const title = String(h.title || 'Week').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return `<button class="chat-hist-item${active}" onclick="loadCWWeek('${h.id}')">
+      <span class="chi-title">${title}</span>
+      <span class="chi-date">${dateStr}</span>
+    </button>`;
+  }).join('');
+}
+
+function loadCWWeek(id) {
+  const history = getCWHistory();
+  const entry = history.find(h => h.id === id);
+  if (!entry || !entry.weekData) return;
+  cwCurrentHistId = id;
+  state.weekData = entry.weekData;
+  state.summary = entry.summary || '';
+  state.brandColors = entry.brandColors || [];
+  state.competitors = entry.competitors || [];
+  state.lang = entry.lang || 'en';
+  document.getElementById('backWeekBar').style.display = 'none';
+  document.getElementById('step1').style.display = 'none';
+  renderStep3();
+  renderCWHistoryList();
+  if (window.innerWidth <= 660) {
+    document.getElementById('side-nav').classList.remove('open');
+    document.getElementById('nav-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+}
+
+function toggleCWHistory() {
+  const list = document.getElementById('cw-hist-list');
+  const chevron = document.getElementById('cw-hist-chevron');
+  const open = !list.classList.contains('collapsed');
+  list.classList.toggle('collapsed', open);
+  chevron.classList.toggle('collapsed', open);
+  try { localStorage.setItem('cw-hist-open', open ? '0' : '1'); } catch {}
+}
+
+function startNewWeek() {
+  cwCurrentHistId = null;
+  resetToStep1();
+  renderCWHistoryList();
+}
+
+function initCWHistory() {
+  try {
+    if (localStorage.getItem('cw-hist-open') === '0') {
+      document.getElementById('cw-hist-list').classList.add('collapsed');
+      document.getElementById('cw-hist-chevron').classList.add('collapsed');
+    }
+  } catch {}
+  renderCWHistoryList();
+}
+
 // ── Feedback ──────────────────────────────────────────────────────────────────
 function giveFeedback(v) {
   document.getElementById('fbYes').classList.toggle('selected', v === 'yes');
@@ -1689,6 +1832,7 @@ function resetToStep2() {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 initPage();
+initCWHistory();
 </script>
 <script>
 (function() {
