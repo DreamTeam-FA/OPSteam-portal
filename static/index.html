@@ -868,6 +868,17 @@ html[data-theme="dark"] { --mark: #4A9FD4; --mark-dim: rgba(74,159,212,0.15); }
       <span class="side-link-text">It's Me, Mark<span class="side-link-credit">Ryan Levesque · Donald Miller et al.</span></span>
     </a>
   </div>
+  <!-- Mark Recent Chats -->
+  <div class="recent-chats-wrap" id="mark-recent-chats-wrap">
+    <button class="recent-chats-toggle" id="mark-recent-chats-toggle" onclick="toggleMarkRecentChats()">
+      <span class="rct-label">Mark's Chats</span>
+      <span class="rct-actions">
+        <span class="rct-chevron" id="mark-rct-chevron">▾</span>
+        <span onclick="event.stopPropagation();startNewMarkChat()" class="rct-new" title="New chat">✏️</span>
+      </span>
+    </button>
+    <div id="mark-chat-hist-list" class="chat-hist-list"></div>
+  </div>
   <!-- Recent Chats — collapsible, lives under Hi Amy -->
   <div class="recent-chats-wrap" id="recent-chats-wrap">
     <button class="recent-chats-toggle" id="recent-chats-toggle" onclick="toggleRecentChats()">
@@ -1045,7 +1056,10 @@ html[data-theme="dark"] { --mark: #4A9FD4; --mark-dim: rgba(74,159,212,0.15); }
         <span id="mark-sync-dot" style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#4A9FD4;margin-left:6px;opacity:0;transition:opacity 0.4s ease;vertical-align:middle;" title="Knowledge synced"></span>
       </div>
     </div>
-    <button id="mark-export-btn" class="export-btn" onclick="markExportAdvice()" title="Export Mark's advice as a summary" style="display:none;margin-left:auto">
+    <button id="mark-new-chat-btn" onclick="startNewMarkChat()" title="New chat" style="display:none;margin-left:auto;align-items:center;gap:6px;padding:7px 13px;border-radius:10px;background:var(--glass-hi);border:1px solid var(--border);color:var(--ink2);cursor:pointer;font-size:12px;font-weight:600;transition:background .14s">
+      ✏️ New Chat
+    </button>
+    <button id="mark-export-btn" class="export-btn" onclick="markExportAdvice()" title="Export Mark's advice as a summary" style="display:none">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Export
     </button>
@@ -1592,6 +1606,136 @@ document.getElementById('mark-export-overlay').addEventListener('click', functio
   if (e.target === this) markCloseExport();
 });
 
+// ── Mark Chat History ─────────────────────────────────────────────────────────
+let markHistory = [];
+let markCurrentSessionId = null;
+const MARK_HIST_KEY  = 'mark-sessions';
+const MARK_MAX_SESS  = 30;
+
+function getMarkSessions() {
+  try { return JSON.parse(localStorage.getItem(MARK_HIST_KEY) || '[]'); } catch { return []; }
+}
+function saveMarkSessions(list) {
+  try { localStorage.setItem(MARK_HIST_KEY, JSON.stringify(list)); } catch {}
+}
+function saveMarkCurrentSession() {
+  if (!markHistory.length || !markCurrentSessionId) return;
+  try {
+    const sessions = getMarkSessions();
+    const firstUser = markHistory.find(m => m.role === 'user');
+    const title = firstUser ? firstUser.text.slice(0, 50) : 'Chat';
+    const entry = {
+      id: markCurrentSessionId, title,
+      date: new Date().toISOString(),
+      messages: markHistory.map(m => ({ role: m.role, text: m.text }))
+    };
+    const idx = sessions.findIndex(s => s.id === markCurrentSessionId);
+    if (idx >= 0) sessions[idx] = entry; else sessions.unshift(entry);
+    localStorage.setItem(MARK_HIST_KEY, JSON.stringify(sessions.slice(0, MARK_MAX_SESS)));
+    renderMarkHistoryList();
+  } catch(e) {}
+}
+function toggleMarkRecentChats() {
+  const list    = document.getElementById('mark-chat-hist-list');
+  const chevron = document.getElementById('mark-rct-chevron');
+  const open    = !list.classList.contains('collapsed');
+  list.classList.toggle('collapsed', open);
+  chevron.classList.toggle('collapsed', open);
+  try { localStorage.setItem('mark-hist-open', open ? '0' : '1'); } catch {}
+}
+function renderMarkHistoryList() {
+  const list = document.getElementById('mark-chat-hist-list');
+  if (!list) return;
+  const sessions = getMarkSessions();
+  if (!sessions.length) { list.innerHTML = '<div style="font-size:11px;color:var(--ink3);padding:6px 14px">No past chats yet</div>'; return; }
+  list.innerHTML = sessions.map(s => {
+    const d = new Date(s.date);
+    const dateStr = d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+    const active  = s.id === markCurrentSessionId ? ' active' : '';
+    return `<button class="chat-hist-item${active}" onclick="loadMarkSession('${s.id}')">
+      <span class="chi-title">${escHtmlIdx(s.title)}</span>
+      <span class="chi-date">${dateStr} · ${s.messages.length} msgs</span>
+    </button>`;
+  }).join('');
+}
+function loadMarkSession(id) {
+  const sessions = getMarkSessions();
+  const s = sessions.find(x => x.id === id);
+  if (!s) return;
+  const markMessages = document.getElementById('mark-messages');
+  const markWelcome  = document.getElementById('mark-welcome');
+  markMessages.innerHTML = '';
+  markHistory = [];
+  markCurrentSessionId = id;
+  markWelcome.style.display = 'none';
+  markMessages.style.display = 'flex';
+  markMessages.style.flexDirection = 'column';
+  const MARK_ICON = `<img src="/avatar-mark.webp" class="msg-avatar" alt="Mark" style="object-position:center 18%">`;
+  s.messages.forEach(m => {
+    markHistory.push({ role: m.role, text: m.text });
+    const div = document.createElement('div');
+    div.className = 'msg' + (m.role === 'user' ? ' user' : '');
+    div.innerHTML = m.role === 'user'
+      ? `<div class="bubble">${escHtmlIdx(m.text)}</div>`
+      : `${MARK_ICON}<div class="bubble">${escHtmlIdx(m.text)}</div>`;
+    markMessages.appendChild(div);
+  });
+  markMessages.scrollTop = markMessages.scrollHeight;
+  document.getElementById('mark-export-btn').style.display = markHistory.some(m => m.role === 'mark') ? 'flex' : 'none';
+  document.getElementById('mark-new-chat-btn').style.display = 'flex';
+  switchPanel('mark');
+  renderMarkHistoryList();
+}
+function startNewMarkChat() {
+  if (markHistory.length > 0) saveMarkCurrentSession();
+  markHistory = [];
+  markCurrentSessionId = null;
+  const markMessages = document.getElementById('mark-messages');
+  const markWelcome  = document.getElementById('mark-welcome');
+  markMessages.innerHTML = '';
+  markMessages.style.display = 'none';
+  markWelcome.style.display = '';
+  document.getElementById('mark-export-btn').style.display = 'none';
+  document.getElementById('mark-new-chat-btn').style.display = 'none';
+  renderMarkHistoryList();
+  document.getElementById('mark-user-input').focus();
+}
+function initMarkHistory() {
+  try {
+    if (localStorage.getItem('mark-hist-open') === '0') {
+      document.getElementById('mark-chat-hist-list').classList.add('collapsed');
+      document.getElementById('mark-rct-chevron').classList.add('collapsed');
+    }
+  } catch {}
+  const sessions = getMarkSessions();
+  if (sessions.length > 0) {
+    const last = sessions[0];
+    if (last.messages && last.messages.length > 0) {
+      markCurrentSessionId = last.id;
+      const markMessages = document.getElementById('mark-messages');
+      const markWelcome  = document.getElementById('mark-welcome');
+      markWelcome.style.display = 'none';
+      markMessages.style.display = 'flex';
+      markMessages.style.flexDirection = 'column';
+      const MARK_ICON = `<img src="/avatar-mark.webp" class="msg-avatar" alt="Mark" style="object-position:center 18%">`;
+      last.messages.forEach(m => {
+        markHistory.push({ role: m.role, text: m.text });
+        const div = document.createElement('div');
+        div.className = 'msg' + (m.role === 'user' ? ' user' : '');
+        div.innerHTML = m.role === 'user'
+          ? `<div class="bubble">${escHtmlIdx(m.text)}</div>`
+          : `${MARK_ICON}<div class="bubble">${escHtmlIdx(m.text)}</div>`;
+        markMessages.appendChild(div);
+      });
+      markMessages.scrollTop = markMessages.scrollHeight;
+      document.getElementById('mark-export-btn').style.display = markHistory.some(m => m.role === 'mark') ? 'flex' : 'none';
+      document.getElementById('mark-new-chat-btn').style.display = 'flex';
+    }
+  }
+  renderMarkHistoryList();
+}
+initMarkHistory();
+
 function showTyping() {
   const div = document.createElement('div');
   div.className = 'msg'; div.id = 'typing';
@@ -1704,7 +1848,6 @@ try {
   const markWelcome   = document.getElementById('mark-welcome');
   const markInput     = document.getElementById('mark-user-input');
   const markSendBtn   = document.getElementById('mark-send-btn');
-  let markHistory = [];
   let markActivated = false;
 
   const MARK_ICON = `<img src="/avatar-mark.webp" class="msg-avatar" alt="Mark" style="object-position:center 18%">`;
@@ -1776,6 +1919,9 @@ try {
       markHistory.push({ role: 'mark', text: data.response });
       markAppendDOM('mark', data.response, data.sources || []);
       document.getElementById('mark-export-btn').style.display = 'flex';
+      if (!markCurrentSessionId) markCurrentSessionId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+      saveMarkCurrentSession();
+      document.getElementById('mark-new-chat-btn').style.display = 'flex';
     } catch(err) {
       markHideTyping();
       markAppendDOM('mark', "Something went wrong. Give me a moment and try again.", []);
