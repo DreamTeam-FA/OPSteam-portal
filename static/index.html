@@ -1002,6 +1002,7 @@ html[data-theme="dark"] { --mark: #4A9FD4; --mark-dim: rgba(74,159,212,0.15); }
       <div class="header-status">
         <span class="status-dot" style="background:#4A9FD4;box-shadow:0 0 6px rgba(29,111,164,0.75)"></span>
         Category of One · Mark Timm
+        <span id="mark-sync-dot" style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#4A9FD4;margin-left:6px;opacity:0;transition:opacity 0.4s ease;vertical-align:middle;" title="Knowledge synced"></span>
       </div>
     </div>
   </div>
@@ -1554,7 +1555,14 @@ function switchPanel(name) {
   try { localStorage.setItem('ops-panel', name); } catch {}
   if (name === 'mark' && !_markSynced) {
     _markSynced = true;
-    fetch('/mark/sync', { method: 'POST' }).catch(() => {});
+    fetch('/mark/sync', { method: 'POST' })
+      .then(() => {
+        const dot = document.getElementById('mark-sync-dot');
+        if (!dot) return;
+        dot.style.opacity = '1';
+        setTimeout(() => { dot.style.opacity = '0'; }, 2000);
+      })
+      .catch(() => {});
   }
 }
 
