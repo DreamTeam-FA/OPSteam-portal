@@ -21,7 +21,8 @@ from database import (init_db, search_chunks,
                        get_document_content, get_course_document_content,
                        search_chunks_with_sources, search_library_chunks_with_sources,
                        get_library_videos,
-                       library_already_processed, library_video_exists)
+                       library_already_processed, library_video_exists,
+                       search_mark_chunks)
 
 # ── Shared sync state (visible to ALL connected users via /library/sync-status) ──
 _sync_state: dict = {
@@ -353,6 +354,119 @@ async def chat_summary(req: ChatSummaryRequest):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+MARK_SYSTEM_PROMPT = """You are Mark — an AI assistant built from Mark Timm's actual voice, stories, frameworks, and philosophy.
+
+IDENTITY:
+Mark Timm is a father, executive advisor, and "secret weapon" behind successful companies. His life mission traces back to hearing Zig Ziglar at nineteen: "You can have everything in life you want, if you will just help enough other people get what they want." That sentence didn't become a strategy for him — it became who he is.
+
+Mark's work is built on three frameworks:
+- Ryan Levesque's Category of One (confluence of events + contrarian approach + criteria to buy): helping businesses become incomparable rather than competitive.
+- Donald Miller's StoryBrand / Hero on a Mission: positioning the customer as the hero, the brand as the guide.
+- Mark's Three Forces newsletter framework: the newsletter is a relationship, not a broadcast.
+
+THE NON-NEGOTIABLE RULE (apply above everything else):
+Voice fidelity. You speak ONLY in language grounded in Mark's actual words, stories, and frameworks from the knowledge base. You NEVER invent biographical details, transitions, statistics, or quotes he didn't actually say. If the knowledge base doesn't cover something, say so directly — do not fill the gap plausibly.
+
+YOUR VOICE:
+- Direct, warm, and deeply personal — you lead with stories, not bullet points
+- You honor proximity: the most important things in life are caught, not taught
+- You see beyond where people see themselves — that is your actual gift
+- You do not use hustle-culture language: no "crush it", "grind", "beast mode", "10x"
+- No em dashes. No victim language ("It is what it is"). No passive-aggressive setups ("No offense, but...").
+- You speak in complete sentences and earn the period. No half-ideas.
+
+WHAT THIS ASSISTANT DOES:
+Help the OPSteam with content and brand operations for Mark Timm — newsletters, positioning, copy, framework application, and voice-faithful drafting.
+
+KNOWLEDGE BASE:
+{context}"""
+
+MARK_SUMMARY_SYSTEM = """You are a professional advisor who synthesizes insights from Mark Timm's frameworks into a clean, structured summary.
+
+Given a conversation between a user and Mark's AI assistant, extract and organize the key insights into a polished advisory document.
+
+OUTPUT FORMAT (use exactly these section headers with emoji):
+
+🎯 Topic
+One sentence describing what this conversation covered.
+
+💡 Core Insights
+Number each insight. Be specific and grounded in Mark's frameworks (Category of One, StoryBrand, Proximity).
+
+✅ Action Steps
+A checklist of concrete next steps. Start each with a verb.
+
+📚 Frameworks Referenced
+List any specific frameworks, principles, or source documents mentioned.
+
+⚡ The One Thing — Start Here
+The single most important takeaway from this conversation.
+
+RULES:
+- Write in second person
+- Ground everything in Mark's actual frameworks — no generic business advice
+- This is a polished document someone would save and act on
+- Do NOT include meta-commentary about the conversation itself"""
+
+
+@app.post("/mark/chat", response_model=ChatResponse)
+async def mark_chat(req: ChatRequest):
+    try:
+        url_parts = []
+        urls_found = _URL_RE.findall(req.message)
+        for url in urls_found[:3]:
+            content = fetch_url_content(url)
+            if content:
+                url_parts.append(content[:4000])
+
+        mark_ctx = search_mark_chunks(req.message, top_n=8)
+
+        parts = []
+        for u in url_parts:
+            parts.append(u)
+        if mark_ctx and len(mark_ctx) > 100:
+            parts.append(f"[From Mark's Knowledge Base]\n{mark_ctx[:5000]}")
+        if not parts:
+            parts.append("(No specific content matched — respond based on Mark's voice and frameworks.)")
+
+        context = "\n\n===\n\n".join(parts)
+        if len(context) > MAX_CONTEXT_CHARS:
+            context = context[:MAX_CONTEXT_CHARS] + "\n[context truncated]"
+        system = MARK_SYSTEM_PROMPT.format(context=context)
+        resp = generate(system, req.message, max_tokens=1800, message_for_routing=req.message, history=req.history or [])
+        return ChatResponse(response=resp, sources=[])
+    except Exception as e:
+        print(f"[mark/chat error] {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/mark/chat/summary")
+async def mark_chat_summary(req: ChatSummaryRequest):
+    try:
+        if not req.messages:
+            raise HTTPException(status_code=400, detail="No messages provided")
+        convo_parts = []
+        for m in req.messages:
+            role = m.get("role", "")
+            text_content = m.get("text", "").strip()
+            if not text_content:
+                continue
+            label = "User" if role == "user" else "Mark"
+            convo_parts.append(f"{label}: {text_content}")
+        convo_text = "\n\n".join(convo_parts)
+        resp = generate(
+            MARK_SUMMARY_SYSTEM,
+            f"Here is the conversation to summarize:\n\n{convo_text}",
+            max_tokens=3500,
+            message_for_routing="help me write a full detailed strategy plan with action steps frameworks and recommendations",
+        )
+        return {"summary": resp}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/health")
 async def health():

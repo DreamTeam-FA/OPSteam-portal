@@ -552,7 +552,7 @@ html[data-theme="dark"] body::before {
 }
 
 /* ── Input Area ─────────────────────────────────────────────────────────────── */
-#input-area {
+#input-area, .input-area-wrap {
   padding: 12px 16px 18px;
   background: var(--glass-hi);
   backdrop-filter: blur(24px);
@@ -621,12 +621,12 @@ html[data-theme="dark"] body::before {
 /* ── Responsive ─────────────────────────────────────────────────────────────── */
 @media (min-width: 640px) {
   #messages { padding: 28px 24px; }
-  #input-area { padding: 14px 24px 20px; }
+  #input-area, .input-area-wrap { padding: 14px 24px 20px; }
 }
 @media (min-width: 900px) {
   #messages { padding: 32px; align-items: center; }
   #messages > * { width: 100%; max-width: 680px; }
-  #input-area { padding: 14px 32px 24px; }
+  #input-area, .input-area-wrap { padding: 14px 32px 24px; }
   .input-wrapper { max-width: 680px; margin: 0 auto; }
   .input-hint { max-width: 680px; margin: 8px auto 0; }
 }
@@ -634,6 +634,66 @@ html[data-theme="dark"] body::before {
   .dot, .welcome-avatar-wrap, .welcome-glow { animation: none; }
   .msg { animation: none; }
   #send-btn, .theme-btn { transition: none; }
+}
+
+/* ── Mark Panel ─────────────────────────────────────────────────────────────── */
+:root {
+  --amber: #D97706;
+  --amber-dim: rgba(217,119,6,0.12);
+}
+html[data-theme="dark"] { --amber: #F59E0B; --amber-dim: rgba(245,158,11,0.15); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --amber: #F59E0B; --amber-dim: rgba(245,158,11,0.15); }
+}
+
+.panel { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+.panel.active { display: flex; }
+
+.mark-avatar-icon {
+  width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, #92400E, #D97706, #F59E0B);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+  font-size: 22px; color: #fff; letter-spacing: 0;
+  box-shadow: 0 0 0 2px rgba(217,119,6,0.4), 0 0 14px rgba(217,119,6,0.3);
+  flex-shrink: 0;
+}
+.mark-welcome-icon {
+  width: 120px; height: 120px; border-radius: 50%;
+  background: linear-gradient(135deg, #92400E, #D97706, #F59E0B);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 58px; color: #fff;
+  animation: markGlow 3.5s ease-in-out infinite;
+  box-shadow: 0 0 0 1px rgba(217,119,6,0.4), 0 0 36px rgba(217,119,6,0.22), 0 0 80px rgba(217,119,6,0.45);
+}
+@keyframes markGlow {
+  0%,100% { box-shadow: 0 0 0 1px rgba(217,119,6,0.35), 0 0 36px rgba(217,119,6,0.18), 0 0 80px rgba(217,119,6,0.35); }
+  50%      { box-shadow: 0 0 0 1px rgba(217,119,6,0.6),  0 0 52px rgba(217,119,6,0.38), 0 0 110px rgba(217,119,6,0.55); }
+}
+
+#mark-welcome {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 20px; padding: 40px 24px; text-align: center;
+}
+#mark-messages {
+  flex: 1; overflow-y: auto; padding: 24px 16px;
+  display: flex; flex-direction: column; gap: 14px; scroll-behavior: smooth;
+}
+#mark-messages::-webkit-scrollbar { width: 3px; }
+#mark-messages::-webkit-scrollbar-track { background: transparent; }
+#mark-messages::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 4px; }
+
+.mark-hint {
+  background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1.5px solid var(--amber-dim); border-radius: 12px;
+  padding: 13px 22px; font-size: 14px; color: var(--amber); font-weight: 500;
+  display: flex; align-items: center; gap: 8px;
+  box-shadow: 0 2px 12px var(--amber-dim);
+}
+.mark-attrib {
+  font-size: 11px; color: var(--ink3); max-width: 360px;
+  line-height: 1.65; text-align: center; font-style: italic;
 }
 
 /* ── Reference Panel ────────────────────────────────────────────────────────── */
@@ -772,9 +832,13 @@ html[data-theme="dark"] body::before {
   </div>
   <div class="nav-section">Tools</div>
   <div class="side-links">
-    <a href="/" class="side-link active">
+    <a href="/" class="side-link active" id="nav-amy" onclick="switchPanel('amy');return false;">
       <span class="side-icon">💬</span>
       <span class="side-link-text">Hi, Amy!</span>
+    </a>
+    <a href="#" class="side-link" id="nav-mark" onclick="switchPanel('mark');return false;">
+      <span class="side-icon">🎯</span>
+      <span class="side-link-text">It's Me, Mark<span class="side-link-credit">Ryan Levesque · Donald Miller et al.</span></span>
     </a>
   </div>
   <!-- Recent Chats — collapsible, lives under Hi Amy -->
@@ -821,6 +885,7 @@ html[data-theme="dark"] body::before {
   <span class="mobile-topbar-brand">OPSteam</span>
 </div>
 
+<div id="amy-panel" class="panel active">
 <!-- ── Amy Identity Bar ── -->
 <div class="ops-header">
   <img src="/avatar-amy.png" class="amy-avatar" alt="Amy">
@@ -908,6 +973,59 @@ html[data-theme="dark"] body::before {
   </div>
   <div class="input-hint">OPSteam Portal · Powered by Amy Porterfield's course · Internal use only</div>
 </div>
+</div><!-- /#amy-panel -->
+
+<!-- ── Mark Panel ── -->
+<div id="mark-panel" class="panel">
+
+  <!-- Mark header bar -->
+  <div class="ops-header">
+    <div class="mark-avatar-icon">M</div>
+    <div>
+      <div class="header-name">It's Me, Mark.</div>
+      <div class="header-status">
+        <span class="status-dot" style="background:#F59E0B;box-shadow:0 0 6px rgba(245,158,11,0.75)"></span>
+        Category of One · Mark Timm
+      </div>
+    </div>
+  </div>
+
+  <!-- Mark Welcome Screen -->
+  <div id="mark-welcome">
+    <div class="mark-welcome-icon">M</div>
+    <div class="welcome-title" style="color:var(--amber)">It's Me, Mark.</div>
+    <div class="welcome-sub">An AI trained on Mark Timm's own words, frameworks, and voice. Ask anything — about his story, his content philosophy, or how he thinks about business and life.</div>
+    <div class="mark-hint">
+      💬 Ask me anything to get started
+    </div>
+    <div class="mark-attrib">
+      Informed by Ryan Levesque's Category of One, Donald Miller's StoryBrand &amp; Hero on a Mission, and Mark's own transcripts, newsletters, and DNA documents.
+    </div>
+  </div>
+
+  <!-- Mark Messages -->
+  <div id="mark-messages" style="display:none"></div>
+
+  <!-- Mark Input -->
+  <div id="mark-input-area" class="input-area-wrap">
+    <div class="input-wrapper">
+      <textarea
+        id="mark-user-input"
+        rows="1"
+        placeholder="Ask me anything…"
+        aria-label="Message input"
+      ></textarea>
+      <button id="mark-send-btn" aria-label="Send message">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </div>
+    <div class="input-hint">OPSteam Portal · Powered by Mark Timm's words · Internal use only</div>
+  </div>
+
+</div><!-- /#mark-panel -->
 </div><!-- /.app-main -->
 
 <script>
@@ -1406,6 +1524,119 @@ initHistory();
 input.focus();
 // Keep server warm during active sessions
 setInterval(() => fetch('/healthz').catch(()=>{}), 8 * 60 * 1000);
+
+// ── Panel Switching ───────────────────────────────────────────────────────────
+function switchPanel(name) {
+  ['amy','mark'].forEach(p => {
+    document.getElementById(p+'-panel').classList.toggle('active', p === name);
+    const navEl = document.getElementById('nav-'+p);
+    if (navEl) navEl.classList.toggle('active', p === name);
+  });
+  try { localStorage.setItem('ops-panel', name); } catch {}
+}
+
+// Restore last panel on load
+try {
+  const savedPanel = localStorage.getItem('ops-panel');
+  if (savedPanel === 'mark') switchPanel('mark');
+} catch {}
+
+// ── Mark Chat ─────────────────────────────────────────────────────────────────
+(function() {
+  const markMessages  = document.getElementById('mark-messages');
+  const markWelcome   = document.getElementById('mark-welcome');
+  const markInput     = document.getElementById('mark-user-input');
+  const markSendBtn   = document.getElementById('mark-send-btn');
+  let markHistory = [];
+  let markActivated = false;
+
+  const MARK_ICON = `<div class="mark-avatar-icon" style="width:36px;height:36px;font-size:16px;flex-shrink:0">M</div>`;
+
+  function markActivate() {
+    markActivated = true;
+    markWelcome.style.display = 'none';
+    markMessages.style.display = 'flex';
+    markMessages.style.flexDirection = 'column';
+  }
+
+  function markShowTyping() {
+    const div = document.createElement('div');
+    div.className = 'msg'; div.id = 'mark-typing';
+    div.innerHTML = `${MARK_ICON}<div class="bubble typing-bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+    markMessages.appendChild(div);
+    markMessages.scrollTop = markMessages.scrollHeight;
+  }
+  function markHideTyping() { const t = document.getElementById('mark-typing'); if (t) t.remove(); }
+
+  function markAppendDOM(role, content, sources) {
+    const isMark = role === 'mark';
+    const div = document.createElement('div');
+    div.className = `msg${isMark ? '' : ' user'}`;
+    const av = document.createElement('div');
+    av.className = 'msg-avatar';
+    av.innerHTML = isMark ? MARK_ICON : USER_SVG;
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    if (isMark) bubble.innerHTML = renderMarkdown(content);
+    else bubble.textContent = content;
+    div.appendChild(av);
+    div.appendChild(bubble);
+    markMessages.appendChild(div);
+    if (isMark && sources && sources.length > 0) {
+      const chips = document.createElement('div');
+      chips.className = 'source-chips';
+      sources.forEach(s => {
+        const btn = document.createElement('button');
+        btn.className = 'source-chip';
+        const name = s.file_name.replace(/\.[^/.]+$/, '');
+        btn.title = name;
+        btn.innerHTML = `📄 ${name}`;
+        chips.appendChild(btn);
+      });
+      markMessages.appendChild(chips);
+    }
+    markMessages.scrollTop = markMessages.scrollHeight;
+  }
+
+  async function markSend() {
+    const text = markInput.value.trim();
+    if (!text) return;
+    if (!markActivated) markActivate();
+    markInput.value = ''; markInput.style.height = 'auto';
+    markSendBtn.disabled = true;
+    markHistory.push({ role: 'user', text });
+    markAppendDOM('user', text, []);
+    markShowTyping();
+    try {
+      const res = await fetch('/mark/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, history: markHistory.slice(0, -1).slice(-10) })
+      });
+      if (!res.ok) throw new Error(res.status);
+      const data = await res.json();
+      markHideTyping();
+      markHistory.push({ role: 'mark', text: data.response });
+      markAppendDOM('mark', data.response, data.sources || []);
+    } catch(err) {
+      markHideTyping();
+      markAppendDOM('mark', "Something went wrong. Give me a moment and try again.", []);
+      console.error(err);
+    } finally {
+      markSendBtn.disabled = false;
+      markInput.focus();
+    }
+  }
+
+  markSendBtn.addEventListener('click', markSend);
+  markInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); markSend(); }
+  });
+  markInput.addEventListener('input', () => {
+    markInput.style.height = 'auto';
+    markInput.style.height = Math.min(markInput.scrollHeight, 140) + 'px';
+  });
+})();
 
 // ── Reference Panel ──────────────────────────────────────────────────────────
 async function openDoc(fileId, docType, fileName) {

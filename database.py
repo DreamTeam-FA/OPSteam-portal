@@ -47,6 +47,20 @@ class LibraryChunk(Base):
     processed_at = Column(DateTime, server_default=func.now())
 
 
+class MarkChunk(Base):
+    """Chunks from Mark Timm 'It's Me, Mark' knowledge base."""
+    __tablename__ = "mark_chunks"
+
+    id           = Column(Integer, primary_key=True, index=True)
+    file_name    = Column(Text, nullable=False)
+    file_id      = Column(Text, nullable=False, index=True)
+    chunk_index  = Column(Integer, default=0)
+    total_chunks = Column(Integer, default=1)
+    content      = Column(Text, nullable=False)
+    source_type  = Column(Text, default="text")
+    processed_at = Column(DateTime, server_default=func.now())
+
+
 class LibraryVideo(Base):
     __tablename__ = "library_videos"
 
@@ -64,7 +78,6 @@ class LibraryVideo(Base):
 def init_db():
     """Create tables if they don't exist."""
     Base.metadata.create_all(bind=engine)
-    # Auto-migrate: add subcategory column to library_chunks if absent
     with SessionLocal() as db:
         try:
             db.execute(text(
@@ -388,3 +401,58 @@ def get_library_videos(category: str = None):
              "category": r.category, "subcategory": r.subcategory,
              "drive_link": r.drive_link, "size_mb": r.size_mb,
              "mime_type": r.mime_type} for r in rows]
+
+
+# ── Mark "It's Me, Mark" helpers ──────────────────────────────────────────────
+
+def mark_already_processed(file_id: str) -> bool:
+    with SessionLocal() as db:
+        row = db.execute(
+            text("SELECT 1 FROM mark_chunks WHERE file_id = :fid LIMIT 1"),
+            {"fid": file_id}
+        ).fetchone()
+        return row is not None
+
+
+def store_mark_chunks(file_name: str, file_id: str, content: str, source_type: str = "text"):
+    size, overlap = 3000, 300
+    chunks, start = [], 0
+    while start < len(content):
+        chunks.append(content[start:start + size])
+        start += size - overlap
+    with SessionLocal() as db:
+        for i, chunk in enumerate(chunks):
+            db.add(MarkChunk(
+                file_name=file_name,
+                file_id=file_id,
+                chunk_index=i,
+                total_chunks=len(chunks),
+                content=chunk,
+                source_type=source_type,
+            ))
+        db.commit()
+    return len(chunks)
+
+
+def search_mark_chunks(query: str, top_n: int = 8) -> str:
+    with SessionLocal() as db:
+        rows = db.execute(
+            text("""
+                SELECT file_name, source_type, content,
+                       ts_rank(to_tsvector('english', content),
+                               plainto_tsquery('english', :q)) AS rank
+                FROM mark_chunks
+                WHERE to_tsvector('english', content) @@ plainto_tsquery('english', :q)
+                ORDER BY rank DESC LIMIT :n
+            """),
+            {"q": query, "n": top_n}
+        ).fetchall()
+        if not rows:
+            rows = db.execute(
+                text("SELECT file_name, source_type, content FROM mark_chunks ORDER BY id DESC LIMIT :n"),
+                {"n": top_n}
+            ).fetchall()
+    if not rows:
+        return "No specific Mark Timm content matched."
+    parts = [f"[Source: {r.file_name}]\n{r.content}" for r in rows]
+    return "\n\n---\n\n".join(parts)
