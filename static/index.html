@@ -931,16 +931,24 @@ function saveSessions(list) {
 
 function saveCurrentSession() {
   if (!chatHistory.length || !currentSessionId) return;
-  const sessions = getSessions();
-  const idx = sessions.findIndex(s => s.id === currentSessionId);
-  const firstUser = chatHistory.find(m => m.role === 'user');
-  const title = firstUser ? firstUser.text.slice(0, 50) : 'Chat';
-  const entry = { id: currentSessionId, title, date: new Date().toISOString(), messages: chatHistory };
-  if (idx >= 0) sessions[idx] = entry;
-  else sessions.unshift(entry);
-  // Trim to max
-  saveSessions(sessions.slice(0, MAX_SESSIONS));
-  renderHistoryList();
+  try {
+    const raw = localStorage.getItem(HIST_KEY);
+    const sessions = raw ? JSON.parse(raw) : [];
+    const firstUser = chatHistory.find(m => m.role === 'user');
+    const title = firstUser ? firstUser.text.slice(0, 50) : 'Chat';
+    const entry = {
+      id: currentSessionId,
+      title,
+      date: new Date().toISOString(),
+      messages: chatHistory.map(m => ({ role: m.role, text: m.text }))
+    };
+    const idx = sessions.findIndex(s => s.id === currentSessionId);
+    if (idx >= 0) sessions[idx] = entry; else sessions.unshift(entry);
+    localStorage.setItem(HIST_KEY, JSON.stringify(sessions.slice(0, MAX_SESSIONS)));
+    renderHistoryList();
+  } catch(e) {
+    console.error('[Amy] session save failed:', e);
+  }
 }
 
 function toggleRecentChats() {
@@ -1155,8 +1163,10 @@ function appendMessageDOM(role, content, sources) {
 function appendMessage(role, content, sources = []) {
   chatHistory.push({ role, text: content });
   if (role === 'amy') {
-    document.getElementById('export-btn').style.display = 'flex';
-    document.getElementById('new-chat-header-btn').style.display = 'flex';
+    const eb = document.getElementById('export-btn');
+    const nb = document.getElementById('new-chat-header-btn');
+    if (eb) eb.style.display = 'flex';
+    if (nb) nb.style.display = 'flex';
   }
   appendMessageDOM(role, content, sources);
   saveCurrentSession();
