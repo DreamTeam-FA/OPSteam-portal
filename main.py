@@ -22,7 +22,8 @@ from database import (init_db, search_chunks,
                        search_chunks_with_sources, search_library_chunks_with_sources,
                        get_library_videos,
                        library_already_processed, library_video_exists,
-                       search_mark_chunks)
+                       search_mark_chunks,
+                       store_mark_chunks, mark_already_processed)
 
 # ── Live Google Doc (Mark's newsletter drafts) ────────────────────────────────
 _MARK_GDOC_URL = (
@@ -432,6 +433,69 @@ RULES:
 - Ground everything in Mark's actual frameworks — no generic business advice
 - This is a polished document someone would save and act on
 - Do NOT include meta-commentary about the conversation itself"""
+
+
+@app.post("/mark/sync")
+async def mark_sync():
+    """Pull new/updated files from Google Drive and ingest into mark_chunks."""
+    try:
+        import io, json
+        from google.oauth2 import service_account
+        from googleapiclient.discovery import build
+        from googleapiclient.http import MediaIoBaseDownload
+
+        folder_id = os.getenv("DRIVE_FOLDER_ID", "1uH8z-MhXSKuKMZtKoL-vBweFjnwTZaCd")
+        sa_json   = os.getenv("GOOGLE_SA_JSON", "")
+        if sa_json:
+            sa_info = json.loads(sa_json)
+            creds = service_account.Credentials.from_service_account_info(
+                sa_info, scopes=["https://www.googleapis.com/auth/drive.readonly"]
+            )
+        else:
+            from google.oauth2.service_account import Credentials
+            creds = Credentials.from_service_account_file(
+                "hi-amy-service-account.json",
+                scopes=["https://www.googleapis.com/auth/drive.readonly"]
+            )
+
+        svc = build("drive", "v3", credentials=creds, cache_discovery=False)
+        files = svc.files().list(
+            q=f"'{folder_id}' in parents and trashed=false",
+            fields="files(id, name, mimeType)",
+            pageSize=200,
+        ).execute().get("files", [])
+
+        GDOC_EXPORT = {"application/vnd.google-apps.document": "text/plain"}
+        added = skipped = failed = 0
+
+        for f in files:
+            if f["mimeType"] == "application/vnd.google-apps.folder":
+                continue
+            if mark_already_processed(f["id"]):
+                skipped += 1
+                continue
+            try:
+                if f["mimeType"] in GDOC_EXPORT:
+                    req2 = svc.files().export_media(fileId=f["id"], mimeType="text/plain")
+                else:
+                    req2 = svc.files().get_media(fileId=f["id"])
+                buf = io.BytesIO()
+                dl = MediaIoBaseDownload(buf, req2)
+                done = False
+                while not done:
+                    _, done = dl.next_chunk()
+                content = buf.getvalue().replace(b'\x00', b'').decode("utf-8", errors="ignore").strip()
+                if content:
+                    store_mark_chunks(f["name"], f["id"], content)
+                    added += 1
+            except Exception as e:
+                print(f"[mark/sync] failed {f['name']}: {e}")
+                failed += 1
+
+        return {"added": added, "skipped": skipped, "failed": failed}
+    except Exception as e:
+        print(f"[mark/sync error] {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/mark/chat", response_model=ChatResponse)

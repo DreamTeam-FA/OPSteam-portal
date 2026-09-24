@@ -1544,6 +1544,7 @@ input.focus();
 setInterval(() => fetch('/healthz').catch(()=>{}), 8 * 60 * 1000);
 
 // ── Panel Switching ───────────────────────────────────────────────────────────
+let _markSynced = false;
 function switchPanel(name) {
   ['amy','mark'].forEach(p => {
     document.getElementById(p+'-panel').classList.toggle('active', p === name);
@@ -1551,6 +1552,10 @@ function switchPanel(name) {
     if (navEl) navEl.classList.toggle('active', p === name);
   });
   try { localStorage.setItem('ops-panel', name); } catch {}
+  if (name === 'mark' && !_markSynced) {
+    _markSynced = true;
+    fetch('/mark/sync', { method: 'POST' }).catch(() => {});
+  }
 }
 
 // Restore last panel on load
