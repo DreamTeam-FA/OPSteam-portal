@@ -330,7 +330,7 @@ async def chat(req: ChatRequest):
         if len(context) > MAX_CONTEXT_CHARS:
             context = context[:MAX_CONTEXT_CHARS] + "\n[context truncated]"
         system = AMY_SYSTEM_PROMPT.format(context=context)
-        resp   = generate(system, req.message, max_tokens=1800, message_for_routing=req.message, history=req.history or [])
+        resp   = generate(system, req.message, max_tokens=8192, message_for_routing=req.message, history=req.history or [])
         return ChatResponse(response=resp, sources=unique_sources)
     except Exception as e:
         print(f"[chat error] {e}")
@@ -527,7 +527,7 @@ async def mark_chat(req: ChatRequest):
         if len(context) > MAX_CONTEXT_CHARS:
             context = context[:MAX_CONTEXT_CHARS] + "\n[context truncated]"
         system = MARK_SYSTEM_PROMPT.format(context=context)
-        resp = generate(system, req.message, max_tokens=1800, message_for_routing=req.message, history=req.history or [])
+        resp = generate(system, req.message, max_tokens=8192, message_for_routing=req.message, history=req.history or [])
         return ChatResponse(response=resp, sources=[])
     except Exception as e:
         print(f"[mark/chat error] {e}")
