@@ -638,37 +638,49 @@ html[data-theme="dark"] body::before {
 
 /* ── Mark Panel ─────────────────────────────────────────────────────────────── */
 :root {
-  --amber: #D97706;
-  --amber-dim: rgba(217,119,6,0.12);
+  --mark:     #1D6FA4;
+  --mark-dim: rgba(29,111,164,0.13);
 }
-html[data-theme="dark"] { --amber: #F59E0B; --amber-dim: rgba(245,158,11,0.15); }
+html[data-theme="dark"] { --mark: #4A9FD4; --mark-dim: rgba(74,159,212,0.15); }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --amber: #F59E0B; --amber-dim: rgba(245,158,11,0.15); }
+  :root:not([data-theme="light"]) { --mark: #4A9FD4; --mark-dim: rgba(74,159,212,0.15); }
 }
 
 .panel { display: none; flex-direction: column; flex: 1; overflow: hidden; }
 .panel.active { display: flex; }
 
-.mark-avatar-icon {
+.mark-avatar-img {
   width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0;
-  background: linear-gradient(135deg, #92400E, #D97706, #F59E0B);
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
-  font-size: 22px; color: #fff; letter-spacing: 0;
-  box-shadow: 0 0 0 2px rgba(217,119,6,0.4), 0 0 14px rgba(217,119,6,0.3);
-  flex-shrink: 0;
+  object-fit: cover; object-position: center 18%;
+  box-shadow: 0 0 0 2px rgba(29,111,164,0.5), 0 0 14px rgba(29,111,164,0.35);
 }
-.mark-welcome-icon {
+.mark-welcome-wrap {
   width: 120px; height: 120px; border-radius: 50%;
-  background: linear-gradient(135deg, #92400E, #D97706, #F59E0B);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 58px; color: #fff;
-  animation: markGlow 3.5s ease-in-out infinite;
-  box-shadow: 0 0 0 1px rgba(217,119,6,0.4), 0 0 36px rgba(217,119,6,0.22), 0 0 80px rgba(217,119,6,0.45);
+  overflow: hidden; flex-shrink: 0;
+  animation: markGlow 3.5s ease-in-out infinite, markMove 16s ease-in-out infinite;
+  box-shadow: 0 0 0 1px rgba(29,111,164,0.4), 0 0 36px rgba(29,111,164,0.22), 0 0 80px rgba(29,111,164,0.45);
+}
+.mark-welcome-wrap img {
+  width: 100%; height: 100%; display: block;
+  object-fit: cover; object-position: center 18%;
+  transform: scale(1.08);
 }
 @keyframes markGlow {
-  0%,100% { box-shadow: 0 0 0 1px rgba(217,119,6,0.35), 0 0 36px rgba(217,119,6,0.18), 0 0 80px rgba(217,119,6,0.35); }
-  50%      { box-shadow: 0 0 0 1px rgba(217,119,6,0.6),  0 0 52px rgba(217,119,6,0.38), 0 0 110px rgba(217,119,6,0.55); }
+  0%,100% { box-shadow: 0 0 0 1px rgba(29,111,164,0.35), 0 0 36px rgba(29,111,164,0.18), 0 0 80px rgba(29,111,164,0.35); }
+  50%      { box-shadow: 0 0 0 1px rgba(29,111,164,0.6),  0 0 52px rgba(29,111,164,0.38), 0 0 110px rgba(29,111,164,0.55); }
+}
+@keyframes markMove {
+  0%,  30%  { transform: none; }
+  34%  { transform: rotate(-8deg); }
+  38%  { transform: rotate(8deg); }
+  42%  { transform: rotate(-4deg); }
+  46%  { transform: none; }
+  46%,  58% { transform: none; }
+  62%  { transform: scale(1.07) translateY(-6px); }
+  65%  { transform: none; }
+  67%  { transform: scale(1.04) translateY(-3px); }
+  69%  { transform: none; }
+  69%, 100%  { transform: none; }
 }
 
 #mark-welcome {
@@ -686,10 +698,10 @@ html[data-theme="dark"] { --amber: #F59E0B; --amber-dim: rgba(245,158,11,0.15); 
 
 .mark-hint {
   background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  border: 1.5px solid var(--amber-dim); border-radius: 12px;
-  padding: 13px 22px; font-size: 14px; color: var(--amber); font-weight: 500;
+  border: 1.5px solid var(--mark-dim); border-radius: 12px;
+  padding: 13px 22px; font-size: 14px; color: var(--mark); font-weight: 500;
   display: flex; align-items: center; gap: 8px;
-  box-shadow: 0 2px 12px var(--amber-dim);
+  box-shadow: 0 2px 12px var(--mark-dim);
 }
 .mark-attrib {
   font-size: 11px; color: var(--ink3); max-width: 360px;
@@ -980,11 +992,11 @@ html[data-theme="dark"] { --amber: #F59E0B; --amber-dim: rgba(245,158,11,0.15); 
 
   <!-- Mark header bar -->
   <div class="ops-header">
-    <div class="mark-avatar-icon">M</div>
+    <img src="/avatar-mark.webp" class="mark-avatar-img" alt="Mark">
     <div>
       <div class="header-name">It's Me, Mark.</div>
       <div class="header-status">
-        <span class="status-dot" style="background:#F59E0B;box-shadow:0 0 6px rgba(245,158,11,0.75)"></span>
+        <span class="status-dot" style="background:#4A9FD4;box-shadow:0 0 6px rgba(29,111,164,0.75)"></span>
         Category of One · Mark Timm
       </div>
     </div>
@@ -992,8 +1004,10 @@ html[data-theme="dark"] { --amber: #F59E0B; --amber-dim: rgba(245,158,11,0.15); 
 
   <!-- Mark Welcome Screen -->
   <div id="mark-welcome">
-    <div class="mark-welcome-icon">M</div>
-    <div class="welcome-title" style="color:var(--amber)">It's Me, Mark.</div>
+    <div class="mark-welcome-wrap">
+      <img src="/avatar-mark.webp" alt="Mark">
+    </div>
+    <div class="welcome-title" style="color:var(--mark)">It's Me, Mark.</div>
     <div class="welcome-sub">An AI trained on Mark Timm's own words, frameworks, and voice. Ask anything — about his story, his content philosophy, or how he thinks about business and life.</div>
     <div class="mark-hint">
       💬 Ask me anything to get started
@@ -1550,7 +1564,7 @@ try {
   let markHistory = [];
   let markActivated = false;
 
-  const MARK_ICON = `<div class="mark-avatar-icon" style="width:36px;height:36px;font-size:16px;flex-shrink:0">M</div>`;
+  const MARK_ICON = `<img src="/avatar-mark.webp" class="msg-avatar" alt="Mark" style="object-position:center 18%">`;
 
   function markActivate() {
     markActivated = true;
