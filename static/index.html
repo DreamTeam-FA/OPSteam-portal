@@ -183,6 +183,13 @@ html[data-theme="dark"] body::before {
 #nav-mark.active::before { background: #1D6FA4; }
 #nav-mark:hover { color: #1D6FA4; background: rgba(29,111,164,0.1); }
 .side-icon { font-size: 15px; flex-shrink: 0; line-height: 1; }
+.nav-badge{width:28px;height:28px;border-radius:6px;background:linear-gradient(145deg,#3D27C9,#4C35A8);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;gap:2px;box-shadow:0 2px 8px rgba(61,39,201,0.4);font-size:0;}
+.nb-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:9px;color:#fff;letter-spacing:.01em;line-height:1;}
+.nb-d{display:flex;gap:2px;}
+.nb-d i{width:3.5px;height:3.5px;border-radius:50%;font-style:normal;display:block;}
+.nb-d i:nth-child(1){background:#FF5B8A;}
+.nb-d i:nth-child(2){background:#FFB940;}
+.nb-d i:nth-child(3){background:#00D4AA;}
 .side-nav.collapsed .side-link { justify-content: center; padding: 10px; gap: 0; }
 .side-nav.collapsed .side-link-text { display: none; }
 .side-link-credit { display: block; font-size: 10px; font-weight: 400; font-style: italic; opacity: 0.65; letter-spacing: 0.02em; margin-top: 1px; line-height: 1.2; }
@@ -873,7 +880,7 @@ html[data-theme="dark"] { --mark: #4A9FD4; --mark-dim: rgba(74,159,212,0.15); }
   <div class="nav-section">Tools</div>
   <div class="side-links">
     <a href="/" class="side-link active" id="nav-amy" onclick="switchPanel('amy');return false;">
-      <span class="side-icon">💬</span>
+      <div class="side-icon nav-badge"><span class="nb-t">AMY</span><div class="nb-d"><i></i><i></i><i></i></div></div>
       <span class="side-link-text">Hi, Amy!</span>
     </a>
   </div>
@@ -890,7 +897,7 @@ html[data-theme="dark"] { --mark: #4A9FD4; --mark-dim: rgba(74,159,212,0.15); }
   </div>
   <div class="side-links">
     <a href="#" class="side-link" id="nav-mark" onclick="switchPanel('mark');return false;">
-      <span class="side-icon">🎯</span>
+      <div class="side-icon nav-badge"><span class="nb-t">MRK</span><div class="nb-d"><i></i><i></i><i></i></div></div>
       <span class="side-link-text">It's Me, Mark<span class="side-link-credit">Ryan Levesque · Donald Miller et al.</span></span>
     </a>
   </div>
@@ -907,11 +914,11 @@ html[data-theme="dark"] { --mark: #4A9FD4; --mark-dim: rgba(74,159,212,0.15); }
   </div>
   <div class="side-links">
     <a href="/content-week.html" class="side-link">
-      <span class="side-icon">📅</span>
+      <div class="side-icon nav-badge"><span class="nb-t">CW</span><div class="nb-d"><i></i><i></i><i></i></div></div>
       <span class="side-link-text">Content Week</span>
     </a>
     <a href="/watermark-clean.html" class="side-link">
-      <span class="side-icon">🧹</span>
+      <div class="side-icon nav-badge"><span class="nb-t">WMC</span><div class="nb-d"><i></i><i></i><i></i></div></div>
       <span class="side-link-text">Watermark Cleaner</span>
     </a>
   </div>
@@ -919,11 +926,11 @@ html[data-theme="dark"] { --mark: #4A9FD4; --mark-dim: rgba(74,159,212,0.15); }
   <div class="nav-section">Library</div>
   <div class="side-links">
     <a href="/library.html" class="side-link">
-      <span class="side-icon">📚</span>
+      <div class="side-icon nav-badge"><span class="nb-t">LIB</span><div class="nb-d"><i></i><i></i><i></i></div></div>
       <span class="side-link-text">AI Library</span>
     </a>
     <a href="/dca-course.html" class="side-link">
-      <span class="side-icon">🎓</span>
+      <div class="side-icon nav-badge"><span class="nb-t">DCA</span><div class="nb-d"><i></i><i></i><i></i></div></div>
       <span class="side-link-text">Digital Course Academy<span class="side-link-credit">by Amy Porterfield</span></span>
     </a>
   </div>
@@ -949,13 +956,15 @@ html[data-theme="dark"] { --mark: #4A9FD4; --mark-dim: rgba(74,159,212,0.15); }
       Course Assistant · Amy Porterfield
     </div>
   </div>
-  <button id="new-chat-header-btn" onclick="startNewChat()" title="New chat" style="display:none;align-items:center;gap:6px;padding:7px 13px;border-radius:10px;background:var(--glass-hi);border:1px solid var(--border);color:var(--ink2);cursor:pointer;font-size:12px;font-weight:600;transition:background .14s">
-    ✏️ New Chat
-  </button>
-  <button id="export-btn" class="export-btn" onclick="exportAdvice()" title="Export Amy's advice as a summary" style="display:none">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-    Export Advice
-  </button>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+    <button id="new-chat-header-btn" onclick="startNewChat()" title="New chat" style="display:none;align-items:center;gap:6px;padding:7px 13px;border-radius:10px;background:var(--glass-hi);border:1px solid var(--border);color:var(--ink2);cursor:pointer;font-size:12px;font-weight:600;font-family:'Inter',sans-serif;transition:background .14s">
+      ✏️ New Chat
+    </button>
+    <button id="export-btn" onclick="exportAdvice()" title="Export Amy's advice" style="display:none;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;background:#4C35A8;border:none;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .14s">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export
+    </button>
+  </div>
 </div>
 
 <!-- ── Export Summary Modal ── -->
@@ -1071,13 +1080,15 @@ html[data-theme="dark"] { --mark: #4A9FD4; --mark-dim: rgba(74,159,212,0.15); }
         <span id="mark-sync-dot" style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#4A9FD4;margin-left:6px;opacity:0;transition:opacity 0.4s ease;vertical-align:middle;" title="Knowledge synced"></span>
       </div>
     </div>
-    <button id="mark-new-chat-btn" onclick="startNewMarkChat()" title="New chat" style="display:none;margin-left:auto;align-items:center;gap:6px;padding:7px 13px;border-radius:10px;background:var(--glass-hi);border:1px solid var(--border);color:var(--ink2);cursor:pointer;font-size:12px;font-weight:600;transition:background .14s">
-      ✏️ New Chat
-    </button>
-    <button id="mark-export-btn" class="export-btn" onclick="markExportAdvice()" title="Export Mark's advice as a summary" style="display:none">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Export
-    </button>
+    <div id="mark-header-actions" style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+      <button id="mark-new-chat-btn" onclick="startNewMarkChat()" title="New chat" style="display:none;align-items:center;gap:6px;padding:7px 13px;border-radius:9px;background:var(--glass-hi);border:1px solid var(--border);color:var(--ink2);cursor:pointer;font-size:12px;font-weight:600;font-family:'Inter',sans-serif;transition:background .14s">
+        ✏️ New Chat
+      </button>
+      <button id="mark-export-btn" onclick="markExportAdvice()" title="Export Mark's advice" style="display:none;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;background:#4C35A8;border:none;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .14s">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export
+      </button>
+    </div>
   </div>
 
   <!-- Mark Welcome Screen -->

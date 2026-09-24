@@ -142,6 +142,13 @@ body {
   width: 3px; border-radius: 0 3px 3px 0; background: var(--purple);
 }
 .side-icon { font-size: 15px; flex-shrink: 0; line-height: 1; }
+.nav-badge{width:28px;height:28px;border-radius:6px;background:linear-gradient(145deg,#3D27C9,#4C35A8);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;gap:2px;box-shadow:0 2px 8px rgba(61,39,201,0.4);font-size:0;}
+.nb-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:9px;color:#fff;letter-spacing:.01em;line-height:1;}
+.nb-d{display:flex;gap:2px;}
+.nb-d i{width:3.5px;height:3.5px;border-radius:50%;font-style:normal;display:block;}
+.nb-d i:nth-child(1){background:#FF5B8A;}
+.nb-d i:nth-child(2){background:#FFB940;}
+.nb-d i:nth-child(3){background:#00D4AA;}
 .side-nav.collapsed .side-link { justify-content: center; padding: 10px; gap: 0; }
 .side-nav.collapsed .side-link-text { display: none; }
 .side-link-credit { display: block; font-size: 10px; font-weight: 400; font-style: italic; opacity: 0.65; letter-spacing: 0.02em; margin-top: 1px; line-height: 1.2; }
@@ -633,19 +640,19 @@ textarea::placeholder { color: var(--ink3); }
   <div class="nav-section">Tools</div>
   <div class="side-links">
     <a href="/" class="side-link">
-      <span class="side-icon">💬</span>
+      <div class="side-icon nav-badge"><span class="nb-t">AMY</span><div class="nb-d"><i></i><i></i><i></i></div></div>
       <span class="side-link-text">Hi, Amy!</span>
     </a>
     <a href="/" class="side-link" onclick="try{localStorage.setItem('ops-panel','mark')}catch(e){}">
-      <span class="side-icon">🎯</span>
+      <div class="side-icon nav-badge"><span class="nb-t">MRK</span><div class="nb-d"><i></i><i></i><i></i></div></div>
       <span class="side-link-text">It's Me, Mark<span class="side-link-credit">Ryan Levesque · Donald Miller et al.</span></span>
     </a>
     <a href="/content-week.html" class="side-link">
-      <span class="side-icon">📅</span>
+      <div class="side-icon nav-badge"><span class="nb-t">CW</span><div class="nb-d"><i></i><i></i><i></i></div></div>
       <span class="side-link-text">Content Week</span>
     </a>
     <a href="/watermark-clean.html" class="side-link active">
-      <span class="side-icon">🧹</span>
+      <div class="side-icon nav-badge"><span class="nb-t">WMC</span><div class="nb-d"><i></i><i></i><i></i></div></div>
       <span class="side-link-text">Watermark Cleaner</span>
     </a>
   </div>
@@ -653,11 +660,11 @@ textarea::placeholder { color: var(--ink3); }
   <div class="nav-section">Library</div>
   <div class="side-links">
     <a href="/library.html" class="side-link">
-      <span class="side-icon">📚</span>
+      <div class="side-icon nav-badge"><span class="nb-t">LIB</span><div class="nb-d"><i></i><i></i><i></i></div></div>
       <span class="side-link-text">AI Library</span>
     </a>
     <a href="/dca-course.html" class="side-link">
-      <span class="side-icon">🎓</span>
+      <div class="side-icon nav-badge"><span class="nb-t">DCA</span><div class="nb-d"><i></i><i></i><i></i></div></div>
       <span class="side-link-text">Digital Course Academy<span class="side-link-credit">by Amy Porterfield</span></span>
     </a>
   </div>
