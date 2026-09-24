@@ -296,6 +296,19 @@ html[data-theme="dark"] body::before {
 .export-btn:hover { background: var(--purple-dim); border-color: var(--purple); color: var(--purple); }
 /* Export summary body styles */
 .export-section { margin-bottom: 22px; }
+/* Table rendering inside export body */
+#export-body table, #mark-export-body table {
+  width:100%; border-collapse:collapse; margin:8px 0; font-size:13px; overflow-x:auto; display:block;
+}
+#export-body thead, #mark-export-body thead { background:rgba(76,53,168,0.1); }
+#export-body th, #mark-export-body th {
+  text-align:left; padding:7px 10px; font-weight:600;
+  border-bottom:2px solid rgba(76,53,168,0.2); white-space:nowrap;
+}
+#export-body td, #mark-export-body td {
+  padding:7px 10px; border-bottom:1px solid var(--border); vertical-align:top; line-height:1.55;
+}
+#export-body tr:last-child td, #mark-export-body tr:last-child td { border-bottom:none; }
 .export-section-title {
   font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 800;
   letter-spacing: .09em; text-transform: uppercase; color: var(--ink3);
@@ -1463,9 +1476,9 @@ function renderSummary(md) {
     html += `<div class="export-section">`;
     html += `<div class="export-section-title">${escHtmlIdx(titleLine)}</div>`;
     if (isQuickWin) {
-      html += `<div class="export-quickwin">${renderSummaryBody(body)}</div>`;
+      html += `<div class="export-quickwin">${renderMarkdown(body)}</div>`;
     } else {
-      html += renderSummaryBody(body);
+      html += renderMarkdown(body);
     }
     html += `</div>`;
   }

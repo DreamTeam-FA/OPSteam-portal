@@ -206,7 +206,8 @@ RULES:
 - Write in second person ("you should...", "your next step...")
 - Be specific — use exact names, numbers, steps from the conversation
 - This is a polished document someone would save and refer back to
-- Do NOT include any meta-commentary about the conversation itself"""
+- Do NOT include any meta-commentary about the conversation itself
+- If Amy's response included a table (rows and columns of data), reproduce it as a markdown table in the relevant section — do NOT drop or summarize away tabular data"""
 
 class ContentWeekRequest(BaseModel):
     system_prompt: str
