@@ -891,6 +891,7 @@ html[data-theme="dark"] { --mark: #4A9FD4; --mark-dim: rgba(74,159,212,0.15); }
       <span class="rct-actions">
         <span class="rct-chevron" id="rct-chevron">▾</span>
         <span onclick="event.stopPropagation();startNewChat()" class="rct-new" title="New chat">✏️</span>
+        <span onclick="event.stopPropagation();toggleAmyEditMode()" class="rct-new" id="amy-edit-btn" title="Delete chats">🗑</span>
       </span>
     </button>
     <div id="chat-hist-list" class="chat-hist-list"></div>
@@ -908,6 +909,7 @@ html[data-theme="dark"] { --mark: #4A9FD4; --mark-dim: rgba(74,159,212,0.15); }
       <span class="rct-actions">
         <span class="rct-chevron" id="mark-rct-chevron">▾</span>
         <span onclick="event.stopPropagation();startNewMarkChat()" class="rct-new" title="New chat">✏️</span>
+        <span onclick="event.stopPropagation();toggleMarkEditMode()" class="rct-new" id="mark-edit-btn" title="Delete chats">🗑</span>
       </span>
     </button>
     <div id="mark-chat-hist-list" class="chat-hist-list"></div>
@@ -1181,15 +1183,48 @@ function toggleRecentChats() {
   try { localStorage.setItem('hi-amy-hist-open', open ? '0' : '1'); } catch {}
 }
 
+let amyEditMode = false;
+function toggleAmyEditMode() {
+  amyEditMode = !amyEditMode;
+  const btn = document.getElementById('amy-edit-btn');
+  if (btn) btn.style.background = amyEditMode ? 'rgba(239,68,68,0.15)' : '';
+  if (amyEditMode) {
+    document.getElementById('chat-hist-list').classList.remove('collapsed');
+    document.getElementById('rct-chevron').classList.remove('collapsed');
+  }
+  renderHistoryList();
+}
+function deleteAmySession(id) {
+  try {
+    let sessions = getSessions();
+    sessions = sessions.filter(s => s.id !== id);
+    localStorage.setItem(HIST_KEY, JSON.stringify(sessions));
+    if (currentSessionId === id) currentSessionId = null;
+  } catch(e) {}
+  renderHistoryList();
+}
 function renderHistoryList() {
   const list = document.getElementById('chat-hist-list');
   if (!list) return;
   const sessions = getSessions();
-  if (!sessions.length) { list.innerHTML = '<div style="font-size:11px;color:var(--ink3);padding:6px 14px">No past chats yet</div>'; return; }
+  if (!sessions.length) {
+    amyEditMode = false;
+    const btn = document.getElementById('amy-edit-btn');
+    if (btn) btn.style.background = '';
+    list.innerHTML = '<div style="font-size:11px;color:var(--ink3);padding:6px 14px">No past chats yet</div>';
+    return;
+  }
   list.innerHTML = sessions.map(s => {
     const d = new Date(s.date);
     const dateStr = d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
     const active  = s.id === currentSessionId ? ' active' : '';
+    if (amyEditMode) {
+      return `<div class="chat-hist-item" style="display:flex;align-items:center;gap:6px;padding:5px 10px 5px 12px;">
+        <span class="chi-title" style="flex:1">${escHtmlIdx(s.title)}</span>
+        <span class="chi-date" style="flex-shrink:0">${dateStr}</span>
+        <button onclick="deleteAmySession('${s.id}')" style="flex-shrink:0;background:none;border:none;cursor:pointer;color:#ef4444;font-size:15px;line-height:1;padding:2px 4px;border-radius:4px;" title="Delete">✕</button>
+      </div>`;
+    }
     return `<button class="chat-hist-item${active}" onclick="loadSession('${s.id}')">
       <span class="chi-title">${escHtmlIdx(s.title)}</span>
       <span class="chi-date">${dateStr} · ${s.messages.length} msgs</span>
@@ -1669,15 +1704,48 @@ function toggleMarkRecentChats() {
   chevron.classList.toggle('collapsed', open);
   try { localStorage.setItem('mark-hist-open', open ? '0' : '1'); } catch {}
 }
+let markEditMode = false;
+function toggleMarkEditMode() {
+  markEditMode = !markEditMode;
+  const btn = document.getElementById('mark-edit-btn');
+  if (btn) btn.style.background = markEditMode ? 'rgba(239,68,68,0.15)' : '';
+  if (markEditMode) {
+    document.getElementById('mark-chat-hist-list').classList.remove('collapsed');
+    document.getElementById('mark-rct-chevron').classList.remove('collapsed');
+  }
+  renderMarkHistoryList();
+}
+function deleteMarkSession(id) {
+  try {
+    let sessions = getMarkSessions();
+    sessions = sessions.filter(s => s.id !== id);
+    localStorage.setItem(MARK_HIST_KEY, JSON.stringify(sessions));
+    if (markCurrentSessionId === id) markCurrentSessionId = null;
+  } catch(e) {}
+  renderMarkHistoryList();
+}
 function renderMarkHistoryList() {
   const list = document.getElementById('mark-chat-hist-list');
   if (!list) return;
   const sessions = getMarkSessions();
-  if (!sessions.length) { list.innerHTML = '<div style="font-size:11px;color:var(--ink3);padding:6px 14px">No past chats yet</div>'; return; }
+  if (!sessions.length) {
+    markEditMode = false;
+    const btn = document.getElementById('mark-edit-btn');
+    if (btn) btn.style.background = '';
+    list.innerHTML = '<div style="font-size:11px;color:var(--ink3);padding:6px 14px">No past chats yet</div>';
+    return;
+  }
   list.innerHTML = sessions.map(s => {
     const d = new Date(s.date);
     const dateStr = d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
     const active  = s.id === markCurrentSessionId ? ' active' : '';
+    if (markEditMode) {
+      return `<div class="chat-hist-item" style="display:flex;align-items:center;gap:6px;padding:5px 10px 5px 12px;">
+        <span class="chi-title" style="flex:1">${escHtmlIdx(s.title)}</span>
+        <span class="chi-date" style="flex-shrink:0">${dateStr}</span>
+        <button onclick="deleteMarkSession('${s.id}')" style="flex-shrink:0;background:none;border:none;cursor:pointer;color:#ef4444;font-size:15px;line-height:1;padding:2px 4px;border-radius:4px;" title="Delete">✕</button>
+      </div>`;
+    }
     return `<button class="chat-hist-item${active}" onclick="loadMarkSession('${s.id}')">
       <span class="chi-title">${escHtmlIdx(s.title)}</span>
       <span class="chi-date">${dateStr} · ${s.messages.length} msgs</span>
