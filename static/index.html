@@ -169,6 +169,13 @@ html[data-theme="dark"] body::before {
   content: ''; position: absolute; left: 0; top: 25%; bottom: 25%;
   width: 3px; border-radius: 0 3px 3px 0; background: var(--purple);
 }
+/* Per-panel active identity colors */
+#nav-amy.active { color: #B45309; background: rgba(245,158,11,0.12); }
+#nav-amy.active::before { background: #F59E0B; }
+#nav-amy:hover { color: #B45309; background: rgba(245,158,11,0.12); }
+#nav-mark.active { color: #1D6FA4; background: rgba(29,111,164,0.1); }
+#nav-mark.active::before { background: #1D6FA4; }
+#nav-mark:hover { color: #1D6FA4; background: rgba(29,111,164,0.1); }
 .side-icon { font-size: 15px; flex-shrink: 0; line-height: 1; }
 .side-nav.collapsed .side-link { justify-content: center; padding: 10px; gap: 0; }
 .side-nav.collapsed .side-link-text { display: none; }
@@ -863,12 +870,25 @@ html[data-theme="dark"] { --mark: #4A9FD4; --mark-dim: rgba(74,159,212,0.15); }
       <span class="side-icon">💬</span>
       <span class="side-link-text">Hi, Amy!</span>
     </a>
+  </div>
+  <!-- Amy's Chats — lives directly under Amy nav link -->
+  <div class="recent-chats-wrap" id="recent-chats-wrap">
+    <button class="recent-chats-toggle" id="recent-chats-toggle" onclick="toggleRecentChats()">
+      <span class="rct-label">Amy's Chats</span>
+      <span class="rct-actions">
+        <span class="rct-chevron" id="rct-chevron">▾</span>
+        <span onclick="event.stopPropagation();startNewChat()" class="rct-new" title="New chat">✏️</span>
+      </span>
+    </button>
+    <div id="chat-hist-list" class="chat-hist-list"></div>
+  </div>
+  <div class="side-links">
     <a href="#" class="side-link" id="nav-mark" onclick="switchPanel('mark');return false;">
       <span class="side-icon">🎯</span>
       <span class="side-link-text">It's Me, Mark<span class="side-link-credit">Ryan Levesque · Donald Miller et al.</span></span>
     </a>
   </div>
-  <!-- Mark Recent Chats -->
+  <!-- Mark's Chats — lives directly under Mark nav link -->
   <div class="recent-chats-wrap" id="mark-recent-chats-wrap">
     <button class="recent-chats-toggle" id="mark-recent-chats-toggle" onclick="toggleMarkRecentChats()">
       <span class="rct-label">Mark's Chats</span>
@@ -878,17 +898,6 @@ html[data-theme="dark"] { --mark: #4A9FD4; --mark-dim: rgba(74,159,212,0.15); }
       </span>
     </button>
     <div id="mark-chat-hist-list" class="chat-hist-list"></div>
-  </div>
-  <!-- Recent Chats — collapsible, lives under Hi Amy -->
-  <div class="recent-chats-wrap" id="recent-chats-wrap">
-    <button class="recent-chats-toggle" id="recent-chats-toggle" onclick="toggleRecentChats()">
-      <span class="rct-label">Recent Chats</span>
-      <span class="rct-actions">
-        <span class="rct-chevron" id="rct-chevron">▾</span>
-        <span onclick="event.stopPropagation();startNewChat()" class="rct-new" title="New chat">✏️</span>
-      </span>
-    </button>
-    <div id="chat-hist-list" class="chat-hist-list"></div>
   </div>
   <div class="side-links">
     <a href="/content-week.html" class="side-link">
