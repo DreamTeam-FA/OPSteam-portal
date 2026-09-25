@@ -1440,7 +1440,6 @@ function startNewChat() {
 }
 
 function initHistory() {
-  // Restore collapsed state (default: open)
   try {
     if (localStorage.getItem('hi-amy-hist-open') === '0') {
       document.getElementById('chat-hist-list').classList.add('collapsed');
@@ -1448,22 +1447,6 @@ function initHistory() {
     }
   } catch {}
   currentSessionId = genId();
-  // Restore last session on load
-  const sessions = getSessions();
-  if (sessions.length > 0) {
-    const last = sessions[0];
-    if (last.messages && last.messages.length > 0) {
-      currentSessionId = last.id;
-      activate();
-      last.messages.forEach(m => {
-        chatHistory.push({ role: m.role, text: m.text });
-        appendMessageDOM(m.role, m.text, []);
-      });
-      messages.scrollTop = messages.scrollHeight;
-      document.getElementById('export-btn').style.display = chatHistory.some(m => m.role === 'amy') ? 'flex' : 'none';
-      document.getElementById('new-chat-header-btn').style.display = 'flex';
-    }
-  }
   renderHistoryList();
 }
 
@@ -1997,31 +1980,6 @@ function initMarkHistory() {
       document.getElementById('mark-rct-chevron').classList.add('collapsed');
     }
   } catch {}
-  const sessions = getMarkSessions();
-  if (sessions.length > 0) {
-    const last = sessions[0];
-    if (last.messages && last.messages.length > 0) {
-      markCurrentSessionId = last.id;
-      const markMessages = document.getElementById('mark-messages');
-      const markWelcome  = document.getElementById('mark-welcome');
-      markWelcome.style.display = 'none';
-      markMessages.style.display = 'flex';
-      markMessages.style.flexDirection = 'column';
-      const MARK_ICON = `<img src="/avatar-mark.webp" class="msg-avatar" alt="Mark" style="object-position:center 18%">`;
-      last.messages.forEach(m => {
-        markHistory.push({ role: m.role, text: m.text });
-        const div = document.createElement('div');
-        div.className = 'msg' + (m.role === 'user' ? ' user' : '');
-        div.innerHTML = m.role === 'user'
-          ? `<div class="bubble">${escHtmlIdx(m.text)}</div>`
-          : `${MARK_ICON}<div class="bubble">${escHtmlIdx(m.text)}</div>`;
-        markMessages.appendChild(div);
-      });
-      markMessages.scrollTop = markMessages.scrollHeight;
-      document.getElementById('mark-export-btn').style.display = markHistory.some(m => m.role === 'mark') ? 'flex' : 'none';
-      document.getElementById('mark-new-chat-btn').style.display = 'flex';
-    }
-  }
   renderMarkHistoryList();
 }
 initMarkHistory();
