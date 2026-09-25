@@ -951,6 +951,7 @@ html[data-theme="dark"] { --mark: #4A9FD4; --mark-dim: rgba(74,159,212,0.15); }
   </div>
   <div style="flex:1"></div>
   <div class="side-bottom">
+    <button onclick="openAbout()" aria-label="About this portal" style="background:none;border:none;cursor:pointer;color:var(--ink3);font-size:11px;font-weight:600;letter-spacing:.05em;padding:6px 8px;border-radius:8px;transition:background .13s,color .13s;" onmouseover="this.style.background='var(--glass-hi)';this.style.color='var(--ink2)'" onmouseout="this.style.background='none';this.style.color='var(--ink3)'">About</button>
     <button class="theme-btn" id="theme-btn" aria-label="Toggle theme">🌙</button>
   </div>
 </aside>
@@ -1078,6 +1079,67 @@ html[data-theme="dark"] { --mark: #4A9FD4; --mark-dim: rgba(74,159,212,0.15); }
       <button onclick="markCloseExport()" style="padding:7px 10px;border-radius:9px;background:var(--glass-hi);border:1px solid var(--border);color:var(--ink2);cursor:pointer;font-size:15px">✕</button>
     </div>
     <div id="mark-export-body" style="flex:1;overflow-y:auto;padding:24px 28px;"></div>
+  </div>
+</div>
+
+<!-- ── About Modal ── -->
+<div id="about-overlay" onclick="if(event.target===this)closeAbout()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:var(--bg2);border:1px solid var(--border-hi);border-radius:18px;width:min(680px,100%);max-height:88vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(76,53,168,0.3);overflow:hidden;">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;gap:12px;padding:20px 24px 16px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,var(--glass-hi),var(--glass));flex-shrink:0">
+      <div style="flex:1">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:22px;letter-spacing:.03em">OPSteam Portal</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:2px;letter-spacing:.04em;text-transform:uppercase">About this tool</div>
+      </div>
+      <button onclick="closeAbout()" style="padding:7px 10px;border-radius:9px;background:var(--glass-hi);border:1px solid var(--border);color:var(--ink2);cursor:pointer;font-size:15px">✕</button>
+    </div>
+    <!-- Body -->
+    <div style="flex:1;overflow-y:auto;padding:28px 28px 32px;">
+
+      <!-- Amy section -->
+      <div style="margin-bottom:32px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <img src="/avatar-amy.png" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
+          <div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:17px;letter-spacing:.02em">Hi, Amy!</div>
+            <div style="font-size:11px;color:#B45309;font-weight:600;letter-spacing:.04em;text-transform:uppercase">Marketing &amp; Course Creation Assistant</div>
+          </div>
+        </div>
+        <p style="font-size:13.5px;line-height:1.75;color:var(--ink2);margin:0 0 10px;">This assistant serves two powerful purposes:</p>
+        <div style="background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#B45309;margin-bottom:6px;">Day to Day</div>
+          <p style="font-size:13px;line-height:1.7;color:var(--ink2);margin:0;">A marketing and sales assistant trained on world-class frameworks — helping the team with pitches, social content, emails, sales copy, campaigns, product launches, and anything marketing or sales related — all grounded in Amy Porterfield's proven strategies from the Digital Course Academy.</p>
+        </div>
+        <div style="background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#B45309;margin-bottom:6px;">When Needed</div>
+          <p style="font-size:13px;line-height:1.7;color:var(--ink2);margin:0;">A full course creation assistant — ready to help build, launch, price, validate, and market a digital course from scratch using Amy's complete DCA system.</p>
+        </div>
+        <p style="font-size:13px;line-height:1.7;color:var(--ink3);margin:0;">The team can bring <em>any</em> task — improving sales for a product, writing a marketing pitch, planning social media content, drafting an email campaign, building a launch strategy — and Amy will apply her frameworks to get it done. And when the time comes to build an actual digital course, the full DCA system is here — every lesson, every framework, every Q&amp;A session — ready to guide the process from idea to launch.</p>
+      </div>
+
+      <div style="height:1px;background:var(--border);margin-bottom:28px;"></div>
+
+      <!-- Mark section -->
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <img src="/avatar-mark.webp" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
+          <div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:17px;letter-spacing:.02em">It's Me, Mark.</div>
+            <div style="font-size:11px;color:#1D6FA4;font-weight:600;letter-spacing:.04em;text-transform:uppercase">Strategic Business Advisor</div>
+          </div>
+        </div>
+        <p style="font-size:13.5px;line-height:1.75;color:var(--ink2);margin:0 0 10px;">Mark is built from Mark Timm's actual voice, stories, and philosophy — an executive advisor and "secret weapon" behind successful companies, grounded in three proven frameworks:</p>
+        <div style="background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#1D6FA4;margin-bottom:6px;">Day to Day</div>
+          <p style="font-size:13px;line-height:1.7;color:var(--ink2);margin:0;">Strategic counsel grounded in <strong>Category of One</strong> (Ryan Levesque) — making businesses incomparable rather than competitive — <strong>StoryBrand</strong> (Donald Miller) — positioning the customer as the hero — and <strong>The Three Forces</strong> — building newsletters as relationships, not broadcasts.</p>
+        </div>
+        <div style="background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#1D6FA4;margin-bottom:6px;">When Needed</div>
+          <p style="font-size:13px;line-height:1.7;color:var(--ink2);margin:0;">Deep positioning work — newsletters, brand messaging, copy, and framework application — all drawn directly from Mark's actual words, stories, and documented frameworks. Mark speaks only from what's in his knowledge base, never from generic business advice.</p>
+        </div>
+      </div>
+
+    </div>
   </div>
 </div>
 
@@ -1639,6 +1701,13 @@ function markExportAdvice() {
 
 function markCloseExport() {
   document.getElementById('mark-export-overlay').style.display = 'none';
+}
+
+function openAbout() {
+  document.getElementById('about-overlay').style.display = 'flex';
+}
+function closeAbout() {
+  document.getElementById('about-overlay').style.display = 'none';
 }
 
 function markDownloadAdvice(btn) {
