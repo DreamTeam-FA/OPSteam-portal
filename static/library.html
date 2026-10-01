@@ -102,6 +102,37 @@ html[data-theme="dark"] body::before{
 .nav-spacer{flex:1}
 .collapse-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 12px;border-radius:10px;cursor:pointer;color:var(--ink3);font-size:12px;transition:background .15s,color .15s;border:none;background:none;width:100%}
 .collapse-btn:hover{background:var(--glass-hi);color:var(--ink)}
+.nav-brand{display:flex;align-items:center;gap:10px;padding:0 6px 22px;min-width:0}
+.nav-logo-icon{width:36px;height:36px;border-radius:9px;flex-shrink:0;background:linear-gradient(135deg,var(--purple),var(--teal));display:flex;align-items:center;justify-content:center;font-size:18px}
+.nav-brand-info{flex:1;min-width:0;overflow:hidden}
+.nav-brand-name{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:15px;letter-spacing:.04em;color:var(--ink);white-space:nowrap}
+.nav-brand-sub{font-size:10.5px;color:var(--ink2);white-space:nowrap;margin-top:2px}
+.nav-brand-credit{font-size:9px;color:var(--ink3);white-space:nowrap;margin-top:2px}
+.nav-collapse-btn{width:22px;height:22px;flex-shrink:0;background:var(--glass);border:1px solid var(--border);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:11px;transition:background .15s,color .15s;padding:0;margin-left:auto}
+.nav-collapse-btn:hover{background:var(--purple-dim);color:var(--purple)}
+.nav-collapse-btn .ci{display:inline-block;transition:transform 0.26s cubic-bezier(0.4,0,0.2,1)}
+.side-nav.collapsed .nav-collapse-btn .ci{transform:rotate(180deg)}
+.side-nav.collapsed .nav-brand{flex-direction:column;align-items:center;justify-content:center;gap:8px;padding-bottom:12px}
+.side-nav.collapsed .nav-brand-info{display:none}
+.side-nav.collapsed .nav-collapse-btn{margin-left:0}
+.side-links{display:flex;flex-direction:column;gap:2px}
+.side-link{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;cursor:pointer;text-decoration:none;color:var(--ink2);font-size:13px;font-weight:500;transition:background .15s,color .15s;white-space:nowrap;overflow:hidden;position:relative}
+.side-link:hover{color:var(--purple);background:var(--purple-dim)}
+.side-link.active{color:var(--purple);background:var(--purple-dim);font-weight:600}
+.side-link.active::before{content:'';position:absolute;left:0;top:25%;bottom:25%;width:3px;border-radius:0 3px 3px 0;background:var(--purple)}
+.side-icon{font-size:15px;flex-shrink:0;line-height:1}
+.nav-badge{width:28px;height:28px;border-radius:6px;background:linear-gradient(145deg,#3D27C9,#4C35A8);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;gap:2px;box-shadow:0 2px 8px rgba(61,39,201,0.4);font-size:0}
+.nb-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:9px;color:#fff;letter-spacing:.01em;line-height:1}
+.nb-d{display:flex;gap:2px}
+.nb-d i{width:3.5px;height:3.5px;border-radius:50%;font-style:normal;display:block}
+.nb-d i:nth-child(1){background:#FF5B8A}
+.nb-d i:nth-child(2){background:#FFB940}
+.nb-d i:nth-child(3){background:#00D4AA}
+.side-nav.collapsed .side-link{justify-content:center;padding:10px;gap:0}
+.side-nav.collapsed .side-link-text{display:none}
+.side-link-credit{display:block;font-size:10px;font-weight:400;font-style:italic;opacity:0.65;letter-spacing:0.02em;margin-top:1px;line-height:1.2}
+.side-sect-div{height:1px;background:var(--border);margin:10px 4px}
+.side-bottom{padding-top:10px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:3px}
 
 /* ── Main ────────────────────────────────────────────────────────────────── */
 .app-main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
@@ -532,26 +563,54 @@ body.nav-open .nav-backdrop{display:block}
 <div class="nav-backdrop" onclick="closeMobileNav()"></div>
 
 <!-- Side Nav -->
-<nav class="side-nav" id="sideNav">
-  <div class="brand">
-    <div class="brand-icon">⚡</div>
-    <div class="brand-text">
-      <span class="brand-name">OPSteam</span>
-      <span class="brand-sub">Team Portal</span>
+<aside class="side-nav" id="sideNav">
+  <div class="nav-brand">
+    <div class="nav-logo-icon">⚡</div>
+    <div class="nav-brand-info">
+      <div class="nav-brand-name">OPSteam</div>
+      <div class="nav-brand-sub">Team Portal</div>
+      <div class="nav-brand-credit">® Made by Finance Team</div>
     </div>
+    <button class="nav-collapse-btn" onclick="toggleNav()" title="Collapse sidebar">
+      <span class="ci">◀</span>
+    </button>
   </div>
   <div class="nav-section">Tools</div>
-  <a class="nav-item" href="/index.html"><span class="nav-icon">👋</span><span class="nav-label">Hi, Amy!</span></a>
-  <a class="nav-item" href="/" onclick="try{localStorage.setItem('ops-panel','mark')}catch(e){}"><span class="nav-icon">🎯</span><span class="nav-label">It's Me, Mark</span></a>
-  <a class="nav-item" href="/content-week.html"><span class="nav-icon">📅</span><span class="nav-label">Content Week</span></a>
-  <a class="nav-item" href="/watermark-clean.html"><span class="nav-icon">✂️</span><span class="nav-label">Watermark Cleaner</span></a>
-  <div class="filter-divider" style="margin:10px 4px"></div>
+  <div class="side-links">
+    <a href="/" class="side-link">
+      <div class="side-icon nav-badge"><span class="nb-t">AMY</span><div class="nb-d"><i></i><i></i><i></i></div></div>
+      <span class="side-link-text">Hi, Amy!</span>
+    </a>
+    <a href="/" class="side-link" onclick="try{localStorage.setItem('ops-panel','mark')}catch(e){}">
+      <div class="side-icon nav-badge"><span class="nb-t">MRK</span><div class="nb-d"><i></i><i></i><i></i></div></div>
+      <span class="side-link-text">It's Me, Mark<span class="side-link-credit">Ryan Levesque · Donald Miller et al.</span></span>
+    </a>
+    <a href="/content-week.html" class="side-link">
+      <div class="side-icon nav-badge"><span class="nb-t">CW</span><div class="nb-d"><i></i><i></i><i></i></div></div>
+      <span class="side-link-text">Content Week</span>
+    </a>
+    <a href="/watermark-clean.html" class="side-link">
+      <div class="side-icon nav-badge"><span class="nb-t">WMC</span><div class="nb-d"><i></i><i></i><i></i></div></div>
+      <span class="side-link-text">Watermark Cleaner</span>
+    </a>
+  </div>
+  <div class="side-sect-div"></div>
   <div class="nav-section">Library</div>
-  <a class="nav-item active" href="/library.html"><span class="nav-icon">📚</span><span class="nav-label">AI Library</span></a>
-  <a class="nav-item" href="/dca-course.html"><span class="nav-icon">🎓</span><span class="nav-label">Digital Course Academy<span class="nav-credit">by Amy Porterfield</span></span></a>
-  <div class="nav-spacer"></div>
-  <button class="collapse-btn" id="collapseBtn" onclick="toggleNav()"><span id="collapseArrow">◀</span><span class="nav-label" id="collapseLabel">Collapse</span></button>
-</nav>
+  <div class="side-links">
+    <a href="/library.html" class="side-link active">
+      <div class="side-icon nav-badge"><span class="nb-t">LIB</span><div class="nb-d"><i></i><i></i><i></i></div></div>
+      <span class="side-link-text">AI Library</span>
+    </a>
+    <a href="/dca-course.html" class="side-link">
+      <div class="side-icon nav-badge"><span class="nb-t">DCA</span><div class="nb-d"><i></i><i></i><i></i></div></div>
+      <span class="side-link-text">Digital Course Academy<span class="side-link-credit">by Amy Porterfield</span></span>
+    </a>
+  </div>
+  <div style="flex:1"></div>
+  <div class="side-bottom">
+    <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">🌙</button>
+  </div>
+</aside>
 
 <!-- Main -->
 <main class="app-main">
