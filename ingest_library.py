@@ -252,6 +252,7 @@ def walk_folder(folder_id: str, folder_path: list, dry_run: bool,
                 docs_done: list, vids_done: list, skipped: list):
     from database import (library_already_processed, library_video_exists,
                           library_subcategory_is_null, update_library_subcategory,
+                          library_category_mismatch, update_library_category,
                           store_library_chunks, store_library_video, init_db)
 
     items = list_folder(folder_id)
@@ -299,8 +300,13 @@ def walk_folder(folder_id: str, folder_path: list, dry_run: bool,
 
         # ── Documents ──
         if library_already_processed(fid):
+            # Patch category if it was ingested under the wrong category
+            if not dry_run and library_category_mismatch(fid, category):
+                update_library_category(fid, category, subcategory)
+                print(f"  🔁 Re-categorized [{category}] → {name}")
+                docs_done.append(f"[RECATEGORIZED] {name}")
             # Patch subcategory if it was ingested before subcategory support
-            if subcategory and not dry_run and library_subcategory_is_null(fid):
+            elif subcategory and not dry_run and library_subcategory_is_null(fid):
                 update_library_subcategory(fid, subcategory)
                 print(f"  🔖 Patched subcategory [{subcategory}] → {name}")
             else:
