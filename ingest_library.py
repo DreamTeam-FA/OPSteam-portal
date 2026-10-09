@@ -263,6 +263,10 @@ def walk_folder(folder_id: str, folder_path: list, dry_run: bool,
 
         # Recurse into subfolders
         if mime == "application/vnd.google-apps.folder":
+            # DCA has its own dedicated portal page — skip entirely from library
+            if "digital course academy" in name.lower():
+                skipped.append(f"[DCA_FOLDER_SKIP] {name}")
+                continue
             walk_folder(fid, folder_path + [name], dry_run,
                         docs_done, vids_done, skipped)
             continue

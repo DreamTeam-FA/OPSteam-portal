@@ -755,7 +755,7 @@ async function loadCategories() {
   try {
     const r = await fetch('/library/categories');
     const d = await r.json();
-    categories = d.categories || [];
+    categories = (d.categories || []).filter(c => !c.toLowerCase().startsWith('digital course academy'));
     // renderCategoryFilters() called by init() after all data loads
   } catch(e) {}
 }
@@ -798,6 +798,7 @@ async function loadDocs() {
     // Deduplicate by file_name (keep first occurrence per name)
     const seen = new Set();
     allDocs = (d.docs || []).filter(doc => {
+      if ((doc.category || '').toLowerCase().startsWith('digital course academy')) return false;
       const key = doc.file_name.toLowerCase();
       if (seen.has(key)) return false;
       seen.add(key);
