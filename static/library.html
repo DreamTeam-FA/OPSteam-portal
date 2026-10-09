@@ -816,7 +816,7 @@ async function loadVideos() {
   try {
     const r = await fetch('/library/videos');
     const d = await r.json();
-    allVideos = d.videos || [];
+    allVideos = (d.videos || []).filter(v => !v.category.toLowerCase().startsWith('digital course academy'));
     document.getElementById('vidCount').textContent = allVideos.length;
     document.getElementById('statVids').textContent = allVideos.length;
   } catch(e) {}

@@ -210,6 +210,26 @@ def library_video_exists(file_id: str) -> bool:
         return row is not None
 
 
+def library_video_category_mismatch(file_id: str, expected_category: str) -> bool:
+    """Return True if the video exists in DB but with a different category."""
+    with SessionLocal() as db:
+        row = db.execute(
+            text("SELECT category FROM library_videos WHERE file_id = :fid LIMIT 1"),
+            {"fid": file_id}
+        ).fetchone()
+        return row is not None and row.category != expected_category
+
+
+def update_library_video_category(file_id: str, category: str, subcategory: str = None):
+    """Patch category for an already-ingested video."""
+    with SessionLocal() as db:
+        db.execute(
+            text("UPDATE library_videos SET category = :cat, subcategory = :sub WHERE file_id = :fid"),
+            {"cat": category, "sub": subcategory, "fid": file_id}
+        )
+        db.commit()
+
+
 def store_library_chunks(file_name: str, file_id: str, content: str,
                          source_type: str, category: str, subcategory: str = None):
     size, overlap = 3000, 300

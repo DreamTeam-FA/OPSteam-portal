@@ -253,6 +253,7 @@ def walk_folder(folder_id: str, folder_path: list, dry_run: bool,
     from database import (library_already_processed, library_video_exists,
                           library_subcategory_is_null, update_library_subcategory,
                           library_category_mismatch, update_library_category,
+                          library_video_category_mismatch, update_library_video_category,
                           store_library_chunks, store_library_video, init_db)
 
     items = list_folder(folder_id)
@@ -289,7 +290,12 @@ def walk_folder(folder_id: str, folder_path: list, dry_run: bool,
         if is_video(mime):
             embed_url = f"https://drive.google.com/file/d/{fid}/preview"
             if library_video_exists(fid):
-                skipped.append(f"[ALREADY] {name}")
+                if not dry_run and library_video_category_mismatch(fid, category):
+                    update_library_video_category(fid, category, subcategory)
+                    print(f"  🔁 Re-categorized video [{category}] → {name}")
+                    vids_done.append(f"[RECATEGORIZED] {name}")
+                else:
+                    skipped.append(f"[ALREADY] {name}")
                 continue
             print(f"  🎬 [{category}] {name} ({size_mb} MB)")
             if not dry_run:
