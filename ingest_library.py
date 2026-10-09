@@ -92,6 +92,9 @@ def categorize(file_name: str, folder_path: list) -> tuple:
         # Only non-tool files
         return ("Content Week", None)
 
+    if "ai boot camp" in path_str or "ai bootcamp" in path_str:
+        return ("AI Boot Camp", None)
+
     # AI Corner subfolders
     if "ai corner" in path_str:
         if "digital course academy" in path_str:

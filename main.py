@@ -674,7 +674,8 @@ The library contains these categories of content:
 • Category of One — positioning and differentiation content
 • SOPs & Processes — standard operating procedures and team workflows
 • Sales & Marketing — sales frameworks, email sequences, webinar scripts, AI chatbot setups
-• Resources — tools, templates, Google Workspace guides, bootcamp materials
+• AI Boot Camp — AI Boot Camp training materials and resources
+• Resources — tools, templates, Google Workspace guides
 • GHL Webinar — Go High Level webinar transcripts and resources
 
 YOUR RULES:
@@ -731,7 +732,8 @@ KEYWORD_CATEGORY_MAP = [
     (['sop', 'process', 'workflow', 'procedure'], 'SOPs & Processes'),
     (['sales', 'marketing', 'email sequence', 'webinar', 'chatbot', 'funnel'], 'Sales & Marketing'),
     (['ghl', 'go high level', 'highlevel'], 'GHL Webinar'),
-    (['resource', 'tool', 'template', 'workspace', 'google', 'bootcamp'], 'Resources'),
+    (['ai boot camp', 'ai bootcamp', 'boot camp'], 'AI Boot Camp'),
+    (['resource', 'tool', 'template', 'workspace', 'google'], 'Resources'),
 ]
 
 def infer_category_from_message(msg: str) -> str | None:
