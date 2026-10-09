@@ -147,7 +147,7 @@ def categorize(file_name: str, folder_path: list) -> tuple:
         return ("Sales & Marketing", "Build Website")
     if "resource library" in name_lower or "hacks" in name_lower:
         return ("Resources", "Resource Library")
-    if "bootcamp" in name_lower or "masterclass" in name_lower:
+    if "masterclass" in name_lower:
         return ("Resources", "Bootcamp & Training")
     if "invoice" in name_lower:
         return ("Resources", "Finance")
