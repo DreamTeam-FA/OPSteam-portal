@@ -1128,11 +1128,11 @@ async function openDoc(fileId, name, category, sourceType) {
     let embedUrl, openUrl;
     if (st.includes('google-apps.document') || st.includes('google-apps.spreadsheet')) {
       const app = st.includes('spreadsheet') ? 'spreadsheets' : 'document';
-      embedUrl = `https://docs.google.com/${app}/d/${fileId}/preview`;
+      embedUrl = `https://docs.google.com/${app}/d/${fileId}/preview?hl=en`;
       openUrl  = `https://docs.google.com/${app}/d/${fileId}/view`;
     } else {
       // PDFs, DOCX, PPTX, XLSX — Drive's file viewer handles them all
-      embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+      embedUrl = `https://drive.google.com/file/d/${fileId}/preview?hl=en`;
       openUrl  = `https://drive.google.com/file/d/${fileId}/view`;
     }
     const safeName = name.replace(/</g,'&lt;').replace(/>/g,'&gt;');
