@@ -542,16 +542,6 @@ def mark_sync():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/mark/debug-tmp")
-def mark_debug_tmp(q: str = "newsletter 8"):
-    from database import SessionLocal
-    from sqlalchemy import text as _t
-    with SessionLocal() as db:
-        rows = db.execute(_t("SELECT file_name, count(*), sum(length(content)) FROM mark_chunks GROUP BY file_name ORDER BY file_name")).fetchall()
-    ctx = search_mark_chunks(q, top_n=4)
-    return {"files": [[r[0], r[1], r[2]] for r in rows], "ctx_len": len(ctx), "ctx_sources": [l for l in ctx.split("\n") if l.startswith("[Source:")], "gdoc_len": len(fetch_mark_gdoc() or "")}
-
-
 @app.post("/mark/chat", response_model=ChatResponse)
 async def mark_chat(req: ChatRequest):
     try:
