@@ -8,7 +8,7 @@ Usage:
     python ingest_library.py --run    # Actually ingest
 """
 
-import os, sys, io, time, argparse
+import os, sys, io, re, time, argparse
 from dotenv import load_dotenv
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -139,6 +139,8 @@ def categorize(file_name: str, folder_path: list) -> tuple:
 
     # Top-level documents
     name_lower = file_name.lower()
+    if re.search(r"(?<![a-z])sops?(?![a-z])", name_lower):
+        return ("SOPs & Processes", None)
     if "ai advantage" in name_lower:
         return ("AI Advantage", None)
     if "re-engage" in name_lower or "follow-up" in name_lower:
