@@ -550,7 +550,7 @@ async def mark_chat(req: ChatRequest):
             if content:
                 url_parts.append(content[:4000])
 
-        mark_ctx = search_mark_chunks(req.message, top_n=8)
+        mark_ctx = search_mark_chunks(req.message, top_n=4)
 
         gdoc_text = fetch_mark_gdoc()
 
@@ -558,16 +558,16 @@ async def mark_chat(req: ChatRequest):
         for u in url_parts:
             parts.append(u)
         if mark_ctx and len(mark_ctx) > 100:
-            parts.append(f"[From Mark's Knowledge Base]\n{mark_ctx[:5000]}")
+            parts.append(f"[From Mark's Knowledge Base]\n{mark_ctx[:12500]}")
         if gdoc_text:
-            snippet = gdoc_text[-12000:] if len(gdoc_text) > 12000 else gdoc_text
+            snippet = gdoc_text[-4000:] if len(gdoc_text) > 4000 else gdoc_text
             parts.append(f"[Live Newsletter Drafts — Mark's Google Doc, auto-updated]\n{snippet}")
         if not parts:
             parts.append("(No specific content matched — respond based on Mark's voice and frameworks.)")
 
         context = "\n\n===\n\n".join(parts)
-        if len(context) > MAX_CONTEXT_CHARS:
-            context = context[:MAX_CONTEXT_CHARS] + "\n[context truncated]"
+        if len(context) > 17000:
+            context = context[:17000] + "\n[context truncated]"
         system = MARK_SYSTEM_PROMPT.format(context=context)
         resp = generate(system, req.message, max_tokens=8192, message_for_routing=req.message, history=req.history or [])
         return ChatResponse(response=resp, sources=[])

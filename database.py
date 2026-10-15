@@ -475,18 +475,23 @@ def store_mark_chunks(file_name: str, file_id: str, content: str, source_type: s
 
 
 def search_mark_chunks(query: str, top_n: int = 8) -> str:
+    import re
+    tokens = list(dict.fromkeys(re.findall(r"[A-Za-z0-9]+", query.lower())))
+    or_query = " | ".join(tokens[:30])
+    rows = []
     with SessionLocal() as db:
-        rows = db.execute(
-            text("""
-                SELECT file_name, source_type, content,
-                       ts_rank(to_tsvector('english', content),
-                               plainto_tsquery('english', :q)) AS rank
-                FROM mark_chunks
-                WHERE to_tsvector('english', content) @@ plainto_tsquery('english', :q)
-                ORDER BY rank DESC LIMIT :n
-            """),
-            {"q": query, "n": top_n}
-        ).fetchall()
+        if or_query:
+            rows = db.execute(
+                text("""
+                    SELECT file_name, source_type, content,
+                           ts_rank(to_tsvector('english', file_name || ' ' || content),
+                                   to_tsquery('english', :q)) AS rank
+                    FROM mark_chunks
+                    WHERE to_tsvector('english', file_name || ' ' || content) @@ to_tsquery('english', :q)
+                    ORDER BY rank DESC LIMIT :n
+                """),
+                {"q": or_query, "n": top_n}
+            ).fetchall()
         if not rows:
             rows = db.execute(
                 text("SELECT file_name, source_type, content FROM mark_chunks ORDER BY id DESC LIMIT :n"),
