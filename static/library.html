@@ -745,17 +745,21 @@ async function init() {
 async function loadStats() {
   try {
     const r = await fetch('/library/stats');
-    const d = await r.json();
-    document.getElementById('statDocs').textContent = d.documents;
-    document.getElementById('statVids').textContent = d.videos;
+    await r.json();
+    // Header counts are set from the filtered doc/video lists (DCA excluded), not raw totals
   } catch(e) {}
+}
+
+function isHiddenCategory(c) {
+  const k = (c || '').toLowerCase();
+  return k.startsWith('digital course academy') || k === 'transcripts';
 }
 
 async function loadCategories() {
   try {
     const r = await fetch('/library/categories');
     const d = await r.json();
-    categories = (d.categories || []).filter(c => !c.toLowerCase().startsWith('digital course academy'));
+    categories = (d.categories || []).filter(c => !isHiddenCategory(c));
     // renderCategoryFilters() called by init() after all data loads
   } catch(e) {}
 }
@@ -798,7 +802,7 @@ async function loadDocs() {
     // Deduplicate by file_name (keep first occurrence per name)
     const seen = new Set();
     allDocs = (d.docs || []).filter(doc => {
-      if ((doc.category || '').toLowerCase().startsWith('digital course academy')) return false;
+      if (isHiddenCategory(doc.category)) return false;
       const key = doc.file_name.toLowerCase();
       if (seen.has(key)) return false;
       seen.add(key);
@@ -816,7 +820,7 @@ async function loadVideos() {
   try {
     const r = await fetch('/library/videos');
     const d = await r.json();
-    allVideos = (d.videos || []).filter(v => !v.category.toLowerCase().startsWith('digital course academy'));
+    allVideos = (d.videos || []).filter(v => !isHiddenCategory(v.category));
     document.getElementById('vidCount').textContent = allVideos.length;
     document.getElementById('statVids').textContent = allVideos.length;
   } catch(e) {}
