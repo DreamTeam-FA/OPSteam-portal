@@ -462,6 +462,7 @@ def mark_sync():
         from googleapiclient.discovery import build
         from googleapiclient.http import MediaIoBaseDownload
 
+        DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         folder_id = os.getenv("DRIVE_FOLDER_ID", "1uH8z-MhXSKuKMZtKoL-vBweFjnwTZaCd")
         sa_json   = os.getenv("GOOGLE_SA_JSON", "")
         if sa_json:
@@ -490,7 +491,7 @@ def mark_sync():
                 for item in resp.get("files", []):
                     if item["mimeType"] == "application/vnd.google-apps.folder":
                         pending.append(item["id"])
-                    elif item["mimeType"] in ("application/vnd.google-apps.document", "text/plain"):
+                    elif item["mimeType"] in ("application/vnd.google-apps.document", "text/plain", DOCX_MIME):
                         files.append(item)
                 page_token = resp.get("nextPageToken")
                 if not page_token:
@@ -515,7 +516,17 @@ def mark_sync():
                 done = False
                 while not done:
                     _, done = dl.next_chunk()
-                content = buf.getvalue().replace(b'\x00', b'').decode("utf-8", errors="ignore").strip()
+                if f["mimeType"] == DOCX_MIME:
+                    import docx
+                    buf.seek(0)
+                    d = docx.Document(buf)
+                    parts = [p.text for p in d.paragraphs]
+                    for tbl in d.tables:
+                        for row in tbl.rows:
+                            parts.append(" | ".join(c.text for c in row.cells))
+                    content = "\n".join(parts).replace('\x00', '').strip()
+                else:
+                    content = buf.getvalue().replace(b'\x00', b'').decode("utf-8", errors="ignore").strip()
                 if content:
                     store_mark_chunks(f["name"], f["id"], content)
                     added += 1
