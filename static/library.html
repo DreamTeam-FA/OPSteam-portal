@@ -799,15 +799,15 @@ async function loadDocs() {
   try {
     const r = await fetch('/library/docs');
     const d = await r.json();
-    // Deduplicate by file_name (keep first occurrence per name)
-    const seen = new Set();
-    allDocs = (d.docs || []).filter(doc => {
-      if (isHiddenCategory(doc.category)) return false;
+    // Deduplicate by file_name; if copies differ, prefer the one not stuck in General
+    const byName = new Map();
+    (d.docs || []).forEach(doc => {
+      if (isHiddenCategory(doc.category)) return;
       const key = doc.file_name.toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
+      const prev = byName.get(key);
+      if (!prev || (prev.category === 'General' && doc.category !== 'General')) byName.set(key, doc);
     });
+    allDocs = Array.from(byName.values());
     document.getElementById('docCount').textContent = allDocs.length;
     document.getElementById('statDocs').textContent = allDocs.length;
     renderGrid();
