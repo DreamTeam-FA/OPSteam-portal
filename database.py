@@ -483,11 +483,15 @@ def search_mark_chunks(query: str, top_n: int = 8) -> str:
         if or_query:
             rows = db.execute(
                 text("""
-                    SELECT file_name, source_type, content,
-                           ts_rank(to_tsvector('english', file_name || ' ' || content),
-                                   to_tsquery('english', :q)) AS rank
-                    FROM mark_chunks
-                    WHERE to_tsvector('english', file_name || ' ' || content) @@ to_tsquery('english', :q)
+                    WITH q AS (SELECT to_tsquery('english', :q) AS tsq)
+                    SELECT m.file_name, m.source_type, m.content,
+                           ts_rank(
+                               setweight(to_tsvector('english', regexp_replace(m.file_name, '[^A-Za-z0-9]+', ' ', 'g')), 'A')
+                               || setweight(to_tsvector('english', m.content), 'D'),
+                               q.tsq) AS rank
+                    FROM mark_chunks m, q
+                    WHERE (to_tsvector('english', regexp_replace(m.file_name, '[^A-Za-z0-9]+', ' ', 'g'))
+                           || to_tsvector('english', m.content)) @@ q.tsq
                     ORDER BY rank DESC LIMIT :n
                 """),
                 {"q": or_query, "n": top_n}

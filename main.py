@@ -503,6 +503,8 @@ def mark_sync():
         for f in files:
             if f["mimeType"] == "application/vnd.google-apps.folder":
                 continue
+            if f["name"].lower().endswith(".json") or "service-account" in f["name"].lower():
+                continue
             if mark_already_processed(f["id"]):
                 skipped += 1
                 continue
