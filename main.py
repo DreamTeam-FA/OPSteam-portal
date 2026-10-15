@@ -490,7 +490,7 @@ async def mark_sync():
                 for item in resp.get("files", []):
                     if item["mimeType"] == "application/vnd.google-apps.folder":
                         pending.append(item["id"])
-                    else:
+                    elif item["mimeType"] in ("application/vnd.google-apps.document", "text/plain"):
                         files.append(item)
                 page_token = resp.get("nextPageToken")
                 if not page_token:
