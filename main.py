@@ -477,11 +477,24 @@ async def mark_sync():
             )
 
         svc = build("drive", "v3", credentials=creds, cache_discovery=False)
-        files = svc.files().list(
-            q=f"'{folder_id}' in parents and trashed=false",
-            fields="files(id, name, mimeType)",
-            pageSize=200,
-        ).execute().get("files", [])
+        files, pending = [], [folder_id]
+        while pending:
+            fid = pending.pop()
+            page_token = None
+            while True:
+                resp = svc.files().list(
+                    q=f"'{fid}' in parents and trashed=false",
+                    fields="nextPageToken, files(id, name, mimeType)",
+                    pageSize=200, pageToken=page_token,
+                ).execute()
+                for item in resp.get("files", []):
+                    if item["mimeType"] == "application/vnd.google-apps.folder":
+                        pending.append(item["id"])
+                    else:
+                        files.append(item)
+                page_token = resp.get("nextPageToken")
+                if not page_token:
+                    break
 
         GDOC_EXPORT = {"application/vnd.google-apps.document": "text/plain"}
         added = skipped = failed = 0
