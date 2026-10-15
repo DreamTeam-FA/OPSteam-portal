@@ -463,8 +463,8 @@ def mark_sync():
         from googleapiclient.http import MediaIoBaseDownload
 
         DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        folder_id = os.getenv("DRIVE_FOLDER_ID", "1uH8z-MhXSKuKMZtKoL-vBweFjnwTZaCd")
-        sa_json   = os.getenv("GOOGLE_SA_JSON", "")
+        folder_id = os.getenv("MARK_DRIVE_FOLDER_ID", "1uH8z-MhXSKuKMZtKoL-vBweFjnwTZaCd")
+        sa_json   = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON") or os.getenv("GOOGLE_SA_JSON", "")
         if sa_json:
             sa_info = json.loads(sa_json)
             creds = service_account.Credentials.from_service_account_info(
