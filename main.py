@@ -454,7 +454,7 @@ RULES:
 
 
 @app.post("/mark/sync")
-async def mark_sync():
+def mark_sync():
     """Pull new/updated files from Google Drive and ingest into mark_chunks."""
     try:
         import io, json
