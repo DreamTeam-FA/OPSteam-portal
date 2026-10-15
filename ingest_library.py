@@ -95,6 +95,9 @@ def categorize(file_name: str, folder_path: list) -> tuple:
     if "ai boot camp" in path_str or "ai bootcamp" in path_str:
         return ("AI Boot Camp", None)
 
+    if "ai org chart" in path_str:
+        return ("AI Org Chart", None)
+
     # AI Corner subfolders
     if "ai corner" in path_str:
         if "digital course academy" in path_str:
@@ -130,7 +133,9 @@ def categorize(file_name: str, folder_path: list) -> tuple:
             return ("Sales & Marketing", "Build Website")
         if "claude design" in path_str:
             return ("Sales & Marketing", "Claude Design")
-        if "tabme" in path_str or "5-minute" in path_str:
+        if "5-minute" in path_str:
+            return ("SOPs & Processes", None)
+        if "tabme" in path_str:
             return ("Resources", "Tools & Templates")
         if "google workspace" in path_str:
             return ("Resources", "Google Workspace")
@@ -152,7 +157,7 @@ def categorize(file_name: str, folder_path: list) -> tuple:
     if "masterclass" in name_lower:
         return ("Resources", "Bootcamp & Training")
     if "invoice" in name_lower:
-        return ("Resources", "Finance")
+        return ("SOPs & Processes", None)
     if "voice sprint" in name_lower:
         return ("Resources", "Content Creation")
 

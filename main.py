@@ -705,6 +705,7 @@ The library contains these categories of content:
 • SOPs & Processes — standard operating procedures and team workflows
 • Sales & Marketing — sales frameworks, email sequences, webinar scripts, AI chatbot setups
 • AI Boot Camp — AI Boot Camp training materials and resources
+• AI Org Chart — AI Org Chart Masterclass sessions (Callan Faulkner): transcripts and videos
 • Resources — tools, templates, Google Workspace guides
 • GHL Webinar — Go High Level webinar transcripts and resources
 
@@ -763,6 +764,7 @@ KEYWORD_CATEGORY_MAP = [
     (['sales', 'marketing', 'email sequence', 'webinar', 'chatbot', 'funnel'], 'Sales & Marketing'),
     (['ghl', 'go high level', 'highlevel'], 'GHL Webinar'),
     (['ai boot camp', 'ai bootcamp', 'boot camp'], 'AI Boot Camp'),
+    (['org chart', 'callan faulkner'], 'AI Org Chart'),
     (['resource', 'tool', 'template', 'workspace', 'google'], 'Resources'),
 ]
 
